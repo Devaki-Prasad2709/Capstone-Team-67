@@ -1,0 +1,9 @@
+ultralytics
+opencv-python
+numpy
+matplotlib
+pyyaml
+torch
+torchvision
+imagehash 
+pillow
