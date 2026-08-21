@@ -1,18 +1,29 @@
-from ai.preprocessing.preprocessing_pipeline import PreprocessingPipeline
-from ai.computer_vision.inference_engine import InferenceEngine
+"""Legacy batched-inference demonstration retained as a portable CLI."""
 
-pipeline = PreprocessingPipeline()
+from __future__ import annotations
 
-engine = InferenceEngine(
-    "ai/computer_vision/models/best.pt"
-)
+import argparse
+from pathlib import Path
 
-image = "E:/Capstone-Team-67/datasets/processed/drone/isbda/images/10_0.jpg"
 
-result = pipeline.process(image)
+def main() -> None:
+    from ai.computer_vision.inference_engine import InferenceEngine
+    from ai.preprocessing.preprocessing_pipeline import PreprocessingPipeline
 
-if result["status"] == "batch_ready":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("image", type=Path)
+    parser.add_argument(
+        "--model",
+        type=Path,
+        default=Path("ai/computer_vision/artifacts/drone_detector/weights/best.pt"),
+    )
+    args = parser.parse_args()
+    result = PreprocessingPipeline().process(str(args.image))
+    if result["status"] == "batch_ready":
+        print(InferenceEngine(str(args.model)).infer(result["batch"]))
+    else:
+        print(result)
 
-    detections = engine.infer(result["batch"])
 
-    print(detections)
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DisasterScope Control Center</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/ai.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">DS</span><div><strong>DisasterScope</strong><small>Streaming control center</small></div></div>
+      <nav>
+        <button class="nav active" data-view="overview"><span>⌂</span> Overview</button>
+        <button class="nav" data-view="pipeline"><span>▶</span> Pipeline control</button>
+        <button class="nav" data-view="spark"><span>⌁</span> Spark output</button>
+        <button class="nav" data-view="ai"><span>AI</span> Damage analysis</button>
+        <button class="nav" data-view="media"><span>▧</span> Image storage</button>
+        <button class="nav" data-view="logs"><span>≡</span> Live logs</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="connection"><i id="globalDot"></i><span id="globalState">Checking system</span></div>
+        <a href="http://localhost:9001" target="_blank">Open MinIO console ↗</a>
+        <a href="/api/docs" target="_blank">Dashboard API ↗</a>
+      </div>
+    </aside>
+
+    <main>
+      <header>
+        <div><p class="eyebrow">REAL-TIME OPERATIONS</p><h1 id="pageTitle">System overview</h1></div>
+        <div class="header-actions"><span id="lastUpdated">Not refreshed</span><button class="icon-button" id="refreshButton" title="Refresh">↻</button></div>
+      </header>
+
+      <div id="toast" role="status"></div>
+
+      <section class="view active" id="overview">
+        <div class="hero">
+          <div><span class="live-pill"><i></i> LIVE PIPELINE</span><h2>Disaster intelligence,<br><em>without terminal juggling.</em></h2><p>Monitor ingestion, storage, processing, and AI-ready events from one place.</p></div>
+          <div class="hero-flow"><div>Datasets</div><b>→</b><div>Kafka</div><b>→</b><div>MinIO</div><b>→</b><div>Spark</div><b>→</b><div>AI</div></div>
+        </div>
+
+        <div class="section-heading"><div><p class="eyebrow">INFRASTRUCTURE</p><h3>Service health</h3></div><span class="hint">Auto-refreshes every 5 seconds</span></div>
+        <div class="service-grid" id="serviceGrid"></div>
+
+        <div class="metric-grid">
+          <article class="metric teal"><span>Social events</span><strong id="socialCount">—</strong><small>Kafka · social-posts</small></article>
+          <article class="metric orange"><span>Drone events</span><strong id="droneCount">—</strong><small>Kafka · drone-video</small></article>
+          <article class="metric blue"><span>Satellite events</span><strong id="satelliteCount">—</strong><small>Kafka · satellite-imagery</small></article>
+          <article class="metric orange"><span>GIS events</span><strong id="gisCount">—</strong><small>Kafka · gis-data</small></article>
+          <article class="metric teal"><span>AI results</span><strong id="aiCount">—</strong><small>Kafka · ai-analysis-results</small></article>
+          <article class="metric violet"><span>Stored images</span><strong id="storedCount">—</strong><small>MinIO · unique objects</small></article>
+        </div>
+
+        <div class="two-column">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">FLOW</p><h3>Pipeline activity</h3></div><span class="badge">Object storage mode</span></div><div id="activityList" class="activity-list"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">QUALITY</p><h3>Deduplication</h3></div></div><div class="donut-row"><div class="donut"><span id="canonicalTotal">0</span><small>canonical</small></div><div class="legend"><p><i class="drone"></i> Drone <b id="dedupDrone">0</b></p><p><i class="satellite"></i> Satellite <b id="dedupSatellite">0</b></p><small>Repeated frames are referenced, not uploaded twice.</small></div></div></article>
+        </div>
+      </section>
+
+      <section class="view" id="pipeline">
+        <div class="section-heading"><div><p class="eyebrow">ONE-CLICK CONTROL</p><h3>Run the streaming pipeline</h3></div><div class="button-row"><button class="secondary" id="infraStop">Stop infrastructure</button><button class="primary" id="infraStart">Start infrastructure</button></div></div>
+        <div class="callout"><span>1</span><div><strong>Recommended order</strong><p>Start infrastructure → start Spark → start producers. Spark uses <code>latest</code> offsets, so events sent before Spark starts will not appear on a fresh checkpoint.</p></div></div>
+        <div class="control-settings panel"><label>Events per producer<input id="eventLimit" type="number" min="1" max="10000" value="20"></label><label>Social delay<input id="socialDelay" type="number" min="0" max="60" step="0.1" value="1"></label><label>Drone delay<input id="droneDelay" type="number" min="0" max="60" step="0.1" value="0.5"></label><label>Satellite delay<input id="satelliteDelay" type="number" min="0" max="60" step="0.1" value="5"></label></div>
+        <div class="process-grid" id="processGrid"></div>
+      </section>
+
+      <section class="view" id="spark">
+        <div class="section-heading"><div><p class="eyebrow">PROCESSING LAYER</p><h3>Spark durable output</h3></div><div class="segmented" id="sparkTabs"><button class="active" data-source="social">Social</button><button data-source="drone">Drone</button><button data-source="satellite">Satellite</button><button data-source="gis">GIS</button><button data-source="ai">AI</button></div></div>
+        <div id="sparkAlert" class="callout warning hidden"></div>
+        <div class="ai-flow panel"><div><span>01</span><strong>Kafka event</strong><small>Raw source contract</small></div><b>→</b><div><span>02</span><strong>Spark validation</strong><small>Normalize + enrich</small></div><b>→</b><div><span>03</span><strong>Parquet output</strong><small>Durable metadata</small></div><b>→</b><div class="accent"><span>04</span><strong>AI-ready</strong><small>Model integration point</small></div></div>
+        <article class="panel table-panel"><div class="panel-head"><div><p class="eyebrow">LATEST RECORDS</p><h3 id="sparkTableTitle">Social output</h3></div><span id="parquetFiles" class="badge">0 files</span></div><div class="table-wrap"><table><thead id="sparkHead"></thead><tbody id="sparkBody"></tbody></table><div id="sparkEmpty" class="empty">No Spark output yet.</div></div></article>
+      </section>
+
+      <section class="view" id="ai">
+        <div class="section-heading"><div><p class="eyebrow">COMPUTER VISION</p><h3>Drone damage analysis</h3></div><span id="modelState" class="badge">Checking model</span></div>
+        <div class="metric-grid ai-metrics">
+          <article class="metric teal"><span>Precision</span><strong id="metricPrecision">—</strong><small>Preserved epoch 50</small></article>
+          <article class="metric orange"><span>Recall</span><strong id="metricRecall">—</strong><small>Preserved epoch 50</small></article>
+          <article class="metric blue"><span>mAP@50</span><strong id="metricMap50">—</strong><small>Preserved epoch 50</small></article>
+          <article class="metric violet"><span>mAP@50–95</span><strong id="metricMap95">—</strong><small>Preserved epoch 50</small></article>
+        </div>
+        <div class="ai-flow panel ai-live-flow"><div><span>01</span><strong>Drone event</strong><small>Kafka + MinIO reference</small></div><b>→</b><div><span>02</span><strong>Preprocess</strong><small>Motion, blur, pHash</small></div><b>→</b><div><span>03</span><strong>YOLOv8 Nano</strong><small>3 damage classes</small></div><b>→</b><div class="accent"><span>04</span><strong>AI result</strong><small>Kafka + Spark Parquet</small></div></div>
+        <div id="aiAlert" class="callout warning hidden"></div>
+        <article class="panel table-panel"><div class="panel-head"><div><p class="eyebrow">LIVE INFERENCE</p><h3>Latest AI results</h3></div><span id="aiResultTotal" class="badge">0 results</span></div><div class="table-wrap"><table><thead id="aiHead"></thead><tbody id="aiBody"></tbody></table><div id="aiEmpty" class="empty">No AI results yet. Start AI, then publish drone frames.</div></div></article>
+      </section>
+
+      <section class="view" id="media">
+        <div class="section-heading"><div><p class="eyebrow">OBJECT STORAGE</p><h3>MinIO image browser</h3></div><a class="primary link-button" href="http://localhost:9001" target="_blank">Open console ↗</a></div>
+        <div class="media-layout"><article class="panel object-list"><div class="panel-head"><h3>Recent objects</h3><span id="objectTotal" class="badge">0 images</span></div><div id="objectRows"></div></article><article class="panel preview"><div id="previewPlaceholder" class="preview-placeholder"><span>▧</span><p>Select an image to preview</p></div><img id="imagePreview" alt="Selected MinIO object"><div id="imageMeta"></div></article></div>
+      </section>
+
+      <section class="view" id="logs">
+        <div class="section-heading"><div><p class="eyebrow">DIAGNOSTICS</p><h3>Live process logs</h3></div><div class="segmented" id="logTabs"><button class="active" data-log="spark">Spark</button><button data-log="ai">AI</button><button data-log="social">Social</button><button data-log="drone">Drone</button><button data-log="satellite">Satellite</button><button data-log="gis">GIS</button></div></div>
+        <article class="terminal"><div class="terminal-bar"><span></span><span></span><span></span><strong id="logTitle">spark.log</strong><button id="clearLogView">Clear view</button></div><pre id="logOutput">Loading logs…</pre></article>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

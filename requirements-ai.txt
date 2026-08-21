@@ -1,0 +1,5 @@
+# Install after requirements.txt to enable YOLO inference/training.
+ultralytics==8.4.126
+torch==2.13.0
+torchvision==0.28.0
+ImageHash==4.3.2

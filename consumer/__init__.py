@@ -1,0 +1,2 @@
+"""Remote-friendly Kafka consumers."""
+

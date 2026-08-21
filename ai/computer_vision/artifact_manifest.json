@@ -1,0 +1,18 @@
+{
+  "source_repository": "https://github.com/Devaki-Prasad2709/Capstone-Team-67",
+  "source_commit": "e06e69aa7873ad95803378cc33e40cb546406cc0",
+  "training_run": "ai/computer_vision/runs/drone_detector",
+  "epochs": 50,
+  "classes": ["damage_class_1", "damage_class_2", "damage_class_3"],
+  "final_metrics": {
+    "precision": 0.44918,
+    "recall": 0.30059,
+    "map50": 0.25701,
+    "map50_95": 0.11756
+  },
+  "sha256": {
+    "artifacts/drone_detector/weights/best.pt": "177b12e972f7c2c94ac4ad5bc152b4a253a304a99ed50a422a0561cfb9a75fb5",
+    "artifacts/drone_detector/weights/last.pt": "37615cba9c12704e636bdd10ffc6edee8b29b295aedce76e0643e69307b7b4a6",
+    "artifacts/drone_detector/results.csv": "895bd273fd02c9c3162fd19a9a6fba8930b2c516e8857c06def40e36410df229"
+  }
+}

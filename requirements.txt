@@ -1,0 +1,8 @@
+kafka-python==2.2.15
+boto3==1.35.99
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+python-dotenv==1.0.1
+pyspark==3.5.5
+fastapi==0.115.6
+uvicorn==0.34.0

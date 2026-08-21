@@ -1,0 +1,10 @@
+/* AI integration additions kept separate from the compact base stylesheet. */
+.metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.metric-grid.ai-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 14px; }
+.ai-live-flow { margin-top: 0; }
+@media (max-width: 1200px) {
+  .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .metric-grid, .metric-grid.ai-metrics { grid-template-columns: 1fr; }
+}
