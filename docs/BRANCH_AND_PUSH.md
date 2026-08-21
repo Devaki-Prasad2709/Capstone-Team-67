@@ -1,17 +1,27 @@
-# Create a branch and push the combined codebase
+# Work with the combined branch
 
-Git is initialized locally on the unborn `main` branch. Create your own branch,
-make the first commit, and connect your repository:
+The combined codebase is published from the team repository's unchanged
+`main` commit to this dedicated branch:
 
-```powershell
-git switch -c your-name/integrated-pipeline
-git add .
-git commit -m "Integrate streaming pipeline and YOLO AI layer"
-git remote add origin https://github.com/YOUR-ACCOUNT/YOUR-REPOSITORY.git
-git push -u origin your-name/integrated-pipeline
+```text
+dibsei/integrated-disaster-streaming-system
 ```
 
-If you copy the files elsewhere, initialize that directory with `git init -b
-main` first. `.env`, environments, local runtimes, logs, Parquet/checkpoint
-output, and dedup state are ignored. Each preserved checkpoint is below
-GitHub's 100 MB per-file limit.
+Check it out from another clone with:
+
+```powershell
+git fetch origin
+git switch dibsei/integrated-disaster-streaming-system
+```
+
+Commit and push later changes without updating `main`:
+
+```powershell
+git add .
+git commit -m "Describe the change"
+git push
+```
+
+`.env`, environments, local runtimes, logs, Parquet/checkpoint output, and
+dedup state are ignored. Each preserved checkpoint is below GitHub's 100 MB
+per-file limit.
