@@ -13,3 +13,8 @@ storage/processed/*
 storage/checkpoints/*
 storage/dedup/*
 !storage/**/.gitkeep
+# TGNN training artifacts
+tgnn/models/*.pth
+!tgnn/models/tgnn.pth
+# Local AI-agent handoff/context
+AGENT_HANDOFF.md

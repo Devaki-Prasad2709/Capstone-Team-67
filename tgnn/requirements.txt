@@ -1,0 +1,7 @@
+torch==2.5.1
+torch-geometric==2.7.0
+networkx==3.6.1
+shapely==2.1.2
+pyproj==3.8.0
+geopandas==1.1.4
+rtree==1.4.1

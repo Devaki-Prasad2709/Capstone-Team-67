@@ -7,7 +7,7 @@ from typing import Any
 
 
 RESULT_TOPIC = "ai-analysis-results"
-MODEL_NAME = "drone_detector_yolov8n"
+MODEL_NAME = "drone_detector_yolo26s"
 
 
 def result_event(

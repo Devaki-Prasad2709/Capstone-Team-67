@@ -1,0 +1,46 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "DEMO_PLACEHOLDER_FIXTURE",
+    "warning": "This is NOT real surveyed GIS data. It is a small hand-built fixture for local development and testing only, until the real GIS dataset (currently on USB) is available. Do not present this as authoritative infrastructure data.",
+    "crs": "EPSG:4326"
+  },
+  "features": [
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.6949, 12.7106] },
+      "properties": { "feature_class": "infrastructure", "node_type": "power", "name": "Substation A", "capacity": 1.0 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.7005, 12.7140] },
+      "properties": { "feature_class": "infrastructure", "node_type": "power", "name": "Substation B", "capacity": 0.85 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.6975, 12.7125] },
+      "properties": { "feature_class": "infrastructure", "node_type": "hospital", "name": "General Hospital", "capacity": 0.9 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.7030, 12.7095] },
+      "properties": { "feature_class": "infrastructure", "node_type": "hospital", "name": "Community Clinic", "capacity": 0.6 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.6960, 12.7150] },
+      "properties": { "feature_class": "infrastructure", "node_type": "telecom", "name": "Cell Tower 1", "capacity": 0.8 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.7015, 12.7115] },
+      "properties": { "feature_class": "infrastructure", "node_type": "telecom", "name": "Cell Tower 2", "capacity": 0.8 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.6990, 12.7100] },
+      "properties": { "feature_class": "infrastructure", "node_type": "water", "name": "Pump Station 1", "capacity": 0.75 } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [77.7040, 12.7135] },
+      "properties": { "feature_class": "infrastructure", "node_type": "water", "name": "Pump Station 2", "capacity": 0.7 } },
+
+    { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [[77.6949, 12.7106], [77.6975, 12.7125]] },
+      "properties": { "feature_class": "road_segment", "name": "Road Segment 1", "lanes": 2 } },
+    { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [[77.6975, 12.7125], [77.7005, 12.7140]] },
+      "properties": { "feature_class": "road_segment", "name": "Road Segment 2", "lanes": 2 } },
+    { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [[77.7005, 12.7140], [77.7030, 12.7095]] },
+      "properties": { "feature_class": "road_segment", "name": "Road Segment 3", "lanes": 1 } },
+    { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [[77.6975, 12.7125], [77.6990, 12.7100]] },
+      "properties": { "feature_class": "road_segment", "name": "Road Segment 4", "lanes": 1 } },
+    { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [[77.6990, 12.7100], [77.7040, 12.7135]] },
+      "properties": { "feature_class": "road_segment", "name": "Road Segment 5", "lanes": 2 } },
+    { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [[77.6960, 12.7150], [77.7015, 12.7115]] },
+      "properties": { "feature_class": "road_segment", "name": "Road Segment 6", "lanes": 1 } },
+
+    { "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[[77.6968,12.7118],[77.6980,12.7118],[77.6980,12.7130],[77.6968,12.7130],[77.6968,12.7118]]] },
+      "properties": { "feature_class": "building", "building_id": "B1", "name": "Residential Block 1" } },
+    { "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[[77.6998,12.7108],[77.7010,12.7108],[77.7010,12.7120],[77.6998,12.7120],[77.6998,12.7108]]] },
+      "properties": { "feature_class": "building", "building_id": "B2", "name": "Residential Block 2" } },
+    { "type": "Feature", "geometry": { "type": "Polygon", "coordinates": [[[77.7022,12.7128],[77.7038,12.7128],[77.7038,12.7145],[77.7022,12.7145],[77.7022,12.7128]]] },
+      "properties": { "feature_class": "building", "building_id": "B3", "name": "Commercial Block 3" } }
+  ]
+}

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dashboard.map_api import map_config
+
 from pathlib import Path
 from typing import Literal
 
@@ -158,5 +160,8 @@ def object_image(key: str = Query(min_length=1)) -> Response:
     except Exception as exc:
         raise HTTPException(404, f"Could not load object: {exc}") from exc
 
+@app.get("/api/map/config")
+def map_configuration() -> dict[str, object]:
+    return map_config()
 
 app.mount("/", StaticFiles(directory=STATIC_ROOT, html=True), name="dashboard")
