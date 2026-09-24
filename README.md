@@ -5,7 +5,7 @@ feeds, transports events through Kafka, stores imagery in MinIO, processes each
 modality with Spark Structured Streaming, and exposes the complete workflow in a
 local web dashboard.
 
-The repository implements Layers 1-4, including a trained YOLOv8 Nano
+The repository implements Layers 1-4, including a trained YOLO26s
 drone-damage detector. Unique drone images can be analyzed in real time and
 published to `ai-analysis-results`; duplicates remain auditable without
 rerunning inference.
@@ -62,10 +62,12 @@ rerunning inference.
 ### AI damage detection
 
 - Image validation, resize, motion, blur-quality, and pHash preprocessing.
-- Preserved YOLOv8 Nano `best.pt` and `last.pt` checkpoints for three damage
-  classes.
+- Serving YOLO26s `best.pt` checkpoint for `Slight`, `Severe`, and `Debris`.
+- Legacy YOLOv8 `last.pt`, CSV, and plots retained as historical training
+  evidence but not used by the worker.
 - Kafka/MinIO worker: `drone-video` -> inference -> `ai-analysis-results`.
-- Original metrics, training arguments, plots, and validation evidence.
+- Serving-checkpoint metrics and training arguments, plus clearly labeled
+  legacy plots and validation evidence.
 - Portable inference, training, and evaluation commands with no drive-letter
   assumptions.
 - SHA-256 and final-metric verification with `scripts.verify_ai_artifacts`.
@@ -293,11 +295,11 @@ run the preserved detector, and publish this implemented contract:
 {
   "frame_id": "image001.jpg",
   "content_hash": "ab12...",
-  "model_name": "drone_detector_yolov8n",
+  "model_name": "drone_detector_yolo26s",
   "status": "analyzed",
   "detection_count": 1,
   "max_confidence": 0.91,
-  "damage_classes": ["damage_class_2"],
+  "damage_classes": ["Severe"],
   "detections": []
 }
 ```

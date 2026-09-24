@@ -7,16 +7,15 @@ Proves the first milestone from the implementation plan end to end:
         -> synthetic/manual Observation Log
         -> decay-weighted damage -> effective capacity -> stress
         -> G(t)
-        -> existing nx_to_pyg
-        -> existing TGNN
+        -> normalized PyG sequence
+        -> committed TGNN checkpoint
         -> per-node risk
 
 Run from the repository root with: python -m core.pipeline_demo
 
-If torch / torch_geometric are not installed in this environment, the
-script still runs through the GIS overlay (Step 5), then skips Step 6.
-Step 6 is an untrained TGNN shape/forward-pass demo: no checkpoint is loaded,
-and its output is not a trained risk prediction.
+The required Torch/PyG dependencies are declared in requirements-ai.txt.
+Step 6 loads tgnn/models/tgnn.pth and maps predictions back to the original
+GIS node IDs; it fails loudly if that production contract is unavailable.
 """
 
 import time
@@ -28,6 +27,7 @@ from core.observation.geolocator import Detection, ManualOverrideGeoLocator
 from core.observation.observation_log import ObservationLog, ObservationRecord
 from core.observation.state_update import apply_observations
 from core.overlay.gis_overlay import build_node_overlay
+from core.integration.tgnn_predictor import predict_node_risk
 
 
 def find_node_near(G, node_type, name_hint_pos, tolerance=50.0):
@@ -144,33 +144,20 @@ def main():
 
     print()
     print("=" * 70)
-    print("STEP 6: Build PyG sequence and run existing TGNN (if available)")
+    print("STEP 6: Run checkpoint-backed TGNN on GIS graph snapshots")
     print("=" * 70)
-    try:
-        import torch
-        from core.integration.pyg_bridge import build_graph_sequence
-        from tgnn.utils.helpers import nx_to_pyg
-        from tgnn.models.tgnn import TGNN
+    # A minimal 2-timestep sequence: G(0) then G(t). A deployment keeps a
+    # rolling window, but this proves the real GIS/checkpoint contract.
+    predicted_risk = predict_node_risk([G0, Gt])
+    ranked = sorted(predicted_risk.items(), key=lambda item: item[1], reverse=True)
+    print("  Saved TGNN checkpoint loaded successfully.")
+    print("  Highest-risk GIS nodes:")
+    for node_id, risk in ranked[:5]:
+        print(f"    node {node_id} ({Gt.nodes[node_id]['type']}): risk={risk:.4f}")
 
-        # A minimal 2-timestep sequence: G(0) then G(t). A real deployment
-        # keeps a rolling window of the last N ticks; this demo just proves
-        # the shapes line up end to end.
-        sequence = build_graph_sequence([G0, Gt], nx_to_pyg)
-
-        model = TGNN()
-        model.eval()
-        with torch.no_grad():
-            outputs = model(sequence)
-
-        last_step_risk = torch.sigmoid(outputs[-1]).squeeze(-1)
-        print("  Untrained TGNN forward pass succeeded (no checkpoint loaded).")
-        print("  Demo sigmoid outputs at G(t), not trained risk predictions:")
-        for node_id in obs_log.all_observed_node_ids():
-            print(f"    node {node_id}: demo output = {last_step_risk[node_id].item():.4f}")
-
-    except ModuleNotFoundError as e:
-        print(f"  torch/torch_geometric not available in this environment ({e}).")
-        print("  Completed through STEP 5; skipped the untrained TGNN demo.")
+    risk_overlay = build_node_overlay(Gt, predicted_risk)
+    assert len(risk_overlay["features"]) == Gt.number_of_nodes()
+    print(f"  Risk overlay contains {len(risk_overlay['features'])} GIS nodes.")
 
 
 if __name__ == "__main__":

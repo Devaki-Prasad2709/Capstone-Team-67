@@ -1,8 +1,7 @@
-"""Verify preserved YOLO checkpoints and recorded final metrics."""
+"""Verify preserved YOLO artifacts and serving-checkpoint metrics."""
 
 from __future__ import annotations
 
-import csv
 import hashlib
 import json
 from pathlib import Path
@@ -20,15 +19,21 @@ def verify() -> dict[str, float]:
         if actual != expected:
             raise ValueError(f"Checksum mismatch for {relative}: {actual} != {expected}")
 
-    with (AI_ROOT / "artifacts" / "drone_detector" / "results.csv").open(
-        newline="", encoding="utf-8-sig"
-    ) as handle:
-        final = list(csv.DictReader(handle))[-1]
+    try:
+        from ultralytics import YOLO
+    except ImportError as exc:
+        raise RuntimeError(
+            "AI dependencies are required to verify metrics embedded in best.pt"
+        ) from exc
+
+    serving_checkpoint = AI_ROOT / "artifacts" / "drone_detector" / "weights" / "best.pt"
+    checkpoint = YOLO(str(serving_checkpoint)).ckpt
+    embedded = checkpoint.get("train_metrics") or {}
     observed = {
-        "precision": float(final["metrics/precision(B)"]),
-        "recall": float(final["metrics/recall(B)"]),
-        "map50": float(final["metrics/mAP50(B)"]),
-        "map50_95": float(final["metrics/mAP50-95(B)"]),
+        "precision": float(embedded["metrics/precision(B)"]),
+        "recall": float(embedded["metrics/recall(B)"]),
+        "map50": float(embedded["metrics/mAP50(B)"]),
+        "map50_95": float(embedded["metrics/mAP50-95(B)"]),
     }
     if observed != manifest["final_metrics"]:
         raise ValueError(f"Metric drift: {observed} != {manifest['final_metrics']}")

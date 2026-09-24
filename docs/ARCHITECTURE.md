@@ -24,7 +24,7 @@ Layer responsibilities are intentionally separate:
 - **Layer 1 - data source:** discovers static CrisisMMD, ISBDA, and xBD files and emits them slowly to simulate live arrival.
 - **Layer 2 - ingestion:** Kafka buffers and transports events. It does not perform AI or downstream analytics.
 - **Layer 3 - processing:** Spark parses explicit schemas, validates each modality, normalizes social text, performs demonstration counts, preserves Kafka metadata, and produces AI-ready metadata.
-- **Layer 4 - AI:** preprocesses unique drone frames and runs the preserved YOLOv8 damage detector.
+- **Layer 4 - AI:** preprocesses unique drone frames and runs the serving YOLO26s damage detector.
 - **Layer 5 - frontend:** controls the pipeline and visualizes model metrics and live inference results.
 
 ## Event contracts

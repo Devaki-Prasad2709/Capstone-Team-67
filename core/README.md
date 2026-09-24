@@ -1,11 +1,9 @@
 # GIS → Graph Builder → Observation Log → TGNN — Core Integration Layer
 
 This is the "pure core" layer from the implementation plan: fully testable
-without Kafka/Spark/MinIO. **Verified working end-to-end** (see "What's been
-tested" below) up to the point of calling the existing TGNN, which requires
-torch/torch_geometric — not installed in this sandbox, but the code is
-written directly against your `helpers.py`/`tgnn.py` and needs no changes
-to run in your local environment.
+without Kafka/Spark/MinIO. It is verified through checkpoint-backed TGNN
+inference on GIS-derived graph snapshots. Torch and PyTorch Geometric are
+declared through the repository requirements files.
 
 ## What this replaces / adds
 
@@ -20,19 +18,20 @@ to run in your local environment.
 | `observation/state_update.py` | Applies aggregated damage → `effective_capacity` → `stress` onto the graph, producing G(t) from G(t-1). |
 | `overlay/gis_overlay.py` | Graph → GeoJSON for the dashboard's `/api/overlay/nodes` contract. **Single exit point** for coordinate conversion (working CRS → WGS84). |
 | `integration/pyg_bridge.py` | Thin wrapper sequencing graph snapshots into the list your `TGNN.forward()` expects — calls your existing `nx_to_pyg`, unmodified. |
-| `pipeline_demo.py` | End-to-end proof: GIS → G(0) → synthetic observations → G(t) → PyG sequence → TGNN. |
+| `integration/tgnn_predictor.py` | Loads the committed checkpoint, validates temporal node order, and maps prediction rows back to GIS node IDs. |
+| `pipeline_demo.py` | End-to-end proof: GIS → G(0) → synthetic observations → G(t) → PyG sequence → checkpoint-backed TGNN. |
 | `reference/` | Your three uploaded files, untouched, used by the demo. |
 
 ## What's been tested (in this environment)
 
 Ran `pipeline_demo.py` successfully through:
-1. Loading the demo GIS fixture and building G(0) — **14 nodes, 105 edges** (97 spatial, 8 dependency)
+1. Loading the demo GIS fixture and building G(0) — **17 nodes, 157 edges** (146 spatial, 11 dependency)
 2. Building association — correctly resolved all 3 demo buildings to their nearest road/hospital
 3. Simulating 3 drone passes (Severe damage, 3 different confidences/timestamps) over one building — correctly resolved to the same road node each time
 4. Applying observations — damage went `0.000 → 0.608`, stress `0.350 → 1.000` (capped), via the decay/max aggregation formula, exactly matching the worked example in the architecture doc
 5. Building the dashboard overlay — correct WGS84 round-trip (output coordinates matched the input fixture's coordinates to float precision)
 
-Step 6 (actual TGNN forward pass) needs torch/torch_geometric, which couldn't be installed in this sandbox (disk space). **The code path is written directly against your `nx_to_pyg` and `TGNN.forward()` signatures** — run `python pipeline_demo.py` in your local environment (which already has the right torch/PyG versions per your `requirements.txt`) to see it complete. If it doesn't run cleanly first try, it's almost certainly a PyG version-specific `GATConv` argument issue, not a shape/contract mismatch — those have already been checked by hand against your `tgnn.py`.
+6. Loading `tgnn/models/tgnn.pth`, running inference on `[G(0), G(t)]`, mapping risk back to all 17 GIS node IDs, and adding risk to the GeoJSON overlay.
 
 ## Known, disclosed simplifications (see comments in code for detail)
 

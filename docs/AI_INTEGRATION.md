@@ -8,9 +8,10 @@ The computer-vision functionality was adapted from
 
 - Image validation, resize, frame sampling, motion filtering, blur filtering,
   bounded pHash near-duplicate filtering, and batching behavior.
-- YOLOv8 Nano training, evaluation, and inference for three damage classes.
-- `best.pt`, `last.pt`, `results.csv`, training/validation plots, and original
-  training arguments.
+- YOLO26s serving inference for `Slight`, `Severe`, and `Debris` using
+  `best.pt`.
+- A legacy YOLOv8 `last.pt`, `results.csv`, and plots are retained as
+  historical evidence and are not used by the worker.
 
 Hard-coded `E:/...` paths were replaced with settings and CLI arguments. The
 new worker reads Kafka/MinIO events and publishes `ai-analysis-results`.
@@ -21,12 +22,12 @@ second pHash filter is disabled by default.
 
 | Precision | Recall | mAP@50 | mAP@50-95 |
 | ---: | ---: | ---: | ---: |
-| 0.44918 | 0.30059 | 0.25701 | 0.11756 |
+| 0.36917 | 0.28202 | 0.25171 | 0.10874 |
 
-`python -m scripts.verify_ai_artifacts` verifies SHA-256 for both checkpoints
-and `results.csv`, then compares the CSV's final row with the manifest. A new
-evaluation requires the original dataset and can vary with dependencies,
-hardware, or dataset contents.
+`python -m scripts.verify_ai_artifacts` verifies SHA-256 for all preserved
+artifacts, then compares the serving checkpoint's embedded `train_metrics`
+with the manifest. A new evaluation requires the original dataset and can
+vary with dependencies, hardware, or dataset contents.
 
 ```text
 drone-video -> AI worker -> ai-analysis-results -> Spark -> storage/processed/ai

@@ -1,4 +1,4 @@
-"""Lazy-loading wrapper around the preserved YOLOv8 detector."""
+"""Lazy-loading wrapper around the serving YOLO26s detector."""
 
 from __future__ import annotations
 

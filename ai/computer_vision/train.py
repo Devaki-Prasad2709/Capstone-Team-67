@@ -9,7 +9,7 @@ from pathlib import Path
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, required=True, help="Ultralytics dataset YAML")
-    parser.add_argument("--model", default="yolov8n.pt")
+    parser.add_argument("--model", default="yolo26s.pt")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch", type=int, default=8)
     parser.add_argument("--imgsz", type=int, default=640)

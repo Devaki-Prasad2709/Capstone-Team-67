@@ -5,7 +5,7 @@ from ai.preprocessing.preprocessing_pipeline import PreprocessingPipeline
 
 class VisionPipeline:
 
-    def __init__(self, model_path="yolov8n.pt"):
+    def __init__(self, model_path="yolo26s.pt"):
 
         self.pipeline = PreprocessingPipeline()
 
