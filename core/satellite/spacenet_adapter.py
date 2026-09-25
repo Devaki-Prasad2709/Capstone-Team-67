@@ -7,6 +7,7 @@ Metadata alignment does not correct residual sensor registration or illumination
 """
 
 from dataclasses import dataclass
+from io import BytesIO
 import math
 
 import numpy as np
@@ -118,16 +119,9 @@ def _sample_post(pre_grid, post_grid, post, valid):
     return sampled, inside
 
 
-def classify_spacenet_pair(pre_image_path, post_image_path, grid_size=4,
-                           min_valid_fraction=0.95):
-    """Return WGS84 dashboard GeoJSON; low-coverage cells have null scores.
-
-    Scores reuse the generic classifier's grayscale MAD and severity thresholds.
-    Polygons follow exact integer pixel boundaries, including non-divisible grids.
-    This is radiometric change evidence, not calibrated destruction probability.
-    """
-    pre_grid, pre, pre_valid = _load(pre_image_path)
-    post_grid, post, post_valid = _load(post_image_path)
+def _classify_loaded_pair(
+    pre_grid, pre, pre_valid, post_grid, post, post_valid, grid_size, min_valid_fraction
+):
     if (isinstance(grid_size, bool) or not isinstance(grid_size, (int, np.integer))
             or not 1 <= grid_size <= min(pre.shape)):
         raise ValueError("grid_size must be a positive integer within PRE dimensions")
@@ -174,6 +168,66 @@ def classify_spacenet_pair(pre_image_path, post_image_path, grid_size=4,
         "mask_policy": "exclude declared NoData in any band, all-black RGB, and invalid interpolation support",
         "interpretation": "uncalibrated radiometric change; not destruction probability",
     }}
+
+
+def classify_spacenet_pair(pre_image_path, post_image_path, grid_size=4,
+                           min_valid_fraction=0.95):
+    """Return WGS84 dashboard GeoJSON; low-coverage cells have null scores.
+
+    Scores reuse the generic classifier's grayscale MAD and severity thresholds.
+    Polygons follow exact integer pixel boundaries, including non-divisible grids.
+    This is radiometric change evidence, not calibrated destruction probability.
+    """
+    return _classify_loaded_pair(
+        *_load(pre_image_path),
+        *_load(post_image_path),
+        grid_size,
+        min_valid_fraction,
+    )
+
+
+def _grid_from_bbox(width: int, height: int, bbox) -> GeoGrid:
+    if (
+        not isinstance(bbox, (list, tuple))
+        or len(bbox) != 4
+        or not all(isinstance(value, (int, float)) and math.isfinite(value) for value in bbox)
+    ):
+        raise ValueError("Transported satellite image requires a finite WGS84 bbox")
+    west, south, east, north = map(float, bbox)
+    if not (-180 <= west < east <= 180 and -90 <= south < north <= 90):
+        raise ValueError("Transported satellite bbox must be west,south,east,north")
+    return GeoGrid(width, height, west, north, (east - west) / width, (north - south) / height)
+
+
+def _load_transferred_rgb(image_bytes: bytes, bbox):
+    """Decode producer-transferred RGB/JPEG bytes with explicit footprint metadata."""
+    with Image.open(BytesIO(image_bytes)) as image:
+        rgb = np.asarray(image.convert("RGB"))
+        gray = np.asarray(image.convert("L"), dtype=np.float64)
+    grid = _grid_from_bbox(rgb.shape[1], rgb.shape[0], bbox)
+    return grid, gray, ~np.all(rgb == 0, axis=2)
+
+
+def classify_transferred_pair(
+    pre_image_bytes: bytes,
+    post_image_bytes: bytes,
+    pre_bbox,
+    post_bbox,
+    grid_size=8,
+    min_valid_fraction=0.95,
+):
+    """Analyze the actual Kafka/MinIO JPEG payloads as broad-area evidence.
+
+    GeoTIFF tags do not survive the existing TIFF-to-JPEG producer contract, so
+    the producer's explicit, validated WGS84 footprints define each transported
+    raster grid. The output remains dashboard-only and is never a TGNN feature.
+    """
+    return _classify_loaded_pair(
+        *_load_transferred_rgb(pre_image_bytes, pre_bbox),
+        *_load_transferred_rgb(post_image_bytes, post_bbox),
+        grid_size,
+        min_valid_fraction,
+    )
 
 
 if __name__ == "__main__":

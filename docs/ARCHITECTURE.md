@@ -34,6 +34,7 @@ Layer responsibilities are intentionally separate:
 | `social-posts` | Text, hazard, event, source timestamp | Normalized text, keyword flag, Kafka metadata |
 | `drone-video` | Base64 fallback or object URI; checksum and duplicate metadata | Unique frame `ready_for_ai` or `duplicate_skipped` |
 | `satellite-imagery` | Base64 fallback or object URI for converted JPEG | Unique image `ready_for_ai` or exact `duplicate_skipped` |
+| `satellite-change-results` | GeoJSON grid, source references, timestamp, footprint, summary | Dashboard-only broad-area evidence; never a TGNN node feature |
 | `gis-data` | Reserved | Future |
 | `ai-analysis-results` | Detection classes, confidences, boxes, and status | Durable AI Parquet records |
 
@@ -72,5 +73,12 @@ Future interfaces naturally attach after each topic-specific Spark processor:
 - normalized social text -> NLP classifier or text embedding service;
 - drone frame reference -> damage/fire/flood computer vision service;
 - satellite image reference -> change detection and affected-area model.
+
+The implemented satellite change worker pairs explicit `pre` and `post`
+records by scenario and SpaceNet tile, retrieves the exact producer-transferred
+bytes from MinIO/Base64, aligns their WGS84 footprints, and emits coarse
+radiometric-change GeoJSON. The dashboard reads this separate result topic.
+Neither the graph snapshot builder nor the PyG/TGNN bridge imports or consumes
+the result contract.
 
 Embeddings belong in the AI/processing layer, not inside the Kafka broker. Kafka transports embedding events if needed, but does not generate them.

@@ -51,7 +51,7 @@
       "official_annotations": {"Slight": 0, "Severe": 1, "Debris": 4},
       "assigned_location": {"longitude": -90.08495870221768, "latitude": 29.762723979404086, "crs": "EPSG:4326"},
       "target_id": "osm-way-794401251",
-      "scenario_timestamp": "2026-09-24T12:01:45Z",
+      "scenario_timestamp": "2026-09-24T12:01:30Z",
       "input_origin": "real-isbda-image",
       "geographic_footprint": "not_provided_by_source_dataset",
       "simulation_fields": ["assigned_location", "target_id", "scenario_timestamp"]

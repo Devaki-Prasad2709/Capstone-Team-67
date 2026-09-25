@@ -29,7 +29,9 @@ from dashboard.services import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATIC_ROOT = Path(__file__).resolve().parent / "static"
-PROCESS_NAMES = ("spark", "ai", "social", "drone", "satellite", "gis")
+PROCESS_NAMES = (
+    "spark", "ai", "satellite_change", "social", "drone", "satellite", "gis"
+)
 
 app = FastAPI(title="Disaster Streaming Control Center", docs_url="/api/docs")
 manager = ProcessManager()
@@ -91,6 +93,10 @@ def start_process(name: str, options: StartOptions) -> dict[str, object]:
         command = spark_command()
     elif name == "ai":
         command = python_module("ai.computer_vision.worker", "--limit", str(options.limit))
+    elif name == "satellite_change":
+        command = python_module(
+            "core.satellite.change_worker", "--limit", str(options.limit)
+        )
     else:
         defaults = {
             "social": settings.social_delay,
@@ -140,6 +146,18 @@ def ai_output() -> dict[str, object]:
         "results": rows,
         "errors": {"model": model_error, "results": results_error},
     }
+
+
+@app.get("/api/satellite/change")
+def satellite_change_output() -> dict[str, object]:
+    rows, error = recent_topic_events("satellite-change-results", 10)
+    latest = rows[0] if rows else None
+    if latest:
+        for image in (latest.get("source_images") or {}).values():
+            key = image.get("object_key") if isinstance(image, dict) else None
+            if isinstance(key, str) and key.startswith("satellite/"):
+                image["preview_url"] = "/api/object?key=" + key
+    return {"latest": latest, "result_count": len(rows), "error": error}
 
 
 @app.get("/api/objects")

@@ -6,6 +6,7 @@
   <title>DisasterScope Control Center</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/ai.css">
+  <link rel="stylesheet" href="/satellite.css">
 </head>
 <body>
   <div class="shell">
@@ -16,6 +17,7 @@
         <button class="nav" data-view="pipeline"><span>▶</span> Pipeline control</button>
         <button class="nav" data-view="spark"><span>⌁</span> Spark output</button>
         <button class="nav" data-view="ai"><span>AI</span> Damage analysis</button>
+        <button class="nav" data-view="satellite-change"><span>Δ</span> Satellite change</button>
         <button class="nav" data-view="media"><span>▧</span> Image storage</button>
         <button class="nav" data-view="logs"><span>≡</span> Live logs</button>
       </nav>
@@ -85,13 +87,31 @@
         <article class="panel table-panel"><div class="panel-head"><div><p class="eyebrow">LIVE INFERENCE</p><h3>Latest AI results</h3></div><span id="aiResultTotal" class="badge">0 results</span></div><div class="table-wrap"><table><thead id="aiHead"></thead><tbody id="aiBody"></tbody></table><div id="aiEmpty" class="empty">No AI results yet. Start AI, then publish drone frames.</div></div></article>
       </section>
 
+      <section class="view" id="satellite-change">
+        <div class="section-heading"><div><p class="eyebrow">BROAD-AREA EVIDENCE</p><h3>Satellite change analysis</h3></div><span class="badge">Separate from TGNN node features</span></div>
+        <div id="satelliteChangeAlert" class="callout warning hidden"></div>
+        <div id="satelliteChangeEmpty" class="empty panel">No broad-area result yet. Start the Satellite change worker before replaying the scenario pair.</div>
+        <div id="satelliteChangeContent" class="hidden">
+          <div class="satellite-summary metric-grid">
+            <article class="metric blue"><span>Changed cells</span><strong id="changeCellCount">—</strong><small>Moderate + severe</small></article>
+            <article class="metric teal"><span>Scored cells</span><strong id="scoredCellCount">—</strong><small id="totalCellCount">of — grid cells</small></article>
+            <article class="metric orange"><span>Maximum difference</span><strong id="maxDiffScore">—</strong><small>Uncalibrated radiometric score</small></article>
+            <article class="metric violet"><span>Reference flooding</span><strong id="referenceFlooding">—</strong><small>Official SpaceNet labels</small></article>
+          </div>
+          <div class="satellite-layout">
+            <article class="panel satellite-source-panel"><div class="panel-head"><div><p class="eyebrow">SOURCE IMAGES</p><h3>Real SpaceNet pre/post pair</h3></div><span id="satelliteTimestamp" class="badge"></span></div><div class="satellite-pair"><figure><img id="satellitePreImage" alt="SpaceNet pre-event source"><figcaption id="satellitePreCaption"></figcaption></figure><figure><img id="satellitePostImage" alt="SpaceNet post-event source"><figcaption id="satellitePostCaption"></figcaption></figure></div></article>
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">CHANGE GRID</p><h3 id="satelliteTileTitle">Tile</h3></div><span class="badge">Broad area only</span></div><div id="changeGrid" class="change-grid"></div><div class="change-legend"><span><i class="low"></i>Low</span><span><i class="moderate"></i>Moderate</span><span><i class="severe"></i>Severe</span><span><i class="unknown"></i>Insufficient coverage</span></div><p id="satelliteFootprint" class="footprint"></p><p class="interpretation">This layer is uncalibrated radiometric change evidence. It is not a destruction probability and is not passed into TGNN node features.</p></article>
+          </div>
+        </div>
+      </section>
+
       <section class="view" id="media">
         <div class="section-heading"><div><p class="eyebrow">OBJECT STORAGE</p><h3>MinIO image browser</h3></div><a class="primary link-button" href="http://localhost:9001" target="_blank">Open console ↗</a></div>
         <div class="media-layout"><article class="panel object-list"><div class="panel-head"><h3>Recent objects</h3><span id="objectTotal" class="badge">0 images</span></div><div id="objectRows"></div></article><article class="panel preview"><div id="previewPlaceholder" class="preview-placeholder"><span>▧</span><p>Select an image to preview</p></div><img id="imagePreview" alt="Selected MinIO object"><div id="imageMeta"></div></article></div>
       </section>
 
       <section class="view" id="logs">
-        <div class="section-heading"><div><p class="eyebrow">DIAGNOSTICS</p><h3>Live process logs</h3></div><div class="segmented" id="logTabs"><button class="active" data-log="spark">Spark</button><button data-log="ai">AI</button><button data-log="social">Social</button><button data-log="drone">Drone</button><button data-log="satellite">Satellite</button><button data-log="gis">GIS</button></div></div>
+        <div class="section-heading"><div><p class="eyebrow">DIAGNOSTICS</p><h3>Live process logs</h3></div><div class="segmented" id="logTabs"><button class="active" data-log="spark">Spark</button><button data-log="ai">AI</button><button data-log="satellite_change">Change</button><button data-log="social">Social</button><button data-log="drone">Drone</button><button data-log="satellite">Satellite</button><button data-log="gis">GIS</button></div></div>
         <article class="terminal"><div class="terminal-bar"><span></span><span></span><span></span><strong id="logTitle">spark.log</strong><button id="clearLogView">Clear view</button></div><pre id="logOutput">Loading logs…</pre></article>
       </section>
     </main>

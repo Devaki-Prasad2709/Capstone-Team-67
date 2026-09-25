@@ -42,12 +42,24 @@ class Settings:
     drone_dataset_path: str = os.getenv("DRONE_DATASET_PATH", "")
     satellite_dataset_path: str = os.getenv("SATELLITE_DATASET_PATH", "")
     gis_dataset_path: str = os.getenv("GIS_DATASET_PATH", "")
+    spacenet8_dataset_path: str = os.getenv("SPACENET8_DATASET_PATH", "")
+    isbda_dataset_path: str = os.getenv("ISBDA_DATASET_PATH", "")
+    final_scenario_path: str = os.getenv(
+        "FINAL_SCENARIO_PATH", "scenarios/louisiana_east_flood/scenario.json"
+    )
     social_delay: float = _float("SOCIAL_STREAM_DELAY", 1.0)
     drone_delay: float = _float("DRONE_STREAM_DELAY", 0.5)
     satellite_delay: float = _float("SATELLITE_STREAM_DELAY", 5.0)
     gis_delay: float = _float("GIS_STREAM_DELAY", 2.0)
     max_message_bytes: int = _int("KAFKA_MAX_MESSAGE_BYTES", 10 * 1024 * 1024)
     satellite_jpeg_quality: int = _int("SATELLITE_JPEG_QUALITY", 85)
+    satellite_change_consumer_group: str = os.getenv(
+        "SATELLITE_CHANGE_CONSUMER_GROUP", "satellite-change-v1"
+    )
+    satellite_change_starting_offsets: str = os.getenv(
+        "SATELLITE_CHANGE_STARTING_OFFSETS", "latest"
+    )
+    satellite_change_grid_size: int = _int("SATELLITE_CHANGE_GRID_SIZE", 8)
     image_transfer_mode: str = os.getenv("IMAGE_TRANSFER_MODE", "base64").lower()
     object_storage_endpoint_url: str = os.getenv(
         "OBJECT_STORAGE_ENDPOINT_URL", "http://localhost:9000"

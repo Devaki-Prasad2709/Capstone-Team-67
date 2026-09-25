@@ -28,8 +28,8 @@
     },
     {
       "event_id": "drone-003",
-      "offset_seconds": 105,
-      "scenario_timestamp": "2026-09-24T12:01:45Z",
+      "offset_seconds": 90,
+      "scenario_timestamp": "2026-09-24T12:01:30Z",
       "asset_id": "drone-debris-001",
       "target_id": "osm-way-794401251",
       "gps": {"longitude": -90.08495870221768, "latitude": 29.762723979404086},

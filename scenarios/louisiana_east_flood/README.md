@@ -5,6 +5,11 @@ It combines a pinned, real OpenStreetMap structural snapshot with a deterministi
 simulated event timeline. Model outputs are produced by the real committed YOLO
 and TGNN artifacts; they are not stored here as invented results.
 
+`timeline.json` is the locked twelve-step story contract. Every step declares
+its input, timestamp, target, expected graph transition, and expected dashboard
+transition. The primary replay confirms the social report; the report-false
+alternative remains specified in `responder_decisions.json` for workflow tests.
+
 ## Current readiness
 
 - Structural GIS: ready (21 OSM source features in the selected tile).
@@ -41,3 +46,30 @@ To refresh the OSM snapshot deliberately (this changes the frozen input):
 ```
 
 OpenStreetMap data is (c) OpenStreetMap contributors and licensed under ODbL 1.0.
+
+## Scenario runner
+
+Start Kafka, MinIO, Spark, and the AI worker first, then run:
+
+```powershell
+.venv\Scripts\python.exe -m scripts.run_scenario --speed 10
+```
+
+Use `--interactive` for `start`, `pause`, `resume`, `reset`, playback-speed,
+clock, current-event, completed-event, and upcoming-event controls. The six
+input milestones emit eight ordinary Kafka records: two satellite images,
+three drone images, one social report, and two telemetry updates. The other
+six milestones are deliberately not injected because they represent baseline,
+human review, or downstream graph/model/dashboard effects.
+
+Scenario provenance is additive metadata. Existing required producer fields
+remain unchanged, so consumers use the same contracts for scenario replay and
+field input. A reset rewinds only the scenario clock; it does not erase the
+persistent image deduplication database or Kafka history.
+
+For the satellite step, start `python -m core.satellite.change_worker` before
+the runner. It consumes both real images from the normal transport contract and
+publishes one `satellite-change-results` record. The dashboard's **Satellite
+change** view displays the source pair, `2026-09-24T12:00:30Z` timestamp,
+WGS84 overlap footprint, change grid, and 22/40 official flood-reference count.
+This broad-area evidence has no graph node IDs and is excluded from TGNN input.

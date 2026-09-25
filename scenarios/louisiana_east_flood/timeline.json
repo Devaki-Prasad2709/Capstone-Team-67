@@ -1,0 +1,211 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "scenario_start": "2026-09-24T12:00:00Z",
+  "events": [
+    {
+      "sequence": 1,
+      "event_id": "timeline-01-baseline",
+      "name": "baseline_gis_graph_loaded",
+      "offset_seconds": 0,
+      "scenario_timestamp": "2026-09-24T12:00:00Z",
+      "input": {"kind": "asset", "source": "structural-gis", "reference": "gis/infrastructure.geojson"},
+      "target": {"kind": "graph", "ids": ["all"]},
+      "expected_graph_effect": {
+        "mutation": "initialize",
+        "assertions": ["21 nodes and 322 spatial edges", "all node damage starts at 0", "topology is frozen for the replay"]
+      },
+      "expected_dashboard_effect": {
+        "view": "map",
+        "assertions": ["show 5 roads and 16 buildings", "show baseline state and 12:00:00 freshness", "show no risk layer before inference"]
+      }
+    },
+    {
+      "sequence": 2,
+      "event_id": "timeline-02-satellite",
+      "name": "satellite_post_event_change_detected",
+      "offset_seconds": 30,
+      "scenario_timestamp": "2026-09-24T12:00:30Z",
+      "input": {"kind": "asset", "source": "satellite-before-after", "reference": "SpaceNet 8 tile 2_23_44 pre/post pair and annotation"},
+      "target": {"kind": "broad_area", "ids": ["spacenet8:2_23_44"]},
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": ["satellite evidence remains outside TGNN node features", "graph topology and node state remain unchanged"]
+      },
+      "expected_dashboard_effect": {
+        "view": "satellite_change_panel",
+        "assertions": ["show the pre/post pair", "show 22 of 40 reference features marked flooded", "label this as broad-area evidence"]
+      }
+    },
+    {
+      "sequence": 3,
+      "event_id": "timeline-03-drone-first",
+      "name": "first_drone_observation_arrives",
+      "offset_seconds": 60,
+      "scenario_timestamp": "2026-09-24T12:01:00Z",
+      "input": {"kind": "stream_event", "source": "drone-events", "reference": "drone-001 / drone-slight-001"},
+      "target": {"kind": "gis_node", "ids": ["osm-way-791288888"]},
+      "expected_graph_effect": {
+        "mutation": "observation_pending",
+        "assertions": ["append real-image YOLO evidence for Estuary Road", "do not mutate topology", "defer aggregated damage application to timeline step 8"]
+      },
+      "expected_dashboard_effect": {
+        "view": "drone_observations",
+        "assertions": ["show the real ISBDA image and model detections", "mark GPS and scenario time as simulated", "mark Estuary Road as observed"]
+      }
+    },
+    {
+      "sequence": 4,
+      "event_id": "timeline-04-drone-severe",
+      "name": "severe_damage_observations_arrive",
+      "offset_seconds": 90,
+      "scenario_timestamp": "2026-09-24T12:01:30Z",
+      "input": {"kind": "stream_events", "source": "drone-events", "reference": "drone-002 and drone-003 at 90s"},
+      "target": {"kind": "gis_nodes", "ids": ["osm-way-1064972993", "osm-way-794401251"]},
+      "expected_graph_effect": {
+        "mutation": "observations_pending",
+        "assertions": ["append Severe evidence for the affected building", "append Debris evidence for Ditcharo Street", "defer state mutation to timeline step 8"]
+      },
+      "expected_dashboard_effect": {
+        "view": "drone_observations",
+        "assertions": ["show Severe and Debris observations independently", "show real-image versus simulated-context provenance", "increase the visible incident severity"]
+      }
+    },
+    {
+      "sequence": 5,
+      "event_id": "timeline-05-social-pending",
+      "name": "social_distress_report_arrives_pending",
+      "offset_seconds": 120,
+      "scenario_timestamp": "2026-09-24T12:02:00Z",
+      "input": {"kind": "stream_event", "source": "social-events", "reference": "social-001"},
+      "target": {"kind": "alert_and_gis_nodes", "ids": ["social-001", "osm-way-791288888", "osm-way-1064972993"]},
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": ["pending social reports never update graph damage or TGNN input", "resolved target IDs remain review evidence only"]
+      },
+      "expected_dashboard_effect": {
+        "view": "pending_alerts",
+        "assertions": ["show the report as PENDING_REVIEW", "show Confirm and Report False actions", "do not create an orange hotspot"]
+      }
+    },
+    {
+      "sequence": 6,
+      "event_id": "timeline-06-responder-confirm",
+      "name": "responder_confirms_report",
+      "offset_seconds": 135,
+      "scenario_timestamp": "2026-09-24T12:02:15Z",
+      "input": {"kind": "responder_decision", "source": "responder-decisions", "reference": "decision-001 confirms social-001"},
+      "target": {"kind": "alert", "ids": ["social-001"]},
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": ["AlertStore review state remains dashboard-only", "confirmation does not enter TGNN features"]
+      },
+      "expected_dashboard_effect": {
+        "view": "confirmed_hotspots",
+        "assertions": ["move social-001 from pending to CONFIRMED", "create one orange human-confirmed hotspot", "record responder and review timestamp"]
+      }
+    },
+    {
+      "sequence": 7,
+      "event_id": "timeline-07-telemetry-degrade",
+      "name": "road_telemetry_degrades",
+      "offset_seconds": 150,
+      "scenario_timestamp": "2026-09-24T12:02:30Z",
+      "input": {"kind": "stream_event", "source": "telemetry", "reference": "telemetry-001"},
+      "target": {"kind": "gis_node", "ids": ["osm-way-791288888"]},
+      "expected_graph_effect": {
+        "mutation": "telemetry_pending",
+        "assertions": ["stage load 0.72, capacity 0.8, and damage 0.35 for Estuary Road", "defer snapshot mutation to timeline step 8"]
+      },
+      "expected_dashboard_effect": {
+        "view": "telemetry",
+        "assertions": ["show degraded telemetry and freshness 12:02:30", "label telemetry values as simulated"]
+      }
+    },
+    {
+      "sequence": 8,
+      "event_id": "timeline-08-graph-update",
+      "name": "graph_state_changes",
+      "offset_seconds": 180,
+      "scenario_timestamp": "2026-09-24T12:03:00Z",
+      "input": {"kind": "derived_state", "source": "observation-and-telemetry-adapters", "reference": "all accepted evidence through 12:03:00"},
+      "target": {"kind": "graph_snapshot", "ids": ["G(180)"]},
+      "expected_graph_effect": {
+        "mutation": "create_snapshot",
+        "assertions": ["preserve 21 nodes and 322 edges", "apply maximum decayed CV damage per associated node", "apply staged road telemetry", "recalculate effective capacity, utilization, stress, and status"]
+      },
+      "expected_dashboard_effect": {
+        "view": "infrastructure_state",
+        "assertions": ["refresh affected node damage and stress", "retain evidence links to each source event", "show graph snapshot time 12:03:00"]
+      }
+    },
+    {
+      "sequence": 9,
+      "event_id": "timeline-09-risk",
+      "name": "tgnn_recalculates_node_risks",
+      "offset_seconds": 210,
+      "scenario_timestamp": "2026-09-24T12:03:30Z",
+      "input": {"kind": "model_inference", "source": "checkpoint-backed-tgnn", "reference": "ordered snapshots G(0) through G(180)"},
+      "target": {"kind": "risk_set", "ids": ["all-21-graph-nodes"]},
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": ["emit one finite risk value per node", "map tensor rows back to stable GIS node IDs", "do not overwrite graph observations"]
+      },
+      "expected_dashboard_effect": {
+        "view": "risk_layer",
+        "assertions": ["display all node risks", "highlight the top five", "mark the highest-risk node explicitly", "show inference freshness 12:03:30"]
+      }
+    },
+    {
+      "sequence": 10,
+      "event_id": "timeline-10-risk-cluster",
+      "name": "cascading_risk_pattern_becomes_visible",
+      "offset_seconds": 240,
+      "scenario_timestamp": "2026-09-24T12:04:00Z",
+      "input": {"kind": "derived_visualization", "source": "risk-and-spatial-graph", "reference": "TGNN risks at 12:03:30 plus edge_type=0 spatial neighbors"},
+      "target": {"kind": "spatial_risk_cluster", "ids": ["top-risk-node-and-neighbors"]},
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": ["preserve graph state", "do not claim functional dependency propagation because this tile has zero dependency edges", "treat the cluster as model-derived risk, not confirmed physical failure"]
+      },
+      "expected_dashboard_effect": {
+        "view": "risk_cluster",
+        "assertions": ["emphasize high-risk spatially adjacent nodes", "label the view model-derived spatial risk pattern", "do not label it a confirmed power or telecom cascade"]
+      }
+    },
+    {
+      "sequence": 11,
+      "event_id": "timeline-11-recovery",
+      "name": "recovery_information_arrives",
+      "offset_seconds": 300,
+      "scenario_timestamp": "2026-09-24T12:05:00Z",
+      "input": {"kind": "stream_event", "source": "telemetry", "reference": "telemetry-002"},
+      "target": {"kind": "gis_node", "ids": ["osm-way-791288888"]},
+      "expected_graph_effect": {
+        "mutation": "create_recovery_snapshot",
+        "assertions": ["reduce Estuary Road load from 0.72 to 0.44", "retain prior structural damage under the non-self-healing maximum-damage rule", "recalculate stress without changing topology"]
+      },
+      "expected_dashboard_effect": {
+        "view": "recovery_state",
+        "assertions": ["show lower road load and refreshed stress", "show recovery evidence at 12:05:00", "do not display structural damage as repaired"]
+      }
+    },
+    {
+      "sequence": 12,
+      "event_id": "timeline-12-risk-refresh",
+      "name": "risk_is_recalculated_after_recovery",
+      "offset_seconds": 330,
+      "scenario_timestamp": "2026-09-24T12:05:30Z",
+      "input": {"kind": "model_inference", "source": "checkpoint-backed-tgnn", "reference": "ordered snapshots through the recovery snapshot at 12:05:00"},
+      "target": {"kind": "risk_set", "ids": ["all-21-graph-nodes"]},
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": ["emit one finite refreshed risk value per node", "preserve stable GIS ID mapping", "record before-versus-after risk deltas without assuming every risk decreases"]
+      },
+      "expected_dashboard_effect": {
+        "view": "risk_layer",
+        "assertions": ["refresh top-five ranking", "show risk deltas from 12:03:30", "show final scenario freshness 12:05:30"]
+      }
+    }
+  ]
+}

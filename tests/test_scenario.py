@@ -18,8 +18,9 @@ def test_final_scenario_contract_has_no_pending_assets():
     assert result["valid"] is True
     assert result["gis_ids"] == 21
     assert result["pending_assets"] == []
-    assert result["timeline_events"] == 11
-    assert result["stream_events"] == 6
+    assert result["asset_count"] == 9
+    assert result["timeline_events"] == 12
+    assert result["stream_events"] == 7
 
 
 def test_strict_scenario_gate_passes_for_frozen_asset_package():
@@ -58,6 +59,26 @@ def test_spacenet_pair_and_gis_share_the_scenario_footprint():
     assert pair["reference"]["flooded_feature_count"] == 22
     assert pair["pre_event"]["bbox"] == manifest["location"]["bbox"]
     assert gis["metadata"]["bbox"] == pytest.approx(manifest["location"]["bbox"], abs=1e-9)
+
+
+def test_locked_timeline_defines_every_transition_before_runner_exists():
+    timeline = json.loads((SCENARIO / "timeline.json").read_text(encoding="utf-8"))
+    assert [event["sequence"] for event in timeline["events"]] == list(range(1, 13))
+    for event in timeline["events"]:
+        assert {"kind", "source", "reference"} <= event["input"].keys()
+        assert event["target"]["ids"]
+        assert event["expected_graph_effect"]["assertions"]
+        assert event["expected_dashboard_effect"]["assertions"]
+    cascade = timeline["events"][9]
+    assert cascade["expected_graph_effect"]["mutation"] == "none"
+    assert any("zero dependency edges" in item for item in cascade["expected_graph_effect"]["assertions"])
+
+
+def test_primary_story_confirms_alert_and_documents_rejection_branch():
+    decisions = json.loads((SCENARIO / "responder_decisions.json").read_text(encoding="utf-8"))
+    assert decisions["events"][0]["action"] == "confirm"
+    assert decisions["alternative_demo_branch"]["action"] == "report_false"
+    assert decisions["alternative_demo_branch"]["graph_effect"] == "none"
 
 
 def test_osm_converter_preserves_source_ids_and_filters_power_lines():

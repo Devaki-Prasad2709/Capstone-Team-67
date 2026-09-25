@@ -4,6 +4,7 @@
   "acceptance_criteria": [
     {"id": "gis-loads", "assertion": "GIS loads with 21 nodes and no excluded infrastructure features"},
     {"id": "graph-builds", "assertion": "Graph has at least one edge and preserves every source GIS ID"},
+    {"id": "timeline-contract", "assertion": "All 12 ordered events have an input, timestamp, target, expected graph effect, and expected dashboard effect"},
     {"id": "dedup", "assertion": "Repeated drone bytes are rejected by SHA-256 exact deduplication"},
     {"id": "cv-output", "assertion": "The three registered real ISBDA images produce only Slight, Severe, or Debris labels through the committed YOLO model"},
     {"id": "state-change", "assertion": "Severe damage or degraded telemetry increases target-node stress over baseline"},

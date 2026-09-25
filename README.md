@@ -13,7 +13,7 @@ rerunning inference.
 The canonical demonstration is now defined by
 [`scenarios/louisiana_east_flood/scenario.json`](scenarios/louisiana_east_flood/scenario.json):
 a bounded Louisiana flood scenario with a frozen OpenStreetMap GIS snapshot,
-stable infrastructure IDs, and a deterministic ten-step event timeline. See
+stable infrastructure IDs, and a deterministic twelve-step event timeline. See
 [`docs/FINAL_SCENARIO.md`](docs/FINAL_SCENARIO.md) for its readiness and data
 provenance.
 
@@ -25,6 +25,9 @@ provenance.
 - ISBDA drone JPG frames replayed through `drone-video`.
 - xBD satellite TIFF images converted to JPEG and published through
   `satellite-imagery`.
+- Real SpaceNet pre/post pairs downloaded from MinIO by a dedicated change
+  worker and published as dashboard-only broad-area evidence on
+  `satellite-change-results`.
 - GIS JPG/PNG map imagery replayed through `gis-data`.
 - Configurable stream delay and event limits for demonstrations.
 - Recursive dataset discovery from paths configured in `.env`.
@@ -151,6 +154,45 @@ From **Pipeline control** in the dashboard:
 
 The order matters when `SPARK_STARTING_OFFSETS=latest`: start Spark before the
 producers so it sees newly published events.
+
+### Replay the frozen scenario
+
+After Kafka/MinIO and the downstream Spark and AI consumers are running, replay
+the twelve-step story at 10x speed:
+
+```powershell
+python -m scripts.run_scenario --speed 10
+```
+
+Start the satellite change worker before the replay so it receives both images:
+
+```powershell
+python -m core.satellite.change_worker
+```
+
+It may also be started from **Pipeline control** in the dashboard. Open
+**Satellite change** to see the real pre/post images, scenario timestamp,
+WGS84 footprint, 8x8 radiometric-change grid, and official SpaceNet flood-label
+count. This result is intentionally not subscribed to by the TGNN path.
+
+For operator controls, open the interactive runner:
+
+```powershell
+python -m scripts.run_scenario --interactive --speed 10
+```
+
+Its commands are `start`, `pause`, `resume`, `reset`, `speed <factor>`,
+`status`, and `quit`. The runner publishes the real SpaceNet and ISBDA image
+bytes through the existing satellite/drone producers, the simulated distress
+report through the social producer schema, and state readings through the
+validated `infrastructure-telemetry` contract. It never writes model output or
+dashboard state directly; Spark, AI, graph, and TGNN consumers must derive
+those results normally.
+
+The persistent image deduplication registry is intentionally shared with the
+normal producers. Therefore, replaying after `reset` can produce canonical
+duplicate events unless you intentionally reset the dedup database as described
+below.
 
 ## First-time local setup
 
@@ -762,6 +804,11 @@ Do this only for an intentional reset. Removing the Spark checkpoint directories
 | `SATELLITE_STREAM_DELAY` | `5` | Seconds between satellite images |
 | `KAFKA_MAX_MESSAGE_BYTES` | `10485760` | Development Kafka event ceiling |
 | `SPARK_STARTING_OFFSETS` | `latest` | Initial Spark offset without a checkpoint |
+| `SATELLITE_CHANGE_STARTING_OFFSETS` | `latest` | Initial pair-worker offset |
+| `SATELLITE_CHANGE_GRID_SIZE` | `8` | Coarse broad-area change grid dimension |
+| `FINAL_SCENARIO_PATH` | `scenarios/louisiana_east_flood/scenario.json` | Frozen scenario manifest |
+| `SPACENET8_DATASET_PATH` | empty | Root containing the registered SpaceNet 8 files |
+| `ISBDA_DATASET_PATH` | empty | Root containing the registered ISBDA files |
 
 ## Troubleshooting
 

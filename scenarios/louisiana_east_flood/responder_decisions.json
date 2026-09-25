@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "events": [
+    {
+      "event_id": "decision-001",
+      "offset_seconds": 135,
+      "scenario_timestamp": "2026-09-24T12:02:15Z",
+      "alert_id": "social-001",
+      "action": "confirm",
+      "responder_id": "scenario-responder-01",
+      "input_origin": "simulation",
+      "simulation_fields": ["scenario_timestamp", "action", "responder_id"]
+    }
+  ],
+  "alternative_demo_branch": {
+    "action": "report_false",
+    "resulting_status": "REPORTED_FALSE",
+    "graph_effect": "none",
+    "dashboard_effect": "move the alert to reported-false history without creating an orange hotspot",
+    "played_in_primary_timeline": false
+  }
+}

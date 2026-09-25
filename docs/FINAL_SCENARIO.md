@@ -31,12 +31,41 @@ The scenario does not disguise simulated values as field observations. The
 drone images and annotations are real ISBDA data, while their Louisiana GPS,
 target associations, and scenario timestamps are explicitly simulated.
 
+## Locked temporal story
+
+| Step | Time | Transition |
+|---:|---:|---|
+| 1 | 12:00:00 | Load the 21-node baseline GIS graph |
+| 2 | 12:00:30 | Display real SpaceNet post-event change evidence |
+| 3 | 12:01:00 | Receive the first drone observation |
+| 4 | 12:01:30 | Receive Severe, followed by Debris, evidence |
+| 5 | 12:02:00 | Create a pending social distress alert |
+| 6 | 12:02:15 | Simulated responder confirms the alert |
+| 7 | 12:02:30 | Receive degraded road telemetry |
+| 8 | 12:03:00 | Apply accumulated evidence to a new graph snapshot |
+| 9 | 12:03:30 | Recalculate TGNN risks and rank the top five |
+| 10 | 12:04:00 | Display the model-derived spatial risk cluster |
+| 11 | 12:05:00 | Apply recovery load telemetry without erasing damage |
+| 12 | 12:05:30 | Recalculate risk and display deltas |
+
+Step 10 is deliberately described as a spatial risk pattern, not a confirmed
+functional cascade. This tile has 322 spatial edges and no power, telecom, or
+other dependency-provider nodes, so its graph has zero dependency edges. The
+complete machine-readable transition contract is in `timeline.json`.
+
 ## Implementation order from here
 
-1. Add a scenario runner that publishes the event files on the simulated clock.
-2. Connect the dashboard to scenario start/pause/reset and timeline state.
+1. Connect the dashboard to the completed scenario controller's
+   start/pause/resume/reset/speed/status operations.
+2. Connect the telemetry Kafka consumer to the validated observation adapter
+   and persistent graph snapshot service.
 3. Run the full Kafka, MinIO, Spark, YOLO, graph, and TGNN acceptance rehearsal.
 4. Capture expected screenshots and freeze the release commit/tag.
+
+The runner is implemented in `scenario_runtime/` with the executable entry
+point `python -m scripts.run_scenario`. It emits only raw inputs through normal
+producer schemas. Graph snapshots, TGNN predictions, risk clusters, and
+dashboard effects remain downstream-derived outputs.
 
 ## Validation commands
 

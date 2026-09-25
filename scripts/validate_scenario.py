@@ -220,8 +220,14 @@ def validate_scenario(
             errors.append(f"binding {binding}: GIS id {source_id!r} does not exist")
 
     event_ids: set[str] = set()
+    social_event_ids: set[str] = set()
     scenario_start = _parse_timestamp((manifest.get("clock") or {}).get("scenario_start"))
-    for filename in ("drone_events.json", "telemetry.json", "social_events.json"):
+    for filename in (
+        "drone_events.json",
+        "telemetry.json",
+        "social_events.json",
+        "responder_decisions.json",
+    ):
         event_path = root / filename
         if not event_path.exists():
             continue
@@ -233,6 +239,8 @@ def validate_scenario(
             if not event_id or event_id in event_ids:
                 errors.append(f"event id is missing or duplicated: {event_id!r}")
             event_ids.add(event_id)
+            if filename == "social_events.json":
+                social_event_ids.add(event_id)
             timestamp = event.get("scenario_timestamp")
             offset = event.get("offset_seconds")
             if timestamp is None or offset is None or _parse_timestamp(timestamp) != scenario_start + timedelta(seconds=offset):
@@ -245,9 +253,65 @@ def validate_scenario(
                 required = {"scenario_timestamp", "gps", "target_id"}
                 if not required.issubset(set(event.get("simulation_fields", []))):
                     errors.append(f"event {event_id}: simulated drone fields are incomplete")
+            if filename == "responder_decisions.json":
+                if event.get("alert_id") not in social_event_ids:
+                    errors.append(f"event {event_id}: responder decision references an unknown alert")
+                if event.get("action") not in {"confirm", "report_false"}:
+                    errors.append(f"event {event_id}: unsupported responder action")
             for target_id in ([event.get("target_id")] if event.get("target_id") else event.get("target_ids", [])):
                 if target_id not in gis_ids:
                     errors.append(f"event {event_id}: GIS target {target_id!r} does not exist")
+
+    timeline_path = root / "timeline.json"
+    if timeline_path.exists():
+        contract = _read_json(timeline_path)
+        detailed_events = contract.get("events") or []
+        expected_names = [
+            "baseline_gis_graph_loaded",
+            "satellite_post_event_change_detected",
+            "first_drone_observation_arrives",
+            "severe_damage_observations_arrive",
+            "social_distress_report_arrives_pending",
+            "responder_confirms_report",
+            "road_telemetry_degrades",
+            "graph_state_changes",
+            "tgnn_recalculates_node_risks",
+            "cascading_risk_pattern_becomes_visible",
+            "recovery_information_arrives",
+            "risk_is_recalculated_after_recovery",
+        ]
+        if contract.get("scenario_id") != scenario_id:
+            errors.append("timeline.json: scenario_id does not match manifest")
+        if contract.get("scenario_start") != (manifest.get("clock") or {}).get("scenario_start"):
+            errors.append("timeline.json: scenario_start does not match manifest")
+        if [event.get("sequence") for event in detailed_events] != list(range(1, 13)):
+            errors.append("timeline.json must contain the ordered sequence 1 through 12")
+        if [event.get("name") for event in detailed_events] != expected_names:
+            errors.append("timeline.json event names do not match the locked disaster story")
+        if [event.get("offset_seconds") for event in detailed_events] != offsets:
+            errors.append("timeline.json offsets do not match the manifest summary")
+        detailed_ids: set[str] = set()
+        for event in detailed_events:
+            event_id = event.get("event_id")
+            if not event_id or event_id in detailed_ids:
+                errors.append(f"timeline event id is missing or duplicated: {event_id!r}")
+            detailed_ids.add(event_id)
+            offset = event.get("offset_seconds")
+            timestamp = event.get("scenario_timestamp")
+            if timestamp is None or offset is None or _parse_timestamp(timestamp) != scenario_start + timedelta(seconds=offset):
+                errors.append(f"timeline event {event_id}: timestamp does not match offset")
+            input_contract = event.get("input") or {}
+            target = event.get("target") or {}
+            graph_effect = event.get("expected_graph_effect") or {}
+            dashboard_effect = event.get("expected_dashboard_effect") or {}
+            if not all(input_contract.get(field) for field in ("kind", "source", "reference")):
+                errors.append(f"timeline event {event_id}: complete input contract is required")
+            if not target.get("kind") or not target.get("ids"):
+                errors.append(f"timeline event {event_id}: at least one explicit target is required")
+            if not graph_effect.get("mutation") or not graph_effect.get("assertions"):
+                errors.append(f"timeline event {event_id}: expected graph effect is required")
+            if not dashboard_effect.get("view") or not dashboard_effect.get("assertions"):
+                errors.append(f"timeline event {event_id}: expected dashboard effect is required")
 
     if strict and pending:
         errors.append("pending assets are not allowed in strict mode: " + ", ".join(pending))
