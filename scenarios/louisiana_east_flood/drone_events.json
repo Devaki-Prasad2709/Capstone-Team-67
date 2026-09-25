@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "events": [
+    {
+      "event_id": "drone-001",
+      "offset_seconds": 60,
+      "scenario_timestamp": "2026-09-24T12:01:00Z",
+      "asset_id": "drone-slight-001",
+      "target_id": "osm-way-791288888",
+      "gps": {"longitude": -90.08068050532742, "latitude": 29.76281341403139},
+      "annotation_primary_class": "Slight",
+      "input_origin": "hybrid-real-image-simulated-context",
+      "real_fields": ["image_bytes", "official_annotations"],
+      "simulation_fields": ["scenario_timestamp", "gps", "target_id"]
+    },
+    {
+      "event_id": "drone-002",
+      "offset_seconds": 90,
+      "scenario_timestamp": "2026-09-24T12:01:30Z",
+      "asset_id": "drone-severe-001",
+      "target_id": "osm-way-1064972993",
+      "gps": {"longitude": -90.08543330768804, "latitude": 29.763329185970875},
+      "annotation_primary_class": "Severe",
+      "input_origin": "hybrid-real-image-simulated-context",
+      "real_fields": ["image_bytes", "official_annotations"],
+      "simulation_fields": ["scenario_timestamp", "gps", "target_id"]
+    },
+    {
+      "event_id": "drone-003",
+      "offset_seconds": 105,
+      "scenario_timestamp": "2026-09-24T12:01:45Z",
+      "asset_id": "drone-debris-001",
+      "target_id": "osm-way-794401251",
+      "gps": {"longitude": -90.08495870221768, "latitude": 29.762723979404086},
+      "annotation_primary_class": "Debris",
+      "input_origin": "hybrid-real-image-simulated-context",
+      "real_fields": ["image_bytes", "official_annotations"],
+      "simulation_fields": ["scenario_timestamp", "gps", "target_id"]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "events": [
+    {"event_id": "telemetry-001", "event_type": "road_degradation", "offset_seconds": 150, "scenario_timestamp": "2026-09-24T12:02:30Z", "target_id": "osm-way-791288888", "load": 0.72, "capacity": 0.8, "damage": 0.35, "input_origin": "simulation", "simulation_fields": ["scenario_timestamp", "target_id", "load", "capacity", "damage"]},
+    {"event_id": "telemetry-002", "event_type": "road_recovery", "offset_seconds": 300, "scenario_timestamp": "2026-09-24T12:05:00Z", "target_id": "osm-way-791288888", "load": 0.44, "capacity": 0.8, "damage": 0.15, "input_origin": "simulation", "simulation_fields": ["scenario_timestamp", "target_id", "load", "capacity", "damage"]}
+  ]
+}

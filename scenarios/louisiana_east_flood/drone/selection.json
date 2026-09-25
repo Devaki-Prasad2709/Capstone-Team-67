@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "dataset": "ISBDA",
+  "split": "train",
+  "dataset_root_env": "ISBDA_DATASET_PATH",
+  "annotation": {
+    "relative_path": "annotations/instances_train.json",
+    "sha256": "4c9111b1375c498993fc20b3452dc5b030a7de2c820b7a10a74354e566c503c7",
+    "size_bytes": 20139980,
+    "class_mapping": {"1": "Slight", "2": "Severe", "3": "Debris"}
+  },
+  "images": [
+    {
+      "asset_id": "drone-slight-001",
+      "relative_path": "train/5_9240.jpg",
+      "sha256": "632ea63506f8e7a452434f8daa0caa93d2c676692966500fb993a227f5a66f52",
+      "size_bytes": 666848,
+      "width": 1920,
+      "height": 1080,
+      "official_annotations": {"Slight": 18, "Severe": 0, "Debris": 0},
+      "assigned_location": {"longitude": -90.08068050532742, "latitude": 29.76281341403139, "crs": "EPSG:4326"},
+      "target_id": "osm-way-791288888",
+      "scenario_timestamp": "2026-09-24T12:01:00Z",
+      "input_origin": "real-isbda-image",
+      "geographic_footprint": "not_provided_by_source_dataset",
+      "simulation_fields": ["assigned_location", "target_id", "scenario_timestamp"]
+    },
+    {
+      "asset_id": "drone-severe-001",
+      "relative_path": "train/6_270.jpg",
+      "sha256": "67d3bbb81c5b5b10a61246b5c7164011b4d9b50aef8c6ce19f170728639cbb87",
+      "size_bytes": 444557,
+      "width": 1920,
+      "height": 1080,
+      "official_annotations": {"Slight": 0, "Severe": 6, "Debris": 2},
+      "assigned_location": {"longitude": -90.08543330768804, "latitude": 29.763329185970875, "crs": "EPSG:4326"},
+      "target_id": "osm-way-1064972993",
+      "scenario_timestamp": "2026-09-24T12:01:30Z",
+      "input_origin": "real-isbda-image",
+      "geographic_footprint": "not_provided_by_source_dataset",
+      "simulation_fields": ["assigned_location", "target_id", "scenario_timestamp"]
+    },
+    {
+      "asset_id": "drone-debris-001",
+      "relative_path": "train/8_90.jpg",
+      "sha256": "dd02613401c24114e1241c033846252086f5feb8f1a621f78a22e26fce217183",
+      "size_bytes": 639883,
+      "width": 1920,
+      "height": 1080,
+      "official_annotations": {"Slight": 0, "Severe": 1, "Debris": 4},
+      "assigned_location": {"longitude": -90.08495870221768, "latitude": 29.762723979404086, "crs": "EPSG:4326"},
+      "target_id": "osm-way-794401251",
+      "scenario_timestamp": "2026-09-24T12:01:45Z",
+      "input_origin": "real-isbda-image",
+      "geographic_footprint": "not_provided_by_source_dataset",
+      "simulation_fields": ["assigned_location", "target_id", "scenario_timestamp"]
+    }
+  ],
+  "selection_inference": {
+    "model": "ai/computer_vision/artifacts/drone_detector/weights/best.pt",
+    "confidence_threshold": 0.25,
+    "results_are_model_outputs_not_ground_truth": true,
+    "detection_counts": {
+      "drone-slight-001": {"Slight": 14, "Severe": 0, "Debris": 0},
+      "drone-severe-001": {"Slight": 1, "Severe": 8, "Debris": 1},
+      "drone-debris-001": {"Slight": 0, "Severe": 1, "Debris": 4}
+    }
+  }
+}

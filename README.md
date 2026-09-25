@@ -10,6 +10,13 @@ drone-damage detector. Unique drone images can be analyzed in real time and
 published to `ai-analysis-results`; duplicates remain auditable without
 rerunning inference.
 
+The canonical demonstration is now defined by
+[`scenarios/louisiana_east_flood/scenario.json`](scenarios/louisiana_east_flood/scenario.json):
+a bounded Louisiana flood scenario with a frozen OpenStreetMap GIS snapshot,
+stable infrastructure IDs, and a deterministic ten-step event timeline. See
+[`docs/FINAL_SCENARIO.md`](docs/FINAL_SCENARIO.md) for its readiness and data
+provenance.
+
 ## Current features
 
 ### Data ingestion
@@ -120,6 +127,16 @@ python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8088
 ```
 
 Open <http://localhost:8088>.
+
+Validate the scenario package independently of Docker:
+
+```powershell
+python -m scripts.validate_scenario scenarios\louisiana_east_flood\scenario.json
+```
+
+The real SpaceNet 8 satellite pair and three real ISBDA drone images are
+registered. The `--strict` scenario package gate now passes; the drone GPS
+assignments and scenario timestamps are explicitly simulated.
 
 From **Pipeline control** in the dashboard:
 

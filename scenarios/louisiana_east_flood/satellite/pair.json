@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "dataset": "SpaceNet 8 Louisiana-East Training Public",
+  "tile_id": "2_23_44",
+  "dataset_root_env": "SPACENET8_DATASET_PATH",
+  "crs": "EPSG:4326",
+  "pre_event": {
+    "relative_path": "PRE-event/10300100AF395C00_2_23_44.tif",
+    "sha256": "077969f40ffa59c2a976e18d3548f9d9c5e2150c946411fc4871bf19254b5023",
+    "size_bytes": 4719220,
+    "width": 1300,
+    "height": 1300,
+    "scenario_timestamp": "2026-09-24T12:00:00Z",
+    "bbox": [-90.08553068272339, 29.75831551754242, -90.07989924402005, 29.763946956245753]
+  },
+  "post_event": {
+    "relative_path": "POST-event/10300100C46F5900_2_23_44.tif",
+    "sha256": "0e1524412342676e15d6ed9eb3a0547bdf7a4355cbd970403fe11bc33b5134f7",
+    "size_bytes": 3301578,
+    "width": 1049,
+    "height": 1048,
+    "scenario_timestamp": "2026-09-24T12:00:30Z",
+    "bbox": [-90.08553561443097, 29.758312457735837, -90.07989418246916, 29.76394851178348]
+  },
+  "annotation": {
+    "relative_path": "annotations/2_23_44.geojson",
+    "sha256": "662918f9c3a376a020c23e7173c5dd73098d28ba11a9b405ec87421efd78f0e9",
+    "scenario_timestamp": "2026-09-24T12:00:30Z"
+  },
+  "reference": {
+    "relative_path": "Louisiana-East_Training_Public_reference.csv",
+    "sha256": "ee0d8ebd90ee2aca032b25a1e019a741b97e425ec29dd3f996d77be05c96d20b",
+    "feature_count": 40,
+    "flooded_feature_count": 22,
+    "road_count": 23,
+    "building_count": 17
+  },
+  "provenance": {
+    "imagery_and_labels": "real",
+    "scenario_time": "simulated for pre-event, post-event, and annotation records",
+    "raw_files_committed": false
+  }
+}

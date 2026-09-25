@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "events": [
+    {
+      "event_id": "social-001",
+      "offset_seconds": 120,
+      "scenario_timestamp": "2026-09-24T12:02:00Z",
+      "text": "Flood water is blocking Estuary Road; a nearby building needs assistance.",
+      "gps": {"longitude": -90.08320, "latitude": 29.76330},
+      "target_ids": ["osm-way-791288888", "osm-way-1064972993"],
+      "input_origin": "simulation",
+      "simulation_fields": ["scenario_timestamp", "text", "gps", "target_ids"]
+    }
+  ]
+}

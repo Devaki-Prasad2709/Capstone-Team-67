@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "title": "Louisiana East Flood and Infrastructure Disruption",
+  "description": "A reproducible flood-response demonstration in Jean Lafitte, Louisiana, aligned to SpaceNet 8 tile 2_23_44.",
+  "location": {
+    "name": "Jean Lafitte, Jefferson Parish, Louisiana, USA",
+    "crs": "EPSG:4326",
+    "bbox": [-90.08553068272339, 29.75831551754242, -90.07989924402005, 29.763946956245753],
+    "center": [-90.08271496337172, 29.761131236894086]
+  },
+  "clock": {
+    "mode": "simulated",
+    "scenario_start": "2026-09-24T12:00:00Z",
+    "speed": 1.0
+  },
+  "assets": [
+    {
+      "id": "structural-gis",
+      "kind": "gis",
+      "status": "ready",
+      "path": "gis/infrastructure.geojson",
+      "sha256": "c3f25ab5304944b118b1a6495e3088f146a41d135f0385fe60b5de93be694da8",
+      "original_dataset": "OpenStreetMap",
+      "original_path": "Overpass snapshot for location.bbox",
+      "input_origin": "real-openstreetmap-snapshot",
+      "scenario_timestamp": "2026-09-24T12:00:00Z",
+      "simulation_fields": ["scenario_timestamp"],
+      "geographic_footprint": "location.bbox"
+    },
+    {
+      "id": "satellite-before-after",
+      "kind": "satellite",
+      "status": "ready",
+      "path": "satellite/pair.json",
+      "sha256": "ddc65d241af66a077ff5f18cba9349af40f74b16318c08007bb7b0854cdcc302",
+      "original_dataset": "SpaceNet 8 Louisiana-East Training Public",
+      "original_path": "tile 2_23_44; external paths locked in satellite/pair.json",
+      "input_origin": "real-spacenet8",
+      "scenario_timestamp_range": ["2026-09-24T12:00:00Z", "2026-09-24T12:00:30Z"],
+      "simulation_fields": ["scenario_time"],
+      "geographic_footprint": "location.bbox"
+    },
+    {
+      "id": "drone-images",
+      "kind": "drone",
+      "status": "ready",
+      "path": "drone/selection.json",
+      "sha256": "628924a84f6b1537db7d5defc305648bc5cf34f8d72238337643b19f01ac43c9",
+      "original_dataset": "ISBDA train split",
+      "original_path": "external paths locked in drone/selection.json",
+      "input_origin": "real-isbda",
+      "scenario_timestamp_range": ["2026-09-24T12:01:00Z", "2026-09-24T12:01:45Z"],
+      "simulation_fields": ["assigned_location", "target_id", "scenario_timestamp"],
+      "geographic_footprint": "source not provided; Louisiana positions are simulated"
+    },
+    {
+      "id": "drone-events",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "drone_events.json",
+      "sha256": "98a265aab67f66b895f63ac26293b782db4e6a0fe5c72f49de36e48389dd8e2f",
+      "original_dataset": "scenario event definition",
+      "original_path": "drone_events.json",
+      "input_origin": "simulation",
+      "scenario_timestamp_range": ["2026-09-24T12:01:00Z", "2026-09-24T12:01:45Z"],
+      "simulation_fields": ["scenario_timestamp", "gps", "target_id"],
+      "geographic_footprint": "assigned event points inside location.bbox"
+    },
+    {
+      "id": "telemetry",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "telemetry.json",
+      "sha256": "e6f86b6566f6e454b961971b060734f6045bb40be93f6a46dd3472e62c6b3f87",
+      "original_dataset": "scenario simulation",
+      "original_path": "telemetry.json",
+      "input_origin": "simulation",
+      "scenario_timestamp_range": ["2026-09-24T12:02:30Z", "2026-09-24T12:05:00Z"],
+      "simulation_fields": ["scenario_timestamp", "target_id", "load", "capacity", "damage"],
+      "geographic_footprint": "target GIS elements inside location.bbox"
+    },
+    {
+      "id": "social-events",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "social_events.json",
+      "sha256": "24ffb9455b34ebd2e2b4ecb62e6269c25c465520d727e73bd0603b6f6a03834f",
+      "original_dataset": "scenario simulation",
+      "original_path": "social_events.json",
+      "input_origin": "simulation",
+      "scenario_timestamp": "2026-09-24T12:02:00Z",
+      "simulation_fields": ["scenario_timestamp", "text", "gps", "target_ids"],
+      "geographic_footprint": "assigned event point inside location.bbox"
+    },
+    {
+      "id": "acceptance-criteria",
+      "kind": "validation",
+      "status": "ready",
+      "path": "expected_results.json",
+      "sha256": "fc77ac2a0111f5545d05d18bae08b2e6a9ab9d05f430f5dd9ef2e43342e5342b",
+      "original_dataset": "engineering acceptance contract",
+      "original_path": "expected_results.json",
+      "input_origin": "engineering-contract",
+      "scenario_timestamp": "not_applicable",
+      "simulation_fields": [],
+      "geographic_footprint": "not applicable"
+    }
+  ],
+  "bindings": {
+    "primary_road": "osm-way-791288888",
+    "secondary_road": "osm-way-794401251",
+    "affected_building": "osm-way-1064972993"
+  },
+  "timeline": [
+    {"offset_seconds": 0, "event": "baseline_graph_loaded", "source": "structural-gis"},
+    {"offset_seconds": 30, "event": "satellite_change_window", "source": "satellite-before-after"},
+    {"offset_seconds": 60, "event": "drone_slight_damage", "source": "drone-events"},
+    {"offset_seconds": 90, "event": "drone_severe_damage", "source": "drone-events"},
+    {"offset_seconds": 105, "event": "drone_debris_observation", "source": "drone-events"},
+    {"offset_seconds": 120, "event": "social_distress_report", "source": "social-events"},
+    {"offset_seconds": 150, "event": "telemetry_power_degradation", "source": "telemetry"},
+    {"offset_seconds": 180, "event": "graph_state_updated", "source": "telemetry"},
+    {"offset_seconds": 210, "event": "tgnn_risk_ranked", "source": "acceptance-criteria"},
+    {"offset_seconds": 240, "event": "cascading_failure_visible", "source": "acceptance-criteria"},
+    {"offset_seconds": 300, "event": "recovery_observation", "source": "telemetry"}
+  ]
+}

@@ -199,7 +199,7 @@ def load_gis(path: str) -> GISData:
 
         if fclass == "infrastructure":
             infra_points.append(InfraPoint(
-                id=f"infra_{i}",
+                id=str(props.get("infrastructure_id", f"infra_{i}")),
                 node_type=props["node_type"],
                 name=props.get("name", f"infra_{i}"),
                 geometry=geom_working,
@@ -207,7 +207,7 @@ def load_gis(path: str) -> GISData:
             ))
         elif fclass == "road_segment":
             road_segments.append(RoadSegment(
-                id=f"road_{i}",
+                id=str(props.get("road_id", f"road_{i}")),
                 name=props.get("name", f"road_{i}"),
                 geometry=geom_working,
                 lanes=props.get("lanes"),

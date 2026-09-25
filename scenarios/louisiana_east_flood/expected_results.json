@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "louisiana-east-flood-v1",
+  "acceptance_criteria": [
+    {"id": "gis-loads", "assertion": "GIS loads with 21 nodes and no excluded infrastructure features"},
+    {"id": "graph-builds", "assertion": "Graph has at least one edge and preserves every source GIS ID"},
+    {"id": "dedup", "assertion": "Repeated drone bytes are rejected by SHA-256 exact deduplication"},
+    {"id": "cv-output", "assertion": "The three registered real ISBDA images produce only Slight, Severe, or Debris labels through the committed YOLO model"},
+    {"id": "state-change", "assertion": "Severe damage or degraded telemetry increases target-node stress over baseline"},
+    {"id": "tgnn-output", "assertion": "Checkpoint-backed TGNN emits a finite risk value for every graph node"},
+    {"id": "dashboard", "assertion": "Dashboard displays source status, event progression, affected nodes, and ranked risks"}
+  ],
+  "non_claims": [
+    "Simulated event values are not field measurements.",
+    "Official ISBDA labels are ground truth; recorded selection inference is model output and not a model-accuracy claim.",
+    "ISBDA capture locations are not provided; all Louisiana GPS assignments are simulated and explicitly marked."
+  ]
+}
