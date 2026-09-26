@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dashboard.map_api import map_config
 from dashboard.social_alert_service import SocialAlertService
+from dashboard.building_classification_service import BuildingClassificationService
 
 from pathlib import Path
 from typing import Literal
@@ -37,6 +38,7 @@ PROCESS_NAMES = (
 app = FastAPI(title="Disaster Streaming Control Center", docs_url="/api/docs")
 manager = ProcessManager()
 social_alerts = SocialAlertService()
+building_classifications = BuildingClassificationService()
 
 
 class StartOptions(BaseModel):
@@ -46,6 +48,12 @@ class StartOptions(BaseModel):
 
 class ResponderDecision(BaseModel):
     responder_id: str = Field(min_length=1, max_length=200)
+
+
+class BuildingClassificationRequest(BaseModel):
+    assigned_type: str = Field(min_length=1, max_length=64)
+    operator: str = Field(min_length=1, max_length=200)
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 def process_states() -> dict[str, dict[str, object]]:
@@ -192,6 +200,51 @@ def review_social_alert(
         "message": f"Alert {alert_id} changed to {alert['status']}",
         "alert": alert,
         "state": social_alerts.state(),
+    }
+
+
+@app.get("/api/buildings")
+def buildings() -> dict[str, object]:
+    overlay = building_classifications.list_buildings()
+    return {
+        "buildings": overlay,
+        "count": len(overlay["features"]),
+        "classified_count": sum(
+            feature["properties"]["classification"] is not None
+            for feature in overlay["features"]
+        ),
+        "raw_gis_mutated": False,
+    }
+
+
+@app.get("/api/buildings/{building_source_id}")
+def building(building_source_id: str) -> dict[str, object]:
+    try:
+        return building_classifications.get_building(building_source_id)
+    except KeyError as exc:
+        raise HTTPException(404, "Unknown GIS building source ID") from exc
+
+
+@app.post("/api/buildings/{building_source_id}/classification")
+def classify_building(
+    building_source_id: str,
+    assignment: BuildingClassificationRequest,
+) -> dict[str, object]:
+    try:
+        result = building_classifications.classify(
+            building_source_id,
+            assignment.assigned_type,
+            assignment.operator,
+            assignment.notes,
+        )
+    except KeyError as exc:
+        raise HTTPException(404, "Unknown GIS building source ID") from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {
+        "ok": True,
+        "message": f"Classification revision saved for {building_source_id}",
+        **result,
     }
 
 

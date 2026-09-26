@@ -149,7 +149,7 @@
       "target": {"kind": "risk_set", "ids": ["all-21-graph-nodes"]},
       "expected_graph_effect": {
         "mutation": "none",
-        "assertions": ["emit one finite risk value per node", "map tensor rows back to stable GIS node IDs", "do not overwrite graph observations"]
+        "assertions": ["emit one finite relative failure-risk score per node", "map tensor rows back to stable GIS node IDs", "label scores as uncalibrated and do not overwrite graph observations"]
       },
       "expected_dashboard_effect": {
         "view": "risk_layer",
@@ -162,7 +162,7 @@
       "name": "cascading_risk_pattern_becomes_visible",
       "offset_seconds": 240,
       "scenario_timestamp": "2026-09-24T12:04:00Z",
-      "input": {"kind": "derived_visualization", "source": "risk-and-spatial-graph", "reference": "TGNN risks at 12:03:30 plus edge_type=0 spatial neighbors"},
+      "input": {"kind": "derived_visualization", "source": "risk-and-spatial-graph", "reference": "TGNN relative scores at 12:03:30 plus edge_type=0 spatial neighbors"},
       "target": {"kind": "spatial_risk_cluster", "ids": ["top-risk-node-and-neighbors"]},
       "expected_graph_effect": {
         "mutation": "none",
@@ -200,7 +200,7 @@
       "target": {"kind": "risk_set", "ids": ["all-21-graph-nodes"]},
       "expected_graph_effect": {
         "mutation": "none",
-        "assertions": ["emit one finite refreshed risk value per node", "preserve stable GIS ID mapping", "record before-versus-after risk deltas without assuming every risk decreases"]
+        "assertions": ["emit one finite refreshed relative score per node", "preserve stable GIS ID mapping", "record before-versus-after score deltas without assuming every score decreases"]
       },
       "expected_dashboard_effect": {
         "view": "risk_layer",

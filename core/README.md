@@ -12,6 +12,7 @@ declared through the repository requirements files.
 | `gis/gis_loader.py` | Loads GeoJSON GIS data, reprojects WGS84 → working CRS (EPSG:32643). **Single entry point** for coordinate conversion. |
 | `gis/fixtures/demo_gis.geojson` | Clearly-labeled placeholder GIS data (small area near Bengaluru) — used only until your real GIS dataset (currently on USB) is available. Swap the file path in `gis_loader.load_gis()`; nothing else changes if the real data follows the same `feature_class` convention. |
 | `gis/building_association.py` | One-time building-to-infrastructure lookup plus runtime point-in-polygon/nearest-road resolution. This maps a geolocated detection to a stable GIS source ID and the corresponding graph node ID. |
+| `gis/building_classification.py` | Append-only SQLite classification ledger plus copy-on-read graph enrichment; the frozen GIS source is never edited. |
 | `graphs/gis_graph_builder.py` | **Replaces** the random generator in your original `graph_builder.py`. Produces the exact same node/edge attribute contract, so `helpers.py`/`tgnn.py` need zero changes. |
 | `observation/geolocator.py` | Pixel→GPS interface. `NullGeoLocator` fails loudly (no fabricated GPS). `ManualOverrideGeoLocator` is test-only, used in the demo. |
 | `observation/observation_log.py` | Append-only observation store + decay-weighted, max-based damage aggregation. |

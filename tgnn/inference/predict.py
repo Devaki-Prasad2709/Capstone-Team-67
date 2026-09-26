@@ -91,8 +91,10 @@ with torch.no_grad():
     preds = model(pyg_seq[:-1])
 
 
+# Training target is status (1=operational, 0=failed). The complementary
+# sigmoid is therefore the relative failure-risk score. It is not calibrated.
 risk = (
-    torch.sigmoid(preds[-1])
+    torch.sigmoid(-preds[-1])
     .squeeze()
     .cpu()
     .numpy()

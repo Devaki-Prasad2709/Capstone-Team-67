@@ -231,7 +231,7 @@ def main():
         print(f"  raw logit at road_node index {road_node}: {raw_logits[road_node].item():.6f}")
         print(f"  raw logit at hospital_node index {hospital_node}: {raw_logits[hospital_node].item():.6f}")
 
-        sig = torch.sigmoid(raw_logits)
+        sig = torch.sigmoid(-raw_logits)
         print(f"  sigmoid at road_node index {road_node}: {sig[road_node].item():.6f}")
         print(f"  sigmoid at hospital_node index {hospital_node}: {sig[hospital_node].item():.6f}")
 
@@ -250,11 +250,11 @@ def main():
 
         print(f"  TGNN ran on all {len(outputs)} timesteps. Risk trend for road_node:")
         for i, out in enumerate(outputs):
-            risk = torch.sigmoid(out).squeeze(-1)[road_node].item()
+            risk = torch.sigmoid(-out).squeeze(-1)[road_node].item()
             print(f"    tick {i}: risk = {risk:.4f}")
         print(f"  Risk trend for hospital_node (single early hit, should plateau/not keep rising):")
         for i, out in enumerate(outputs):
-            risk = torch.sigmoid(out).squeeze(-1)[hospital_node].item()
+            risk = torch.sigmoid(-out).squeeze(-1)[hospital_node].item()
             print(f"    tick {i}: risk = {risk:.4f}")
 
     except ModuleNotFoundError as e:

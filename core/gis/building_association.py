@@ -42,6 +42,7 @@ class BuildingAssociation:
     nearest_water: Optional[str] = None
     nearest_telecom: Optional[str] = None
     service_hospital: Optional[str] = None
+    classification: Optional[dict] = None
 
 
 def _nearest(point, candidates: list):
@@ -62,7 +63,7 @@ def _nearest(point, candidates: list):
     return best_id, best_dist
 
 
-def build_building_lookup(gis_data: GISData, id_map: dict) -> dict:
+def build_building_lookup(gis_data: GISData, id_map: dict, classification_store=None) -> dict:
     """
     One-time association, run once per GIS ingestion (not per detection).
 
@@ -96,6 +97,7 @@ def build_building_lookup(gis_data: GISData, id_map: dict) -> dict:
             nearest_water=nearest_water,
             nearest_telecom=nearest_telecom,
             service_hospital=service_hospital,
+            classification=(classification_store.get(b.id) if classification_store else None),
         )
     return lookup
 
@@ -109,10 +111,14 @@ class SpatialIndex:
     Built once after `build_building_lookup`; queried once per detection.
     """
 
-    def __init__(self, gis_data: GISData, building_lookup: dict, id_map: dict):
+    def __init__(
+        self, gis_data: GISData, building_lookup: dict, id_map: dict,
+        classification_store=None,
+    ):
         self.gis_data = gis_data
         self.building_lookup = building_lookup
         self.id_map = dict(id_map)
+        self.classification_store = classification_store
 
         self._building_geoms = [b.geometry for b in gis_data.buildings]
         self._building_ids = [b.id for b in gis_data.buildings]
@@ -170,6 +176,10 @@ class SpatialIndex:
                     "node_id": node_id,
                     "distance_m": 0.0,
                     "candidate_count": len(matches),
+                    "building_classification": (
+                        self.classification_store.get(source_id)
+                        if self.classification_store else self.building_lookup[source_id].classification
+                    ),
                 }
 
         # No building match -> nearest road fallback, within threshold
@@ -191,6 +201,7 @@ class SpatialIndex:
                 "node_id": node_id,
                 "distance_m": distance,
                 "candidate_count": nearest_count,
+                "building_classification": None,
             }
 
         return {
@@ -201,4 +212,5 @@ class SpatialIndex:
             "node_id": None,
             "distance_m": None,
             "candidate_count": 0,
+            "building_classification": None,
         }

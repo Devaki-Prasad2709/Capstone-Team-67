@@ -129,7 +129,9 @@ def run_and_report(label, pyg_sequence, model, road_node, hospital_node, torch):
 
     road_risks, hosp_risks, diffs = [], [], []
     for i, out in enumerate(outputs):
-        sig = torch.sigmoid(out).squeeze(-1)
+        # status=1 means operational during training, so failure score is
+        # the complementary sigmoid. This is a relative, uncalibrated score.
+        sig = torch.sigmoid(-out).squeeze(-1)
         r = sig[road_node].item()
         h = sig[hospital_node].item()
         road_risks.append(r)

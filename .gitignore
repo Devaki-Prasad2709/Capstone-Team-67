@@ -12,6 +12,7 @@ storage/received_images/gis/*
 storage/processed/*
 storage/checkpoints/*
 storage/dedup/*
+storage/gis/*.sqlite3*
 !storage/**/.gitkeep
 # TGNN training artifacts
 tgnn/models/*.pth

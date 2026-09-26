@@ -55,6 +55,7 @@ def test_inside_building_maps_source_id_to_its_exact_graph_node():
         "node_id": id_map["building-1"],
         "distance_m": 0.0,
         "candidate_count": 1,
+        "building_classification": None,
     }
     assert graph.nodes[match["graph_node_id"]]["gis_source_id"] == "building-1"
 

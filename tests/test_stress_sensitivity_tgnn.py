@@ -147,8 +147,8 @@ def main():
         with torch.no_grad():
             outputs = model(pyg_sequence)
 
-        road_risks = [torch.sigmoid(o).squeeze(-1)[road_node].item() for o in outputs]
-        hosp_risks = [torch.sigmoid(o).squeeze(-1)[hospital_node].item() for o in outputs]
+        road_risks = [torch.sigmoid(-o).squeeze(-1)[road_node].item() for o in outputs]
+        hosp_risks = [torch.sigmoid(-o).squeeze(-1)[hospital_node].item() for o in outputs]
         road_stresses = [g.nodes[road_node]["stress"] for g in sequence]
 
         all_results[k] = (road_risks, hosp_risks, road_stresses)

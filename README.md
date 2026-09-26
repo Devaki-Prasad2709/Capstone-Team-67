@@ -27,6 +27,12 @@ provenance.
   human-evidence hotspots.
 - Immutable temporal graph snapshots with freshness, explicit recovery,
   dependency-cascade propagation, and field-level before/after explanations.
+- Persistent responder-assigned building types, stored as an append-only SQLite
+  revision history and joined to GIS lookups, graph nodes, and dashboard data
+  without changing the frozen raw OpenStreetMap snapshot.
+- Checkpoint-pinned TGNN inference with validated feature/tensor contracts,
+  stable GIS ID mapping, and explicitly uncalibrated relative failure-risk
+  scores. These scores support ranking and temporal deltas, not probability claims.
 - ISBDA drone JPG frames replayed through `drone-video`.
 - xBD satellite TIFF images converted to JPEG and published through
   `satellite-imagery`.
@@ -99,6 +105,8 @@ provenance.
 - Spark Parquet tables and AI-readiness flow.
 - Live detections and preserved precision, recall, and mAP metrics.
 - MinIO image browser with previews.
+- Building selection and manual classification with operator, timestamp, notes,
+  and complete revision history that survives dashboard restarts.
 - Deduplication totals and live process logs.
 - REST API documentation at `/api/docs`.
 - Optional ngrok sharing for demonstrations.
@@ -332,6 +340,7 @@ python -m consumers.observation_consumer `
 | AI results | Kafka topic `ai-analysis-results` |
 | Spark checkpoints | `storage/checkpoints/` |
 | Deduplication registry | `storage/dedup/image_fingerprints.sqlite3` |
+| Building classification ledger | `storage/gis/building_classifications.sqlite3` |
 | Dashboard-managed logs | `logs/dashboard/` |
 
 Default development MinIO login from `.env.example`:
@@ -814,6 +823,7 @@ Do this only for an intentional reset. Removing the Spark checkpoint directories
 | `NEAR_DUPLICATE_SOURCES` | `drone` | Sources eligible for pHash suppression |
 | `PHASH_DISTANCE_THRESHOLD` | `6` | Maximum pHash Hamming distance |
 | `DEDUP_LOOKBACK_RECORDS` | `500` | Recent fingerprints compared per source |
+| `BUILDING_CLASSIFICATION_DATABASE_PATH` | `storage/gis/building_classifications.sqlite3` | Persistent manual building-classification revision ledger |
 | `SOCIAL_STREAM_DELAY` | `1` | Seconds between social records |
 | `DRONE_STREAM_DELAY` | `0.5` | Seconds between drone frames |
 | `SATELLITE_STREAM_DELAY` | `5` | Seconds between satellite images |
@@ -895,6 +905,8 @@ For production:
 - use embeddings only after inexpensive SHA-256 and pHash checks.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the complete data flow and Layer 4 extension points.
+The manual classification data model and API are documented in
+[docs/BUILDING_CLASSIFICATION.md](docs/BUILDING_CLASSIFICATION.md).
 The live drone/YOLO completion evidence is recorded in
 [docs/DRONE_YOLO_VALIDATION.md](docs/DRONE_YOLO_VALIDATION.md).
 Geolocation and exact graph-node traceability are recorded in

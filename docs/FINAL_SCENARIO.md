@@ -11,7 +11,7 @@ Jefferson Parish, Louisiana, inside the exact footprint of SpaceNet 8 tile
 `2_23_44`. The real satellite pair contains 40 labelled features, 22 marked
 flooded. It is followed by drone observations over Estuary Road, a geolocated
 social distress report, and degraded road telemetry. These observations update graph state;
-the checkpoint-backed TGNN then ranks node risk and the dashboard presents the
+the checkpoint-backed TGNN then ranks uncalibrated relative node-risk scores and the dashboard presents the
 progression and recovery update.
 
 ## Data truth labels
@@ -25,7 +25,7 @@ progression and recovery update.
 | Drone image bytes and official annotations | ISBDA external dataset | Ready |
 | Satellite before/after imagery | SpaceNet 8 tile `2_23_44` | Ready |
 | YOLO detections | Committed model inference | Ready |
-| TGNN risks | Committed checkpoint inference | Ready |
+| TGNN relative risk scores | Committed checkpoint inference; not probability-calibrated | Ready with interpretation warning |
 
 The scenario does not disguise simulated values as field observations. The
 drone images and annotations are real ISBDA data, while their Louisiana GPS,
@@ -43,7 +43,7 @@ target associations, and scenario timestamps are explicitly simulated.
 | 6 | 12:02:15 | Simulated responder confirms the alert |
 | 7 | 12:02:30 | Receive degraded road telemetry |
 | 8 | 12:03:00 | Apply accumulated evidence to a new graph snapshot |
-| 9 | 12:03:30 | Recalculate TGNN risks and rank the top five |
+| 9 | 12:03:30 | Recalculate TGNN relative scores and rank the top five |
 | 10 | 12:04:00 | Display the model-derived spatial risk cluster |
 | 11 | 12:05:00 | Apply explicit recovery telemetry, reducing measured load and damage |
 | 12 | 12:05:30 | Recalculate risk and display deltas |

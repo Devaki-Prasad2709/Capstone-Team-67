@@ -6,6 +6,14 @@ NODE_TYPE_MAP = {
     "telecom": 3, "water": 4, "social": 5
 }
 
+# Checkpoint contract. The first six columns are model inputs; `status` is the
+# next-timestep training target and is excluded inside TGNN.forward().
+NODE_FEATURE_ORDER = (
+    "x_pos", "y_pos", "load", "capacity", "damage", "stress", "status"
+)
+MODEL_INPUT_FEATURE_ORDER = NODE_FEATURE_ORDER[:-1]
+TARGET_FEATURE = NODE_FEATURE_ORDER[-1]
+
 def nx_to_pyg(G):
     node_features = []
     node_types = []
@@ -13,15 +21,16 @@ def nx_to_pyg(G):
     for _, data in G.nodes(data=True):
         x_pos, y_pos = data["pos"]
 
-        node_features.append([
-            x_pos,
-            y_pos,
-            data["load"],
-            data["capacity"],
-            data["damage"],
-            data["stress"],    # NEW: index 5
-            data["status"]     # target stays last: index 6
-        ])
+        values = {
+            "x_pos": x_pos,
+            "y_pos": y_pos,
+            "load": data["load"],
+            "capacity": data["capacity"],
+            "damage": data["damage"],
+            "stress": data["stress"],
+            "status": data["status"],
+        }
+        node_features.append([values[name] for name in NODE_FEATURE_ORDER])
 
         node_types.append(NODE_TYPE_MAP[data["type"]])
 

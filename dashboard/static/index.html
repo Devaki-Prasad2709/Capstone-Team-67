@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/ai.css">
   <link rel="stylesheet" href="/satellite.css">
   <link rel="stylesheet" href="/social.css">
+  <link rel="stylesheet" href="/building.css">
 </head>
 <body>
   <div class="shell">
@@ -19,6 +20,7 @@
         <button class="nav" data-view="spark"><span>⌁</span> Spark output</button>
         <button class="nav" data-view="ai"><span>AI</span> Damage analysis</button>
         <button class="nav" data-view="satellite-change"><span>Δ</span> Satellite change</button>
+        <button class="nav" data-view="buildings"><span>⌂</span> Buildings</button>
         <button class="nav" data-view="social-alerts"><span>!</span> Social alerts</button>
         <button class="nav" data-view="media"><span>▧</span> Image storage</button>
         <button class="nav" data-view="logs"><span>≡</span> Live logs</button>
@@ -104,6 +106,21 @@
             <article class="panel satellite-source-panel"><div class="panel-head"><div><p class="eyebrow">SOURCE IMAGES</p><h3>Real SpaceNet pre/post pair</h3></div><span id="satelliteTimestamp" class="badge"></span></div><div class="satellite-pair"><figure><img id="satellitePreImage" alt="SpaceNet pre-event source"><figcaption id="satellitePreCaption"></figcaption></figure><figure><img id="satellitePostImage" alt="SpaceNet post-event source"><figcaption id="satellitePostCaption"></figcaption></figure></div></article>
             <article class="panel"><div class="panel-head"><div><p class="eyebrow">CHANGE GRID</p><h3 id="satelliteTileTitle">Tile</h3></div><span class="badge">Broad area only</span></div><div id="changeGrid" class="change-grid"></div><div class="change-legend"><span><i class="low"></i>Low</span><span><i class="moderate"></i>Moderate</span><span><i class="severe"></i>Severe</span><span><i class="unknown"></i>Insufficient coverage</span></div><p id="satelliteFootprint" class="footprint"></p><p class="interpretation">This layer is uncalibrated radiometric change evidence. It is not a destruction probability and is not passed into TGNN node features.</p></article>
           </div>
+        </div>
+      </section>
+
+      <section class="view" id="buildings">
+        <div class="section-heading"><div><p class="eyebrow">PERSISTENT GIS OVERLAY</p><h3>Manual building classification</h3></div><span id="buildingClassifiedTotal" class="badge">0 classified</span></div>
+        <div class="callout"><span>i</span><div><strong>The frozen OSM snapshot remains unchanged.</strong><p>Assignments are stored as revisions in a separate SQLite ledger keyed by the original building source ID.</p></div></div>
+        <div class="building-layout">
+          <article class="panel building-form">
+            <label>Select building<select id="buildingSelect"><option value="">Loading buildings…</option></select></label>
+            <label>Assigned type<input id="buildingType" maxlength="64" placeholder="residential, shelter, warehouse…"></label>
+            <label>Operator<input id="buildingOperator" maxlength="200" placeholder="Responder name or ID"></label>
+            <label>Optional notes<textarea id="buildingNotes" maxlength="2000" rows="4" placeholder="Reason or supporting evidence"></textarea></label>
+            <button class="primary" id="saveBuildingClassification">Save classification revision</button>
+          </article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">CURRENT RECORD</p><h3 id="buildingDetailTitle">Select a building</h3></div><span id="buildingRevision" class="badge">No revision</span></div><div id="buildingCurrent" class="building-current empty compact-empty">Choose a building to view its classification.</div><div class="panel-head building-history-head"><div><p class="eyebrow">AUDIT</p><h3>Revision history</h3></div></div><div id="buildingHistory" class="building-history"></div></article>
         </div>
       </section>
 

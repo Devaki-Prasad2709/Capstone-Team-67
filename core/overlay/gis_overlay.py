@@ -47,6 +47,8 @@ def build_node_overlay(G, predicted_risk: dict = None) -> dict:
         }
         if node_id in predicted_risk:
             properties["predicted_risk"] = round(predicted_risk[node_id], 4)
+            properties["risk_interpretation"] = "uncalibrated_relative_failure_risk_score"
+            properties["calibrated_probability"] = False
 
         features.append({
             "type": "Feature",

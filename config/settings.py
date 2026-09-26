@@ -88,6 +88,10 @@ class Settings:
     dedup_database_path: str = os.getenv(
         "DEDUP_DATABASE_PATH", "storage/dedup/image_fingerprints.sqlite3"
     )
+    building_classification_database_path: str = os.getenv(
+        "BUILDING_CLASSIFICATION_DATABASE_PATH",
+        "storage/gis/building_classifications.sqlite3",
+    )
     log_level: str = os.getenv("LOG_LEVEL", "INFO").upper()
     spark_master: str = os.getenv("SPARK_MASTER", "local[*]")
     spark_starting_offsets: str = os.getenv("SPARK_STARTING_OFFSETS", "latest")
@@ -139,6 +143,11 @@ class Settings:
     @property
     def resolved_ai_model_path(self) -> Path:
         path = Path(self.ai_model_path)
+        return path if path.is_absolute() else self.project_root / path
+
+    @property
+    def resolved_building_classification_database_path(self) -> Path:
+        path = Path(self.building_classification_database_path)
         return path if path.is_absolute() else self.project_root / path
 
 
