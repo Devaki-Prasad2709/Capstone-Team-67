@@ -9,13 +9,16 @@
   <link rel="stylesheet" href="/satellite.css">
   <link rel="stylesheet" href="/social.css">
   <link rel="stylesheet" href="/building.css">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="/operations.css">
 </head>
 <body>
   <div class="shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">DS</span><div><strong>DisasterScope</strong><small>Streaming control center</small></div></div>
       <nav>
-        <button class="nav active" data-view="overview"><span>⌂</span> Overview</button>
+        <button class="nav active" data-view="operations"><span>◎</span> Operations</button>
+        <button class="nav" data-view="overview"><span>⌂</span> System overview</button>
         <button class="nav" data-view="pipeline"><span>▶</span> Pipeline control</button>
         <button class="nav" data-view="spark"><span>⌁</span> Spark output</button>
         <button class="nav" data-view="ai"><span>AI</span> Damage analysis</button>
@@ -40,7 +43,38 @@
 
       <div id="toast" role="status"></div>
 
-      <section class="view active" id="overview">
+      <section class="view active" id="operations">
+        <div class="incident-heading">
+          <div><p class="eyebrow">LOUISIANA EAST FLOOD · LIVE COMMON OPERATING PICTURE</p><h2>What happened, what is at risk,<br><em>and why.</em></h2><p id="incidentNarrative">Loading structural, field, human, and model evidence…</p></div>
+          <div class="incident-freshness"><span id="operationsState" class="badge">Loading</span><small>Graph freshness</small><strong id="graphFreshness">—</strong><small>Risk freshness</small><strong id="riskFreshness">—</strong></div>
+        </div>
+        <div id="operationsError" class="callout warning hidden"></div>
+        <div id="operationsLoading" class="operations-loading"><span></span><p>Building the operational picture from live contracts…</p></div>
+        <div id="operationsContent" class="hidden">
+          <div class="section-heading"><div><p class="eyebrow">01 · INTERACTIVE BASEMAP</p><h3>Structural GIS, observations, risk, and confirmed reports</h3></div><span class="hint">Select a building or node for details</span></div>
+          <div class="operations-grid">
+            <article class="map-shell">
+              <div id="operationsMap" aria-label="Interactive disaster operations map"></div>
+              <div class="map-layer-control panel"><strong>Layers</strong><label><input type="checkbox" data-map-layer="structural" checked> Structural GIS</label><label><input type="checkbox" data-map-layer="damage" checked> Damage observations</label><label><input type="checkbox" data-map-layer="risk" checked> TGNN risk</label><label><input type="checkbox" data-map-layer="hotspots" checked> Confirmed social</label></div>
+              <div class="map-legend panel"><strong>Legend</strong><span><i class="legend-road"></i>Road</span><span><i class="legend-building"></i>Building</span><span><i class="legend-damage"></i>Damage evidence</span><span><i class="legend-risk"></i>Higher relative risk</span><span><i class="legend-highest"></i>Highest risk</span><span><i class="legend-social"></i>Confirmed social</span></div>
+              <div id="mapEmpty" class="map-state hidden">No geographic evidence is available.</div>
+            </article>
+            <aside class="operations-side">
+              <article class="panel"><div class="panel-head"><div><p class="eyebrow">02 · TGNN RISK</p><h3>Top-five risk nodes</h3></div><span class="badge">Relative, not probability</span></div><div id="topRiskRows" class="risk-list"></div><p class="model-caveat">Scores are uncalibrated and used only for ranking and temporal comparison.</p></article>
+              <article class="panel"><div class="panel-head"><div><p class="eyebrow">03 · RESPONDER QUEUE</p><h3>Pending social alerts</h3></div><span id="opsPendingTotal" class="badge">0 pending</span></div><div id="opsPendingRows" class="ops-pending-list"></div></article>
+            </aside>
+          </div>
+          <div class="section-heading"><div><p class="eyebrow">04 · SATELLITE CHANGE</p><h3>Broad-area SpaceNet evidence</h3></div><span id="opsSatelliteFreshness" class="hint">Awaiting result</span></div>
+          <article class="panel ops-satellite"><div id="opsSatelliteEmpty" class="empty compact-empty">No satellite change result yet.</div><div id="opsSatelliteContent" class="hidden"><div class="ops-satellite-images"><figure><img id="opsSatellitePre" alt="Pre-event satellite image"><figcaption>REAL SPACENET · PRE-EVENT · SIMULATED TIME</figcaption></figure><figure><img id="opsSatellitePost" alt="Post-event satellite image"><figcaption>REAL SPACENET · POST-EVENT · SIMULATED TIME</figcaption></figure></div><div class="ops-satellite-summary"><strong id="opsSatelliteChanged">—</strong><span>changed grid cells</span><p id="opsSatelliteReference">—</p><small>Broad-area radiometric evidence; not a TGNN node feature.</small></div></div></article>
+          <div class="section-heading"><div><p class="eyebrow">05 · SCENARIO TIMELINE</p><h3>Controlled replay through production interfaces</h3></div><span id="scenarioClock" class="badge">—</span></div>
+          <article class="panel timeline-panel"><div class="timeline-controls"><button class="primary" data-scenario-action="start">Start</button><button class="secondary" data-scenario-action="pause">Pause</button><button class="secondary" data-scenario-action="resume">Resume</button><button class="secondary" data-scenario-action="reset">Reset</button><label>Playback speed<select id="scenarioSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10" selected>10×</option><option value="20">20×</option></select></label></div><div class="timeline-track" id="timelineTrack"></div><div class="timeline-now"><strong id="scenarioCurrentEvent">Not started</strong><span id="scenarioProgress">0 of 12 events</span></div></article>
+          <div class="section-heading"><div><p class="eyebrow">06 · EVIDENCE PROVENANCE</p><h3>What is real, simulated, or model-derived</h3></div></div><div id="provenanceGrid" class="provenance-grid"></div>
+          <div class="section-heading"><div><p class="eyebrow">07 · MANUAL CLASSIFICATION</p><h3>Assign an operational building type</h3></div><span class="hint">Stored separately from frozen OSM</span></div>
+          <div class="ops-building-layout"><article class="panel building-form"><label>Selected building<select id="opsBuildingSelect"><option value="">Select on map or from list</option></select></label><label>Assigned type<input id="opsBuildingType" maxlength="64" placeholder="shelter, field hospital, warehouse…"></label><label>Operator<input id="opsBuildingOperator" maxlength="200" placeholder="Responder name or ID"></label><label>Optional notes<textarea id="opsBuildingNotes" maxlength="2000" rows="3"></textarea></label><button class="primary" id="opsSaveBuilding">Save classification revision</button></article><article class="panel"><div class="panel-head"><div><p class="eyebrow">SELECTED FEATURE</p><h3 id="opsSelectedTitle">Nothing selected</h3></div><span id="opsSelectedBadge" class="badge">—</span></div><div id="opsSelectedDetail" class="selected-detail empty compact-empty">Click a building or risk node on the map.</div></article></div>
+        </div>
+      </section>
+
+      <section class="view" id="overview">
         <div class="hero">
           <div><span class="live-pill"><i></i> LIVE PIPELINE</span><h2>Disaster intelligence,<br><em>without terminal juggling.</em></h2><p>Monitor ingestion, storage, processing, and AI-ready events from one place.</p></div>
           <div class="hero-flow"><div>Datasets</div><b>→</b><div>Kafka</div><b>→</b><div>MinIO</div><b>→</b><div>Spark</div><b>→</b><div>AI</div></div>
@@ -151,6 +185,7 @@
       </section>
     </main>
   </div>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

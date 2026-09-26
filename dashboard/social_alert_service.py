@@ -23,12 +23,25 @@ class SocialAlertService:
     """Own one alert workflow and avoid replaying the same Kafka offsets."""
 
     def __init__(self, gis_path: Path = DEFAULT_GIS_PATH, *, clock=None):
-        gis_data = load_gis(str(gis_path))
+        self.gis_path = Path(gis_path)
+        self.clock = clock
+        gis_data = load_gis(str(self.gis_path))
         graph, id_map = build_graph_from_gis(gis_data, seed=42)
         self.workflow = SocialAlertWorkflow(gis_data, graph, id_map, clock=clock)
         self._seen_messages = set()
         self._ingest_errors = []
         self._lock = RLock()
+
+    def reset(self) -> None:
+        """Clear replay-local review state while leaving Kafka history immutable."""
+        with self._lock:
+            gis_data = load_gis(str(self.gis_path))
+            graph, id_map = build_graph_from_gis(gis_data, seed=42)
+            self.workflow = SocialAlertWorkflow(
+                gis_data, graph, id_map, clock=self.clock
+            )
+            self._seen_messages.clear()
+            self._ingest_errors.clear()
 
     def ingest_events(self, events: list[dict]) -> None:
         with self._lock:

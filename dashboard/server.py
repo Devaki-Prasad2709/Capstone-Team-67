@@ -5,7 +5,10 @@ from __future__ import annotations
 from dashboard.map_api import map_config
 from dashboard.social_alert_service import SocialAlertService
 from dashboard.building_classification_service import BuildingClassificationService
+from dashboard.operational_service import OperationalDashboardService
+from dashboard.scenario_service import DashboardScenarioService
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -39,6 +42,8 @@ app = FastAPI(title="Disaster Streaming Control Center", docs_url="/api/docs")
 manager = ProcessManager()
 social_alerts = SocialAlertService()
 building_classifications = BuildingClassificationService()
+operational_dashboard = OperationalDashboardService(building_classifications)
+scenario_runner = DashboardScenarioService()
 
 
 class StartOptions(BaseModel):
@@ -54,6 +59,36 @@ class BuildingClassificationRequest(BaseModel):
     assigned_type: str = Field(min_length=1, max_length=64)
     operator: str = Field(min_length=1, max_length=200)
     notes: str | None = Field(default=None, max_length=2000)
+
+
+class ScenarioControlRequest(BaseModel):
+    speed: float | None = Field(default=None, gt=0, le=100)
+
+
+def _scenario_rows_visible_at_current_time(rows: list[dict]) -> list[dict]:
+    """Project immutable Kafka history onto the runner's current replay time."""
+    status = scenario_runner.status()
+    if status["state"] == "idle":
+        return []
+    cutoff = datetime.fromisoformat(
+        status["simulation_timestamp"].replace("Z", "+00:00")
+    ).timestamp()
+    visible = []
+    for row in rows:
+        value = row.get("scenario_timestamp", row.get("timestamp"))
+        try:
+            if isinstance(value, str):
+                event_time = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                if event_time.tzinfo is None:
+                    event_time = event_time.replace(tzinfo=timezone.utc)
+                event_epoch = event_time.timestamp()
+            else:
+                event_epoch = float(value)
+        except (TypeError, ValueError):
+            continue
+        if event_epoch <= cutoff:
+            visible.append(row)
+    return visible
 
 
 def process_states() -> dict[str, dict[str, object]]:
@@ -165,6 +200,9 @@ def ai_output() -> dict[str, object]:
 @app.get("/api/satellite/change")
 def satellite_change_output() -> dict[str, object]:
     rows, error = recent_topic_events("satellite-change-results", 10)
+    scenario_id = operational_dashboard.scenario["scenario_id"]
+    rows = [row for row in rows if row.get("scenario_id") == scenario_id]
+    rows = _scenario_rows_visible_at_current_time(rows)
     latest = rows[0] if rows else None
     if latest:
         for image in (latest.get("source_images") or {}).values():
@@ -175,8 +213,12 @@ def satellite_change_output() -> dict[str, object]:
 
 
 @app.get("/api/social/alerts")
-def social_alert_state() -> dict[str, object]:
+def social_alert_state(scenario_only: bool = Query(False)) -> dict[str, object]:
     rows, error = recent_topic_events("social-posts", 100)
+    if scenario_only:
+        scenario_id = operational_dashboard.scenario["scenario_id"]
+        rows = [row for row in rows if row.get("scenario_id") == scenario_id]
+        rows = _scenario_rows_visible_at_current_time(rows)
     social_alerts.ingest_events(rows)
     state = social_alerts.state()
     state["kafka_error"] = error
@@ -269,5 +311,42 @@ def object_image(key: str = Query(min_length=1)) -> Response:
 @app.get("/api/map/config")
 def map_configuration() -> dict[str, object]:
     return map_config()
+
+
+@app.get("/api/operations")
+def operational_view() -> dict[str, object]:
+    ai_events, ai_error = recent_topic_events("ai-analysis-results", 200)
+    telemetry_events, telemetry_error = recent_topic_events(
+        "infrastructure-telemetry", 100
+    )
+    ai_events = _scenario_rows_visible_at_current_time(ai_events)
+    telemetry_events = _scenario_rows_visible_at_current_time(telemetry_events)
+    result = operational_dashboard.snapshot(ai_events, telemetry_events)
+    result["source_errors"] = {
+        "ai_analysis_results": ai_error,
+        "infrastructure_telemetry": telemetry_error,
+    }
+    return result
+
+
+@app.get("/api/scenario")
+def scenario_status() -> dict[str, object]:
+    return scenario_runner.status()
+
+
+@app.post("/api/scenario/{action}")
+def scenario_control(
+    action: Literal["start", "pause", "resume", "reset", "speed"],
+    options: ScenarioControlRequest,
+) -> dict[str, object]:
+    try:
+        status = scenario_runner.control(action, options.speed)
+        if action == "reset":
+            social_alerts.reset()
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except (OSError, ValueError, KeyError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"ok": True, "message": f"Scenario {action} accepted", "status": status}
 
 app.mount("/", StaticFiles(directory=STATIC_ROOT, html=True), name="dashboard")

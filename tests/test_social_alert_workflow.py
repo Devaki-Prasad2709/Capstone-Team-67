@@ -149,3 +149,18 @@ def test_dashboard_adapter_processes_each_kafka_offset_once():
     assert state["counts"]["pending"] == 1
     assert len(state["ingest_outcomes"]) == 1
     assert state["ingest_errors"] == []
+
+
+def test_dashboard_adapter_reset_starts_a_clean_replay():
+    service = SocialAlertService(
+        GIS_PATH, clock=lambda: "2026-09-24T12:02:00+00:00"
+    )
+    event = _event()
+    event.update({"_kafka_partition": 0, "_kafka_offset": 17})
+    service.ingest_events([event])
+    service.decide("social-001", "confirm", "responder-1")
+
+    service.reset()
+    assert service.state()["counts"]["confirmed"] == 0
+    service.ingest_events([event])
+    assert service.state()["counts"]["pending"] == 1

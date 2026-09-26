@@ -10,6 +10,11 @@ from typing import Any
 
 DEFAULT_CENTER = [-90.02204402568451, 29.73879868866008]
 DEFAULT_ZOOM = 15.0
+DEFAULT_SCENARIO_GEOJSON = (
+    Path(__file__).resolve().parents[1]
+    / "scenarios/louisiana_east_flood/gis/infrastructure.geojson"
+)
+DEFAULT_SCENARIO_MANIFEST = DEFAULT_SCENARIO_GEOJSON.parents[1] / "scenario.json"
 
 OSM_RASTER_TILES = [
     "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -64,11 +69,14 @@ def map_config() -> dict[str, Any]:
 
     scenario_path = os.getenv("MAP_SCENARIO_GEOJSON")
 
-    extent = (
-        _geojson_extent(Path(scenario_path))
-        if scenario_path
-        else None
-    )
+    if scenario_path:
+        extent = _geojson_extent(Path(scenario_path))
+    else:
+        try:
+            scenario = json.loads(DEFAULT_SCENARIO_MANIFEST.read_text(encoding="utf-8"))
+            extent = [float(value) for value in scenario["location"]["bbox"]]
+        except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            extent = _geojson_extent(DEFAULT_SCENARIO_GEOJSON)
 
     if extent:
         center = [
@@ -111,8 +119,8 @@ def map_config() -> dict[str, Any]:
 
     return {
         "scenario": {
-            "id": "spacenet8-louisiana-east",
-            "name": "SpaceNet8 Louisiana-East",
+            "id": "louisiana-east-flood-v1",
+            "name": "Louisiana East Flood and Infrastructure Disruption",
             "center": center,
             "bbox": extent,
             "zoom": DEFAULT_ZOOM,

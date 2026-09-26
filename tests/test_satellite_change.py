@@ -82,12 +82,21 @@ def test_duplicate_and_invalid_events_do_not_become_change_results():
 
 def test_dashboard_contract_adds_safe_minio_previews():
     latest = {
+        "scenario_id": "louisiana-east-flood-v1",
+        "scenario_timestamp": "2026-09-24T12:00:30Z",
         "source_images": {
             "pre": {"object_key": "satellite/aa/pre.jpg"},
             "post": {"object_key": "satellite/bb/post.jpg"},
         }
     }
-    with patch("dashboard.server.recent_topic_events", return_value=([latest], None)):
+    completed = {
+        "state": "completed",
+        "simulation_timestamp": "2026-09-24T12:05:30Z",
+    }
+    with (
+        patch("dashboard.server.recent_topic_events", return_value=([latest], None)),
+        patch("dashboard.server.scenario_runner.status", return_value=completed),
+    ):
         response = satellite_change_output()
     assert response["error"] is None
     assert response["latest"]["source_images"]["pre"]["preview_url"] == (

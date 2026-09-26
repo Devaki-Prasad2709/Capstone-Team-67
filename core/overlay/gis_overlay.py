@@ -10,9 +10,15 @@ Nowhere else in the codebase should do this conversion (mirrors gis_loader.py
 being the single entry point for WGS84 -> working CRS).
 """
 
-import time
+from datetime import datetime, timezone
 
 from core.gis.gis_loader import working_to_wgs84
+
+
+def _iso_timestamp(value):
+    if value is None:
+        return None
+    return datetime.fromtimestamp(float(value), timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def build_node_overlay(G, predicted_risk: dict = None) -> dict:
@@ -40,10 +46,15 @@ def build_node_overlay(G, predicted_risk: dict = None) -> dict:
 
         properties = {
             "id": str(node_id),
+            "gis_source_id": data.get("gis_source_id"),
             "node_type": data["type"],
             "damage": round(data["damage"], 4),
             "stress": round(data["stress"], 4),
-            "last_updated": None,  # fill with real tick timestamp when available
+            "status": data.get("status_label"),
+            "freshness_status": data.get("freshness_status"),
+            "last_updated": _iso_timestamp(
+                data.get("state_timestamp") or data.get("last_observation_timestamp")
+            ),
         }
         if node_id in predicted_risk:
             properties["predicted_risk"] = round(predicted_risk[node_id], 4)

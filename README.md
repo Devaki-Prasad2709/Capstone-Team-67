@@ -98,6 +98,12 @@ provenance.
 ### Operations dashboard
 
 - Responsive FastAPI + HTML/CSS/JavaScript control center.
+- Incident-first interactive MapLibre basemap combining the frozen structural
+  GIS, accepted drone damage observations, TGNN relative-risk nodes, an
+  explicit highest-risk marker, and confirmed social hotspots.
+- Top-five risk explanation, pending-alert review actions, SpaceNet change
+  evidence, scenario timeline controls, provenance badges, layer toggles,
+  legends, freshness timestamps, and explicit loading/empty/error states.
 - Docker, Kafka, MinIO, and process health indicators.
 - Kafka topic event counts and MinIO object totals.
 - Start/stop controls for infrastructure, Spark, AI, and all producers.
@@ -907,6 +913,8 @@ For production:
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the complete data flow and Layer 4 extension points.
 The manual classification data model and API are documented in
 [docs/BUILDING_CLASSIFICATION.md](docs/BUILDING_CLASSIFICATION.md).
+The incident-first presentation and operational API are documented in
+[docs/OPERATIONAL_DASHBOARD.md](docs/OPERATIONAL_DASHBOARD.md).
 The live drone/YOLO completion evidence is recorded in
 [docs/DRONE_YOLO_VALIDATION.md](docs/DRONE_YOLO_VALIDATION.md).
 Geolocation and exact graph-node traceability are recorded in
