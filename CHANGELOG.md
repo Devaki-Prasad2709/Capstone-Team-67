@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.0 - Scenario completion and repository cleanup
+
+- Added the frozen Louisiana flood scenario, controller, satellite change
+  analysis, GIS association, temporal graph state, TGNN ranking, social review,
+  operational dashboard, acceptance suite, and measured evaluation package.
+- Removed tracked raw training data, duplicate Ultralytics runs, hard-coded
+  legacy implementations, stale DVC metadata, and obsolete compose/config files.
+- Consolidated pinned runtime, AI, and development dependency entry points.
+- Added repository/model/import verification and clean-clone acceptance tests.
+- Pinned checkout line endings so byte-frozen scenario and model artifacts keep
+  stable SHA-256 identities on Windows.
+- Added one authoritative final system document covering architecture,
+  contracts, operation, evaluation boundaries, deployment, and troubleshooting.
+
 ## 3.0 - Integrated computer vision and GIS pipeline
 
 - Integrated the Capstone-Team-67 preprocessing and trained YOLOv8 Nano model.

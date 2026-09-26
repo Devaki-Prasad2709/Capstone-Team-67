@@ -1,6 +1,7 @@
-# Install after requirements.txt to enable YOLO inference/training.
-ultralytics==8.4.138
+# Complete runtime plus checkpoint-backed YOLO and TGNN inference/training.
+-r requirements.txt
+
 torch==2.13.0
-torchvision==0.28.0
 torch-geometric==2.7.0
-ImageHash==4.3.2
+torchvision==0.28.0
+ultralytics==8.4.138

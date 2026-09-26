@@ -1,12 +1,16 @@
-kafka-python==2.2.15
+# Runtime dependencies for ingestion, Spark, GIS, and the dashboard.
+# Supported interpreter: CPython 3.10 (the tested reference environment).
 boto3==1.35.99
-opencv-python==5.0.0.93
-numpy==2.2.6
-python-dotenv==1.0.1
-pyspark==3.5.5
 fastapi==0.115.6
-uvicorn==0.34.0
+kafka-python==2.2.15
 networkx==3.4.2
-shapely==2.1.2
+numpy==2.2.6
+opencv-python==5.0.0.93
+pandas==2.3.3
+Pillow==11.3.0
+pydantic==2.13.4
 pyproj==3.7.1
-pytest==8.3.5
+pyspark==3.5.5
+python-dotenv==1.0.1
+shapely==2.1.2
+uvicorn==0.34.0

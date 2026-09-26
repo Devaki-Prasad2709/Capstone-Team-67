@@ -57,4 +57,5 @@ python -m consumers.observation_consumer `
 No `LICENSE` file was present in the upstream repository at the reviewed
 commit. Before publishing publicly, confirm that the team may redistribute its
 code, weights, sample, and training evidence. The full training dataset is not
-duplicated here; one test fixture and approximately 19 MB of run evidence are.
+duplicated here; one curated smoke-test image and approximately 32 MB of
+canonical model/training-lineage artifacts are retained.

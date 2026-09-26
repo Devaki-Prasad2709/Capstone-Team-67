@@ -1,9 +1,2 @@
-ultralytics
-opencv-python
-numpy
-matplotlib
-pyyaml
-torch
-torchvision
-imagehash 
-pillow
+# Compatibility entry point. Repository-level files are authoritative.
+-r ../../requirements-ai.txt

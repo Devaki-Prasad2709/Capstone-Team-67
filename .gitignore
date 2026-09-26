@@ -1,21 +1,59 @@
+# Local configuration and virtual environments
 .env
+.env.*
+!.env.example
 .venv/
-.runtime/
+venv/
+
+# Python, test, and editor caches
 __pycache__/
 *.py[cod]
 .pytest_cache/
-logs/*.log
-logs/dashboard/
-storage/received_images/drone/*
-storage/received_images/satellite/*
-storage/received_images/gis/*
-storage/processed/*
-storage/checkpoints/*
-storage/dedup/*
-storage/gis/*.sqlite3*
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.idea/
+.vscode/
+*.swp
+*.tmp
+*.bak
+
+# Logs and local runtime state
+*.log
+logs/**
+!logs/.gitkeep
+.runtime/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Kafka/Spark/MinIO materialized outputs
+storage/**
+!storage/**/
 !storage/**/.gitkeep
-# TGNN training artifacts
-tgnn/models/*.pth
+spark-warehouse/
+metastore_db/
+**/_spark_metadata/
+**/.part-*.crc
+
+# Reproducible ML outputs and raw datasets
+datasets/
+ai/computer_vision/dataset/
+ai/computer_vision/runs/
+runs/
+outputs/
+*.pt
+*.pth
+!ai/computer_vision/artifacts/drone_detector/weights/best.pt
+!ai/computer_vision/artifacts/drone_detector/weights/last.pt
 !tgnn/models/tgnn.pth
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
 # Local AI-agent handoff/context
 AGENT_HANDOFF.md

@@ -17,6 +17,10 @@ stable infrastructure IDs, and a deterministic twelve-step event timeline. See
 [`docs/FINAL_SCENARIO.md`](docs/FINAL_SCENARIO.md) for its readiness and data
 provenance.
 
+For the authoritative system architecture, contracts, setup, operation,
+evaluation boundaries, deployment replacements, and troubleshooting guide, see
+[`docs/FINAL_SYSTEM_DOCUMENTATION.md`](docs/FINAL_SYSTEM_DOCUMENTATION.md).
+
 ## Current features
 
 ### Data ingestion
@@ -234,12 +238,12 @@ py -3.10 -m venv .venv
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -r requirements.txt
-pip install -r requirements-ai.txt
+pip install -r requirements-dev.txt
 ```
 
-If Windows reports error `WinError 206` while installing PyTorch from a deeply
-nested checkout, temporarily map the project to a short drive path:
+Keep the clone path short on Windows. The clean-install acceptance test
+reproduced `WinError 206` for PyTorch in a deeply nested checkout. If needed,
+temporarily map the project to a short drive path:
 
 ```powershell
 subst X: (Get-Location).Path
@@ -284,6 +288,7 @@ python -m scripts.create_topics
 python -m scripts.test_kafka
 python -m scripts.test_object_storage
 python -m scripts.verify_ai_artifacts
+python -m scripts.verify_repository
 python -m unittest discover -v
 ```
 
@@ -437,6 +442,7 @@ disaster-streaming-system/
 |-- docker-compose.yml         ZooKeeper, Kafka, and MinIO
 |-- requirements.txt           Pinned Python dependencies
 |-- requirements-ai.txt        YOLO inference and training dependencies
+|-- requirements-dev.txt       Complete environment plus test tooling
 `-- .env.example               Configuration template
 ```
 
@@ -919,6 +925,12 @@ The live drone/YOLO completion evidence is recorded in
 [docs/DRONE_YOLO_VALIDATION.md](docs/DRONE_YOLO_VALIDATION.md).
 Geolocation and exact graph-node traceability are recorded in
 [docs/GEOLOCATION_GIS_VALIDATION.md](docs/GEOLOCATION_GIS_VALIDATION.md).
+The measured end-to-end results, evidence images, latency observations, and
+claim boundaries are recorded in
+[docs/RESULTS_AND_EVALUATION.md](docs/RESULTS_AND_EVALUATION.md).
+The obsolete-file inventory, dataset exclusion policy, dependency audit, and
+clean-clone acceptance procedure are recorded in
+[docs/REPOSITORY_CLEANUP.md](docs/REPOSITORY_CLEANUP.md).
 
 For repository handoff, see [create a branch and push](docs/BRANCH_AND_PUSH.md)
 and the [integration validation report](docs/VALIDATION_REPORT.md).

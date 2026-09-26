@@ -1,5 +1,4 @@
 # Compatibility entry point for the TGNN layer. The authoritative pins live
 # in the repository-level files so the streaming, CV, GIS, and TGNN stacks do
 # not install conflicting Torch or Python-version requirements.
--r ../requirements.txt
 -r ../requirements-ai.txt

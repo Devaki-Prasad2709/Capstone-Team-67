@@ -1,0 +1,982 @@
+{
+  "generated_at": "2026-09-26T11:45:00.419907+05:30",
+  "scenario_id": "louisiana-east-flood-v1",
+  "yolo_checkpoint_sha256": "780241f6b42f9f0b0d83a8be8d3168e1ca864a756ff93907e72bbb7f9fe3cbf9",
+  "yolo": [
+    {
+      "asset_id": "drone-slight-001",
+      "frame_id": "5_9240.jpg",
+      "real_image_sha256": "632ea63506f8e7a452434f8daa0caa93d2c676692966500fb993a227f5a66f52",
+      "official_annotations": {
+        "Slight": 18,
+        "Severe": 0,
+        "Debris": 0
+      },
+      "live_detection_count": 18,
+      "live_class_counts": {
+        "Slight": 18
+      },
+      "confidence_range": [
+        0.283642,
+        0.810808
+      ],
+      "producer_to_ai_result_ms": 1126,
+      "gps_provenance": "simulated-scenario-assignment",
+      "declared_target_id": "osm-way-791288888",
+      "detections": [
+        {
+          "class": "Slight",
+          "confidence": 0.810808,
+          "bbox": [
+            572.694,
+            174.434,
+            639.941,
+            231.751
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.806444,
+          "bbox": [
+            11.137,
+            40.707,
+            93.782,
+            70.422
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.763327,
+          "bbox": [
+            552.292,
+            248.916,
+            596.634,
+            335.754
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.718127,
+          "bbox": [
+            333.701,
+            269.388,
+            385.288,
+            371.623
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.669299,
+          "bbox": [
+            601.082,
+            239.008,
+            640.0,
+            309.969
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.639661,
+          "bbox": [
+            9.159,
+            295.732,
+            71.805,
+            351.328
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.623301,
+          "bbox": [
+            103.86,
+            36.072,
+            139.861,
+            55.764
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.54712,
+          "bbox": [
+            178.999,
+            210.504,
+            232.925,
+            271.631
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.519516,
+          "bbox": [
+            453.6,
+            156.477,
+            493.648,
+            195.647
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.435778,
+          "bbox": [
+            216.08,
+            197.232,
+            268.114,
+            253.713
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.430659,
+          "bbox": [
+            503.8,
+            94.416,
+            571.282,
+            139.517
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.417784,
+          "bbox": [
+            210.178,
+            40.584,
+            337.43,
+            81.586
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.410485,
+          "bbox": [
+            289.646,
+            40.632,
+            338.306,
+            65.278
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.362626,
+          "bbox": [
+            208.396,
+            37.823,
+            340.019,
+            81.86
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.320363,
+          "bbox": [
+            502.956,
+            74.871,
+            572.149,
+            139.757
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.315134,
+          "bbox": [
+            535.73,
+            169.224,
+            566.056,
+            243.119
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.295515,
+          "bbox": [
+            480.551,
+            63.704,
+            508.227,
+            102.207
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.283642,
+          "bbox": [
+            595.649,
+            83.977,
+            639.145,
+            112.813
+          ]
+        }
+      ],
+      "annotated_image": "yolo_5_9240.png"
+    },
+    {
+      "asset_id": "drone-severe-001",
+      "frame_id": "6_270.jpg",
+      "real_image_sha256": "67d3bbb81c5b5b10a61246b5c7164011b4d9b50aef8c6ce19f170728639cbb87",
+      "official_annotations": {
+        "Slight": 0,
+        "Severe": 6,
+        "Debris": 2
+      },
+      "live_detection_count": 10,
+      "live_class_counts": {
+        "Severe": 6,
+        "Slight": 4
+      },
+      "confidence_range": [
+        0.281148,
+        0.789474
+      ],
+      "producer_to_ai_result_ms": 1027,
+      "gps_provenance": "simulated-scenario-assignment",
+      "declared_target_id": "osm-way-1064972993",
+      "detections": [
+        {
+          "class": "Severe",
+          "confidence": 0.789474,
+          "bbox": [
+            137.819,
+            146.285,
+            315.231,
+            286.193
+          ]
+        },
+        {
+          "class": "Severe",
+          "confidence": 0.642479,
+          "bbox": [
+            122.054,
+            47.797,
+            228.086,
+            112.275
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.457982,
+          "bbox": [
+            356.321,
+            51.106,
+            447.271,
+            111.122
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.33117,
+          "bbox": [
+            582.085,
+            71.997,
+            640.0,
+            127.102
+          ]
+        },
+        {
+          "class": "Severe",
+          "confidence": 0.315884,
+          "bbox": [
+            338.127,
+            163.959,
+            497.541,
+            297.267
+          ]
+        },
+        {
+          "class": "Severe",
+          "confidence": 0.312982,
+          "bbox": [
+            1.096,
+            135.945,
+            137.349,
+            223.648
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.309556,
+          "bbox": [
+            0.569,
+            135.451,
+            136.39,
+            223.952
+          ]
+        },
+        {
+          "class": "Slight",
+          "confidence": 0.304132,
+          "bbox": [
+            242.701,
+            46.506,
+            332.355,
+            101.067
+          ]
+        },
+        {
+          "class": "Severe",
+          "confidence": 0.296017,
+          "bbox": [
+            0.0,
+            29.291,
+            55.096,
+            83.745
+          ]
+        },
+        {
+          "class": "Severe",
+          "confidence": 0.281148,
+          "bbox": [
+            243.921,
+            45.896,
+            333.273,
+            100.913
+          ]
+        }
+      ],
+      "annotated_image": "yolo_6_270.png"
+    },
+    {
+      "asset_id": "drone-debris-001",
+      "frame_id": "8_90.jpg",
+      "real_image_sha256": "dd02613401c24114e1241c033846252086f5feb8f1a621f78a22e26fce217183",
+      "official_annotations": {
+        "Slight": 0,
+        "Severe": 1,
+        "Debris": 4
+      },
+      "live_detection_count": 1,
+      "live_class_counts": {
+        "Debris": 1
+      },
+      "confidence_range": [
+        0.588439,
+        0.588439
+      ],
+      "producer_to_ai_result_ms": 19552,
+      "gps_provenance": "simulated-scenario-assignment",
+      "declared_target_id": "osm-way-794401251",
+      "detections": [
+        {
+          "class": "Debris",
+          "confidence": 0.588439,
+          "bbox": [
+            10.558,
+            195.273,
+            134.409,
+            416.646
+          ]
+        }
+      ],
+      "annotated_image": "yolo_8_90.png"
+    }
+  ],
+  "deduplication": {
+    "scenario_drone_events": 20,
+    "duplicates": 12,
+    "methods": {
+      "sha256": 12,
+      "phash": 0
+    },
+    "unique_minio_drone_objects": 21,
+    "p_hash_validation": {
+      "source_asset": "drone-slight-001",
+      "recompressed_sha256_differs": true,
+      "is_duplicate": true,
+      "method": "phash",
+      "hamming_distance": 0,
+      "canonical_id": "drone-slight-001"
+    }
+  },
+  "satellite_change": {
+    "tile_id": "2_23_44",
+    "summary": {
+      "cell_count": 64,
+      "scored_cell_count": 64,
+      "changed_cell_count": 33,
+      "severity_counts": {
+        "low": 31,
+        "moderate": 24,
+        "severe": 9
+      },
+      "mean_diff_score": 0.21,
+      "max_diff_score": 0.6885
+    },
+    "reference_labels": {
+      "feature_count": 40,
+      "flooded_feature_count": 22
+    },
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            -90.08553068272339,
+            29.75831551754242
+          ],
+          [
+            -90.07989924402005,
+            29.75831551754242
+          ],
+          [
+            -90.07989924402005,
+            29.763946956245753
+          ],
+          [
+            -90.08553068272339,
+            29.763946956245753
+          ],
+          [
+            -90.08553068272339,
+            29.75831551754242
+          ]
+        ]
+      ]
+    },
+    "pair_to_result_ms": 2861,
+    "interpretation": "broad-area uncalibrated radiometric change; not destruction probability",
+    "tgnn_integration": "none"
+  },
+  "gis_association": {
+    "accepted_observations": 29,
+    "by_frame": {
+      "5_9240.jpg": {
+        "observations": 18,
+        "gis_source_ids": [
+          "osm-way-791288888"
+        ],
+        "graph_node_ids": [
+          2
+        ],
+        "association_kinds": [
+          "road"
+        ]
+      },
+      "6_270.jpg": {
+        "observations": 10,
+        "gis_source_ids": [
+          "osm-way-1064972993"
+        ],
+        "graph_node_ids": [
+          19
+        ],
+        "association_kinds": [
+          "building"
+        ]
+      },
+      "8_90.jpg": {
+        "observations": 1,
+        "gis_source_ids": [
+          "osm-way-794401251"
+        ],
+        "graph_node_ids": [
+          4
+        ],
+        "association_kinds": [
+          "road"
+        ]
+      }
+    },
+    "trace_sample": [
+      {
+        "frame_id": "5_9240.jpg",
+        "observation_id": "632ea63506f8e7a452434f8daa0caa93d2c676692966500fb993a227f5a66f52_0",
+        "matched_gis_source_id": "osm-way-791288888",
+        "graph_node_id": 2,
+        "association_kind": "road",
+        "association_distance_m": 0.0008909913131305246,
+        "declared_target_id": "osm-way-791288888",
+        "gps_provenance": "simulated-scenario-assignment"
+      },
+      {
+        "frame_id": "5_9240.jpg",
+        "observation_id": "632ea63506f8e7a452434f8daa0caa93d2c676692966500fb993a227f5a66f52_1",
+        "matched_gis_source_id": "osm-way-791288888",
+        "graph_node_id": 2,
+        "association_kind": "road",
+        "association_distance_m": 0.0008909913131305246,
+        "declared_target_id": "osm-way-791288888",
+        "gps_provenance": "simulated-scenario-assignment"
+      },
+      {
+        "frame_id": "5_9240.jpg",
+        "observation_id": "632ea63506f8e7a452434f8daa0caa93d2c676692966500fb993a227f5a66f52_2",
+        "matched_gis_source_id": "osm-way-791288888",
+        "graph_node_id": 2,
+        "association_kind": "road",
+        "association_distance_m": 0.0008909913131305246,
+        "declared_target_id": "osm-way-791288888",
+        "gps_provenance": "simulated-scenario-assignment"
+      }
+    ]
+  },
+  "graph_and_tgnn": {
+    "nodes": 21,
+    "edges": 322,
+    "dependency_edges": 0,
+    "checkpoint_sha256": "ad40a02e91cfe414da23f585dcf237d7fd2b5f646f3ebc47c20cb7d73640cc88",
+    "feature_order": [
+      "x_pos",
+      "y_pos",
+      "load",
+      "capacity",
+      "damage",
+      "stress",
+      "status"
+    ],
+    "calibrated_probability": false,
+    "stages": [
+      {
+        "stage": "baseline",
+        "snapshot_timestamp": null,
+        "estuary_road_state": {
+          "load": 0.27999999999999997,
+          "capacity": 0.8,
+          "damage": 0.0,
+          "effective_capacity": 0.8,
+          "utilization": 0.3499999999999999,
+          "stress": 0.3499999999999999,
+          "status_label": "operational",
+          "freshness_status": "missing"
+        },
+        "estuary_road_risk": 0.024175,
+        "estuary_road_rank": 19,
+        "top_five": [
+          {
+            "rank": 1,
+            "gis_source_id": "osm-way-1064972975",
+            "node_type": "social",
+            "relative_failure_risk": 0.043266
+          },
+          {
+            "rank": 2,
+            "gis_source_id": "osm-way-1064972977",
+            "node_type": "social",
+            "relative_failure_risk": 0.043235
+          },
+          {
+            "rank": 3,
+            "gis_source_id": "osm-way-1064972979",
+            "node_type": "social",
+            "relative_failure_risk": 0.042933
+          },
+          {
+            "rank": 4,
+            "gis_source_id": "osm-way-1064972963",
+            "node_type": "social",
+            "relative_failure_risk": 0.042931
+          },
+          {
+            "rank": 5,
+            "gis_source_id": "osm-way-1064972994",
+            "node_type": "social",
+            "relative_failure_risk": 0.042905
+          }
+        ]
+      },
+      {
+        "stage": "first_drone",
+        "snapshot_timestamp": 1790251260.0,
+        "estuary_road_state": {
+          "load": 0.27999999999999997,
+          "capacity": 0.8,
+          "damage": 0.24324239999999997,
+          "effective_capacity": 0.5266537413925504,
+          "utilization": 0.3499999999999999,
+          "stress": 0.5316586174051258,
+          "status_label": "operational",
+          "freshness_status": "current"
+        },
+        "estuary_road_risk": 0.09444,
+        "estuary_road_rank": 1,
+        "top_five": [
+          {
+            "rank": 1,
+            "gis_source_id": "osm-way-791288888",
+            "node_type": "road",
+            "relative_failure_risk": 0.09444
+          },
+          {
+            "rank": 2,
+            "gis_source_id": "osm-way-1064972975",
+            "node_type": "social",
+            "relative_failure_risk": 0.05991
+          },
+          {
+            "rank": 3,
+            "gis_source_id": "osm-way-1064972977",
+            "node_type": "social",
+            "relative_failure_risk": 0.059847
+          },
+          {
+            "rank": 4,
+            "gis_source_id": "osm-way-1064972994",
+            "node_type": "social",
+            "relative_failure_risk": 0.059536
+          },
+          {
+            "rank": 5,
+            "gis_source_id": "osm-way-1064972979",
+            "node_type": "social",
+            "relative_failure_risk": 0.05951
+          }
+        ]
+      },
+      {
+        "stage": "all_drone",
+        "snapshot_timestamp": 1790251290.0,
+        "estuary_road_state": {
+          "load": 0.27999999999999997,
+          "capacity": 0.8,
+          "damage": 0.24290479783355212,
+          "effective_capacity": 0.5270062042004778,
+          "utilization": 0.3499999999999999,
+          "stress": 0.5313030430539021,
+          "status_label": "operational",
+          "freshness_status": "current"
+        },
+        "estuary_road_risk": 0.123527,
+        "estuary_road_rank": 3,
+        "top_five": [
+          {
+            "rank": 1,
+            "gis_source_id": "osm-way-1064972993",
+            "node_type": "social",
+            "relative_failure_risk": 0.794759
+          },
+          {
+            "rank": 2,
+            "gis_source_id": "osm-way-794401251",
+            "node_type": "road",
+            "relative_failure_risk": 0.738379
+          },
+          {
+            "rank": 3,
+            "gis_source_id": "osm-way-791288888",
+            "node_type": "road",
+            "relative_failure_risk": 0.123527
+          },
+          {
+            "rank": 4,
+            "gis_source_id": "osm-way-1064972975",
+            "node_type": "social",
+            "relative_failure_risk": 0.084842
+          },
+          {
+            "rank": 5,
+            "gis_source_id": "osm-way-1064972977",
+            "node_type": "social",
+            "relative_failure_risk": 0.084758
+          }
+        ]
+      },
+      {
+        "stage": "telemetry_degraded",
+        "snapshot_timestamp": 1790251350.0,
+        "estuary_road_state": {
+          "load": 0.72,
+          "capacity": 0.8,
+          "damage": 0.35,
+          "effective_capacity": 0.41923740291152467,
+          "utilization": 0.8999999999999999,
+          "stress": 1.0,
+          "status_label": "failed",
+          "freshness_status": "current"
+        },
+        "estuary_road_risk": 0.763072,
+        "estuary_road_rank": 3,
+        "top_five": [
+          {
+            "rank": 1,
+            "gis_source_id": "osm-way-1064972993",
+            "node_type": "social",
+            "relative_failure_risk": 0.86512
+          },
+          {
+            "rank": 2,
+            "gis_source_id": "osm-way-794401251",
+            "node_type": "road",
+            "relative_failure_risk": 0.815308
+          },
+          {
+            "rank": 3,
+            "gis_source_id": "osm-way-791288888",
+            "node_type": "road",
+            "relative_failure_risk": 0.763072
+          },
+          {
+            "rank": 4,
+            "gis_source_id": "osm-way-1064972975",
+            "node_type": "social",
+            "relative_failure_risk": 0.095319
+          },
+          {
+            "rank": 5,
+            "gis_source_id": "osm-way-1064972977",
+            "node_type": "social",
+            "relative_failure_risk": 0.095221
+          }
+        ]
+      },
+      {
+        "stage": "recovery",
+        "snapshot_timestamp": 1790251500.0,
+        "estuary_road_state": {
+          "load": 0.44,
+          "capacity": 0.8,
+          "damage": 0.15,
+          "effective_capacity": 0.6269290230959164,
+          "utilization": 0.5499999999999999,
+          "stress": 0.7018338341191818,
+          "status_label": "operational",
+          "freshness_status": "current"
+        },
+        "estuary_road_risk": 0.282322,
+        "estuary_road_rank": 3,
+        "top_five": [
+          {
+            "rank": 1,
+            "gis_source_id": "osm-way-1064972993",
+            "node_type": "social",
+            "relative_failure_risk": 0.854872
+          },
+          {
+            "rank": 2,
+            "gis_source_id": "osm-way-794401251",
+            "node_type": "road",
+            "relative_failure_risk": 0.803021
+          },
+          {
+            "rank": 3,
+            "gis_source_id": "osm-way-791288888",
+            "node_type": "road",
+            "relative_failure_risk": 0.282322
+          },
+          {
+            "rank": 4,
+            "gis_source_id": "osm-way-1064972975",
+            "node_type": "social",
+            "relative_failure_risk": 0.099259
+          },
+          {
+            "rank": 5,
+            "gis_source_id": "osm-way-1064972977",
+            "node_type": "social",
+            "relative_failure_risk": 0.09915
+          }
+        ]
+      }
+    ]
+  },
+  "cascade": {
+    "scenario_dependency_edges": 0,
+    "fixture_only": true,
+    "failure": [
+      {
+        "type": "power",
+        "damage": 0.8,
+        "dependency_factor": 1.0,
+        "stress": 1.0,
+        "status": "failed"
+      },
+      {
+        "type": "telecom",
+        "damage": 0.0,
+        "dependency_factor": 0.0,
+        "stress": 1.0,
+        "status": "failed"
+      },
+      {
+        "type": "social",
+        "damage": 0.0,
+        "dependency_factor": 0.0,
+        "stress": 1.0,
+        "status": "failed"
+      }
+    ],
+    "recovery": [
+      {
+        "type": "power",
+        "damage": 0.0,
+        "dependency_factor": 1.0,
+        "stress": 0.2,
+        "status": "operational"
+      },
+      {
+        "type": "telecom",
+        "damage": 0.0,
+        "dependency_factor": 1.0,
+        "stress": 0.2,
+        "status": "operational"
+      },
+      {
+        "type": "social",
+        "damage": 0.0,
+        "dependency_factor": 1.0,
+        "stress": 0.2,
+        "status": "operational"
+      }
+    ]
+  },
+  "social_workflow": {
+    "pending": {
+      "incoming": 0,
+      "pending": 1,
+      "confirmed": 0,
+      "rejected": 0,
+      "graph_observations": 0
+    },
+    "confirmed": {
+      "incoming": 0,
+      "pending": 0,
+      "confirmed": 1,
+      "rejected": 0,
+      "graph_observations": 1
+    },
+    "confirmed_hotspots": 1,
+    "confirmed_graph_observations": 1,
+    "rejected": {
+      "incoming": 0,
+      "pending": 0,
+      "confirmed": 0,
+      "rejected": 1,
+      "graph_observations": 0
+    },
+    "rejected_hotspots": 0,
+    "rejected_graph_observations": 0
+  },
+  "latency_ms": {
+    "producer_to_yolo": {
+      "samples": 3,
+      "values": [
+        1126,
+        1027,
+        19552
+      ],
+      "median": 1126
+    },
+    "satellite_pair_to_change_result": 2861,
+    "spark": {
+      "drone": {
+        "parquet_files": 57,
+        "scenario_latency_ms": {
+          "all_replay_records": {
+            "samples": 17,
+            "min": 4128.0,
+            "median": 17103.0,
+            "p95": 32157051.0,
+            "max": 32157051.0
+          },
+          "records_processed_within_60_seconds": {
+            "samples": 15,
+            "min": 4128.0,
+            "median": 16477.0,
+            "max": 23789.0
+          }
+        }
+      },
+      "satellite": {
+        "parquet_files": 53,
+        "scenario_latency_ms": {
+          "all_replay_records": {
+            "samples": 12,
+            "min": 14.0,
+            "median": 385.0,
+            "p95": 32785407.0,
+            "max": 32785407.0
+          },
+          "records_processed_within_60_seconds": {
+            "samples": 10,
+            "min": 14.0,
+            "median": 117.5,
+            "max": 23186.0
+          }
+        }
+      },
+      "ai": {
+        "parquet_files": 61,
+        "scenario_latency_ms": {
+          "all_replay_records": {
+            "samples": 18,
+            "min": 31.0,
+            "median": 13741.0,
+            "p95": 32155926.0,
+            "max": 32155926.0
+          },
+          "records_processed_within_60_seconds": {
+            "samples": 16,
+            "min": 31.0,
+            "median": 8063.0,
+            "max": 20831.0
+          }
+        }
+      },
+      "social": {
+        "parquet_files": 47,
+        "scenario_latency_ms": {
+          "all_replay_records": {
+            "samples": 5,
+            "min": 2926.0,
+            "median": 13810.0,
+            "p95": 23089.0,
+            "max": 23089.0
+          },
+          "records_processed_within_60_seconds": {
+            "samples": 5,
+            "min": 2926.0,
+            "median": 13810.0,
+            "max": 23089.0
+          }
+        }
+      },
+      "gis": {
+        "parquet_files": 31,
+        "scenario_latency_ms": null
+      }
+    },
+    "dashboard_api": {
+      "status": 676.0,
+      "operations": 3360.4,
+      "social": 1647.1,
+      "satellite": 1682.4
+    },
+    "measurement_note": "Local single-machine measurements; Kafka tail APIs intentionally wait up to 1.5 seconds per topic."
+  },
+  "event_counts": {
+    "kafka": {
+      "social-posts": 46,
+      "drone-video": 61,
+      "satellite-imagery": 54,
+      "gis-data": 0,
+      "ai-analysis-results": 59,
+      "infrastructure-telemetry": 12,
+      "satellite-change-results": 2
+    },
+    "kafka_error": null,
+    "minio": {
+      "drone": {
+        "objects": 21,
+        "bytes": 13079508
+      },
+      "satellite": {
+        "objects": 22,
+        "bytes": 4519241
+      },
+      "gis": {
+        "objects": 0,
+        "bytes": 0
+      }
+    },
+    "minio_error": null,
+    "scenario_topic_records": {
+      "drone-video": 20,
+      "satellite-imagery": 14,
+      "social-posts": 6,
+      "ai-analysis-results": 18,
+      "infrastructure-telemetry": 12,
+      "satellite-change-results": 2
+    }
+  },
+  "yolo_training_metrics": {
+    "precision": 0.36917,
+    "recall": 0.28202,
+    "map50": 0.25171,
+    "map50_95": 0.10874
+  }
+}

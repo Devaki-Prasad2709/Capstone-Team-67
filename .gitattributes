@@ -1,4 +1,13 @@
+* text=auto eol=lf
+
 *.pt binary
+*.pth binary
 *.png binary
 *.jpg binary
 *.jpeg binary
+*.tif binary
+*.tiff binary
+
+# These frozen artifacts were registered byte-for-byte with CRLF endings.
+ai/computer_vision/artifacts/drone_detector/results.csv text eol=crlf
+scenarios/louisiana_east_flood/gis/infrastructure.geojson text eol=crlf

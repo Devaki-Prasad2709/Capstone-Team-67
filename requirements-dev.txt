@@ -1,0 +1,4 @@
+# Complete application environment plus the regression test runner.
+-r requirements-ai.txt
+
+pytest==8.3.5
