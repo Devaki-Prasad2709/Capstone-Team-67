@@ -28,6 +28,7 @@ only depend on the GeoLocator interface, not on any specific implementation.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import math
 
 
 @dataclass
@@ -102,3 +103,32 @@ class ManualOverrideGeoLocator(GeoLocator):
             latitude=drone_telemetry["override_lat"],
             longitude=drone_telemetry["override_lon"],
         )
+
+
+class ScenarioAssignedGeoLocator(GeoLocator):
+    """Carry explicitly simulated scenario GPS into an observation.
+
+    This does not perform pixel projection and must never be presented as real
+    drone telemetry. It accepts only the provenance marker emitted by the
+    frozen scenario producer/YOLO contract.
+    """
+
+    def locate(self, detection: Detection, drone_telemetry: dict = None) -> GeolocatedDetection:
+        if not drone_telemetry or drone_telemetry.get("gps_provenance") != "simulated-scenario-assignment":
+            raise ValueError("Scenario GPS requires simulated-scenario-assignment provenance")
+        gps = drone_telemetry.get("gps")
+        if not isinstance(gps, dict):
+            raise ValueError("Scenario GPS must be an object")
+        latitude, longitude = gps.get("latitude"), gps.get("longitude")
+        if (
+            isinstance(latitude, bool)
+            or isinstance(longitude, bool)
+            or not isinstance(latitude, (int, float))
+            or not isinstance(longitude, (int, float))
+            or not math.isfinite(latitude)
+            or not math.isfinite(longitude)
+        ):
+            raise ValueError("Scenario GPS requires numeric latitude and longitude")
+        if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+            raise ValueError("Scenario GPS is outside WGS84 bounds")
+        return GeolocatedDetection(detection, float(latitude), float(longitude))

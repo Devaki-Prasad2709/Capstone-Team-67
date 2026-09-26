@@ -8,9 +8,8 @@ Implements the deterministic bridge between visual evidence and the graph
         -> one-time association
         -> building_id -> nearby/serving infrastructure
 
-    Runtime: geolocated detection -> point-in-polygon -> building_id
-             -> lookup -> infrastructure node(s)
-             (no match -> nearest road node within a distance threshold)
+    Runtime: geolocated detection -> point-in-polygon -> building GIS/node ID
+             (no building match -> nearest road GIS/node ID within a threshold)
 
 NOTE ON SIMPLIFICATION: "nearest by network distance" (the ideal, per the
 architecture doc) requires a routable road graph, which doesn't exist yet
@@ -22,6 +21,7 @@ distance. This is a disclosed simplification, not a silent one -- swap
 """
 
 from dataclasses import dataclass
+import math
 from typing import Optional
 
 from shapely.geometry import Point
@@ -112,13 +112,15 @@ class SpatialIndex:
     def __init__(self, gis_data: GISData, building_lookup: dict, id_map: dict):
         self.gis_data = gis_data
         self.building_lookup = building_lookup
+        self.id_map = dict(id_map)
 
         self._building_geoms = [b.geometry for b in gis_data.buildings]
         self._building_ids = [b.id for b in gis_data.buildings]
+        self._building_node_ids = [id_map[b.id] for b in gis_data.buildings]
         self._building_tree = STRtree(self._building_geoms) if self._building_geoms else None
 
         self._road_candidates = [
-            (id_map[r.id], r.geometry)
+            (r.id, id_map[r.id], r.geometry)
             for r in gis_data.road_segments
             if r.id in id_map
         ]
@@ -127,28 +129,76 @@ class SpatialIndex:
         """
         Returns a dict describing what this detection should be attached to:
             {"building_id": ..., "node_id": ...}
-        `node_id` is the specific infrastructure node the observation should
-        be logged against. `building_id` is None if the point fell outside
-        every building footprint (open ground / mid-road debris case).
+        Both the stable GIS source ID and integer graph node ID are returned.
+        `building_id` is None if the point fell outside every building
+        footprint (open ground / mid-road debris case).
         """
+        if (
+            isinstance(working_x, bool)
+            or isinstance(working_y, bool)
+            or not isinstance(working_x, (int, float))
+            or not isinstance(working_y, (int, float))
+            or not math.isfinite(working_x)
+            or not math.isfinite(working_y)
+        ):
+            raise ValueError("Association coordinates must be finite projected numbers")
         point = Point(working_x, working_y)
 
         if self._building_tree is not None:
             candidate_idxs = self._building_tree.query(point)
-            for idx in candidate_idxs:
-                geom = self._building_geoms[idx]
-                if geom.contains(point):
-                    bid = self._building_ids[idx]
-                    assoc = self.building_lookup[bid]
-                    # A building's damage evidence is primarily attached to
-                    # its nearest road (access-relevant) by default; other
-                    # associated nodes remain available on the assoc object
-                    # for callers that need power/water/hospital association too.
-                    return {"building_id": bid, "node_id": assoc.nearest_road}
+            matches = [
+                int(idx) for idx in candidate_idxs
+                if self._building_geoms[int(idx)].covers(point)
+            ]
+            if matches:
+                # Choose the most specific footprint; GIS source ID breaks
+                # equal-area ties deterministically across STRtree versions.
+                idx = min(
+                    matches,
+                    key=lambda item: (
+                        self._building_geoms[item].area,
+                        self._building_ids[item],
+                    ),
+                )
+                source_id = self._building_ids[idx]
+                node_id = self._building_node_ids[idx]
+                return {
+                    "association_kind": "building",
+                    "gis_source_id": source_id,
+                    "graph_node_id": node_id,
+                    "building_id": source_id,
+                    "node_id": node_id,
+                    "distance_m": 0.0,
+                    "candidate_count": len(matches),
+                }
 
         # No building match -> nearest road fallback, within threshold
-        nearest_road_id, dist = _nearest(point, self._road_candidates)
-        if nearest_road_id is not None and dist <= NEAREST_ROAD_FALLBACK_RADIUS_M:
-            return {"building_id": None, "node_id": nearest_road_id}
+        roads = sorted(
+            (
+                (float(point.distance(geometry)), source_id, node_id)
+                for source_id, node_id, geometry in self._road_candidates
+            ),
+            key=lambda item: (item[0], item[1]),
+        )
+        if roads and roads[0][0] <= NEAREST_ROAD_FALLBACK_RADIUS_M:
+            distance, source_id, node_id = roads[0]
+            nearest_count = sum(math.isclose(item[0], distance, abs_tol=1e-9) for item in roads)
+            return {
+                "association_kind": "road",
+                "gis_source_id": source_id,
+                "graph_node_id": node_id,
+                "building_id": None,
+                "node_id": node_id,
+                "distance_m": distance,
+                "candidate_count": nearest_count,
+            }
 
-        return {"building_id": None, "node_id": None}
+        return {
+            "association_kind": None,
+            "gis_source_id": None,
+            "graph_node_id": None,
+            "building_id": None,
+            "node_id": None,
+            "distance_m": None,
+            "candidate_count": 0,
+        }

@@ -97,8 +97,8 @@
       "input": {"kind": "responder_decision", "source": "responder-decisions", "reference": "decision-001 confirms social-001"},
       "target": {"kind": "alert", "ids": ["social-001"]},
       "expected_graph_effect": {
-        "mutation": "none",
-        "assertions": ["AlertStore review state remains dashboard-only", "confirmation does not enter TGNN features"]
+        "mutation": "confirmed_social_observation",
+        "assertions": ["create one auditable GIS/node-linked human-evidence observation", "do not mutate structural damage or enter TGNN features"]
       },
       "expected_dashboard_effect": {
         "view": "confirmed_hotspots",
@@ -183,11 +183,11 @@
       "target": {"kind": "gis_node", "ids": ["osm-way-791288888"]},
       "expected_graph_effect": {
         "mutation": "create_recovery_snapshot",
-        "assertions": ["reduce Estuary Road load from 0.72 to 0.44", "retain prior structural damage under the non-self-healing maximum-damage rule", "recalculate stress without changing topology"]
+        "assertions": ["reduce Estuary Road load from 0.72 to 0.44", "apply explicit recovery damage reduction from 0.35 to 0.15", "recalculate effective capacity, stress, and status without changing topology"]
       },
       "expected_dashboard_effect": {
         "view": "recovery_state",
-        "assertions": ["show lower road load and refreshed stress", "show recovery evidence at 12:05:00", "do not display structural damage as repaired"]
+        "assertions": ["show lower road load, damage, and stress", "show recovery evidence at 12:05:00", "identify the update as simulated recovery telemetry"]
       }
     },
     {

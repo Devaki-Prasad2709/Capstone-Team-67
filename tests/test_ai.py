@@ -88,6 +88,45 @@ class AIContractTests(unittest.TestCase):
         self.assertEqual(output["damage_classes"], ["damage_class_2"])
         self.assertEqual(output["max_confidence"], 0.8)
 
+    def test_scenario_context_is_attached_to_every_live_detection(self) -> None:
+        source = {
+            "frame_id": "5_9240.jpg",
+            "asset_id": "drone-slight-001",
+            "source": "drone",
+            "timestamp": 1790251260.0,
+            "transfer_mode": "object_storage",
+            "object_key": "drone/aa/image.jpg",
+            "image_uri": "s3://disaster-images/drone/aa/image.jpg",
+            "content_hash": "a" * 64,
+            "scenario_id": "louisiana-east-flood-v1",
+            "scenario_event_id": "drone-001",
+            "scenario_timestamp": "2026-09-24T12:01:00Z",
+            "gps": {"longitude": -90.08068, "latitude": 29.76281},
+            "target_id": "osm-way-791288888",
+            "input_origin": "hybrid-real-image-simulated-context",
+            "simulation_fields": ["scenario_timestamp", "gps", "target_id"],
+        }
+        output = result_event(
+            source,
+            "analyzed",
+            [{"class_id": 0, "class_name": "Slight", "confidence": 0.81, "bbox": [1, 2, 3, 4]}],
+            model_checkpoint_sha256="b" * 64,
+        )
+        detection = output["detections"][0]
+        self.assertEqual(detection["image_reference"]["object_key"], source["object_key"])
+        self.assertEqual(detection["scenario_timestamp"], source["scenario_timestamp"])
+        self.assertEqual(detection["gps"], source["gps"])
+        self.assertEqual(detection["gps_provenance"], "simulated-scenario-assignment")
+        self.assertEqual(
+            detection["target_association"],
+            {
+                "declared_target_id": source["target_id"],
+                "provenance": "simulated-scenario-assignment",
+            },
+        )
+        self.assertEqual(output["inference_provenance"], "live-checkpoint-inference")
+        self.assertFalse(output["prerecorded_output"])
+
 
 class ArtifactIntegrityTests(unittest.TestCase):
     def test_preserved_model_and_metrics(self) -> None:

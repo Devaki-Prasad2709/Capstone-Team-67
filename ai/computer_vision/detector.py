@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -25,6 +26,7 @@ class DamageDetector:
                 "AI dependencies are missing. Run: pip install -r requirements-ai.txt"
             ) from exc
         self.model_path = model_path
+        self.checkpoint_sha256 = hashlib.sha256(model_path.read_bytes()).hexdigest()
         self.confidence = confidence
         self.image_size = image_size
         self.device = device or None

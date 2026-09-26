@@ -19,8 +19,8 @@ NEVER CLAIMS "TRAPPED PERSON CONFIRMED" -- output is always framed as a
 potential/priority signal with its resolution method disclosed, per the
 same labeling discipline used for the drone-based priority score.
 
-DOES NOT become a TGNN input -- like all NLP output, this is
-dashboard-only, per the locked architecture rule.
+The resolved node may become a graph-linked social observation only after a
+responder confirms it. It never becomes structural damage or a TGNN feature.
 """
 
 import re

@@ -45,7 +45,7 @@ target associations, and scenario timestamps are explicitly simulated.
 | 8 | 12:03:00 | Apply accumulated evidence to a new graph snapshot |
 | 9 | 12:03:30 | Recalculate TGNN risks and rank the top five |
 | 10 | 12:04:00 | Display the model-derived spatial risk cluster |
-| 11 | 12:05:00 | Apply recovery load telemetry without erasing damage |
+| 11 | 12:05:00 | Apply explicit recovery telemetry, reducing measured load and damage |
 | 12 | 12:05:30 | Recalculate risk and display deltas |
 
 Step 10 is deliberately described as a spatial risk pattern, not a confirmed

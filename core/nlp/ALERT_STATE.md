@@ -1,60 +1,54 @@
-# Responder review contract
+# Social/NLP responder-review workflow
 
-`AlertStore(graph)` snapshots node positions and `graph.graph["working_crs"]`.
-Use one store per GIS/graph context; integer node IDs are local to that context.
-The existing NLP resolver is unchanged. Nothing writes to G(t), ObservationLog,
-or TGNN. No new dependency or HTTP endpoint is introduced.
+The social workflow consumes the normal `social-posts` contract, validates its
+optional WGS84 GPS, resolves text against the active GIS graph, and records this
+explicit lifecycle:
 
-```python
-from core.nlp.alert_state import AlertStore
-
-store = AlertStore(graph)
-store.create_alert("alert-1", resolved_alert, source="social", source_id="post-123")
-store.approve_alert("alert-1", responder_id="authenticated-responder-id")
-# Alternatively, while still pending:
-# store.report_false("alert-1", responder_id="authenticated-responder-id")
-payload = store.dashboard_state()
+```text
+INCOMING -> PENDING_REVIEW -> CONFIRMED
+                           -> REPORTED_FALSE
 ```
 
-`create_alert` optionally accepts a caller-supplied `priority` string; no priority
-is inferred. Original resolver fields, source, source ID, timestamps and review
-history are retained. NLP confidence is heuristic evidence, never human certainty.
+`SocialAlertWorkflow.ingest_event()` records both the incoming and pending
+transitions. The two-step `AlertStore.receive_alert()` and
+`AlertStore.queue_for_review()` interface remains available when a caller needs
+to expose processing between those stages.
 
-Only `PENDING_REVIEW -> CONFIRMED` and `PENDING_REVIEW -> REPORTED_FALSE` are
-allowed. Every repeated or conflicting decision raises `InvalidTransition`.
-Unknown IDs raise `KeyError`; duplicate IDs and invalid inputs raise `ValueError`.
-Failed operations do not overwrite records. Approval of unresolved/absent nodes
-is rejected and leaves the report pending; reporting false remains possible.
+## State effects
 
-`dashboard_state()` returns JSON-ready data:
+| State | Confirmed hotspot | Graph-linked observation | Structural damage / TGNN |
+|---|---:|---:|---:|
+| Incoming | No | No | No |
+| Pending review | No | No | No |
+| Confirmed | Orange point | Yes | No |
+| Reported false | No | No | No |
 
-- `pending_alerts`: list of review records for the two responder buttons.
-- `confirmed_hotspots`: WGS84 GeoJSON Point FeatureCollection, confirmed only.
-- `reported_false_alerts`: original reports and rejection history.
+A confirmed graph observation records the source report, responder, review
+timestamp, exact GIS source ID, and integer graph node ID. It is a human-evidence
+layer, not a physical damage assertion. Rejected reports retain their original
+event, NLP result, responder decision, and full transition history.
 
-`get_alert(id)` and `list_alerts(status=None)` expose copies for audit/history.
-Hotspot properties contain `hotspot_id`, `alert_id`, `node_id`, `status`,
-`category`, optional `priority`, `original_text`, `nlp_confidence`, `source`,
-`source_id`, `responder_confirmation`, full `report`, and `history`. Point
-coordinates are longitude/latitude of the resolved graph node, not an asserted
-exact incident GPS. Conversion occurs only in `confirmed_hotspots()` using the
-captured working CRS and the existing GIS conversion helper.
+## Duplicates and contradictions
 
-A confirmed hotspot means **a responder confirmed the reported incident**. It is
-not a collapse prediction. Render this separately from TGNN and satellite layers.
+- Replaying the same source ID and content returns an explicit `duplicate`
+  outcome without creating another alert.
+- Identical evidence under another ID points to the first canonical alert.
+- Reusing a source ID for different evidence raises `ContradictoryReport` and
+  leaves the accepted record unchanged.
+- Repeating a terminal decision or trying to replace confirmation with rejection
+  raises `InvalidTransition` and leaves the audit record unchanged.
 
-This is an in-memory component with a lock for atomic review actions in one
-process. History is lost on restart. The integrating service must supply durable
-storage, authenticated/authorized responder identity and cross-process concurrency
-control if needed. No frontend buttons or authentication are implemented here.
+## Dashboard API
 
-Validation from the repository root (PowerShell):
+- `GET /api/social/alerts` reads the bounded Kafka tail, ingests unseen offsets,
+  and returns all review queues, hotspots, graph observations, and audit records.
+- `POST /api/social/alerts/{alert_id}/confirm`
+- `POST /api/social/alerts/{alert_id}/reject`
 
-```powershell
-$env:SPACENET8_TEST_ROOT = 'E:\Capstone-Team-67\datasets\Satellite\spacenet8\Spacenet8_Louisiana-East_Trainingtar'
-& 'D:\CAPSTONE\.venv\Scripts\python.exe' -m unittest tests.test_nlp_alert_state tests.test_gis_crs tests.test_gis_graph_builder -v
-& 'D:\CAPSTONE\.venv\Scripts\python.exe' -m core.nlp.landmark_alert_resolver
-git diff --check
-```
+Decision bodies use `{"responder_id": "..."}`. The dashboard Social alerts view
+provides both actions and plots confirmed reports as orange markers.
 
-The real-data smoke test is skipped when `SPACENET8_TEST_ROOT` is unset.
+State is currently held in the dashboard process. It survives repeated Kafka
+tail reads through partition/offset tracking, but restarting the dashboard clears
+review decisions. Production deployment should replace this adapter with durable
+storage and authenticated responder identity.

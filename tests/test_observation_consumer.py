@@ -14,6 +14,7 @@ from consumers import observation_consumer as adapter
 from core.observation.geolocator import NullGeoLocator
 
 FIXTURE = "core/gis/fixtures/demo_gis.geojson"
+SCENARIO_GIS = "scenarios/louisiana_east_flood/gis/infrastructure.geojson"
 TEST_LOCATION = (12.7106, 77.6949)
 
 
@@ -108,6 +109,53 @@ class ObservationConsumerTests(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             adapter.process_message(self.payload(), state)
         self.assertEqual(state.observation_log.all_observed_node_ids(), [])
+
+    def test_explicit_simulated_scenario_gps_creates_provenanced_observation(self):
+        with redirect_stdout(io.StringIO()):
+            state = adapter.initialize_state(
+                SCENARIO_GIS, allow_scenario_simulated_gps=True
+            )
+        event = result_event(
+            {
+                "frame_id": "5_9240.jpg",
+                "source": "drone",
+                "timestamp": 1790251260.0,
+                "scenario_id": "louisiana-east-flood-v1",
+                "scenario_timestamp": "2026-09-24T12:01:00Z",
+                "transfer_mode": "object_storage",
+                "object_key": "drone/aa/5_9240.jpg",
+                "content_hash": "a" * 64,
+                "gps": {"longitude": -90.08068050532742, "latitude": 29.76281341403139},
+                "target_id": "osm-way-791288888",
+                "simulation_fields": ["scenario_timestamp", "gps", "target_id"],
+            },
+            "analyzed",
+            [{"class_id": 0, "class_name": "Slight", "confidence": 0.8, "bbox": [1, 2, 3, 4]}],
+            model_checkpoint_sha256="b" * 64,
+        )
+        result = adapter.process_message(self.payload(event), state)
+        self.assertEqual(result.detections_ingested, 1)
+        record = state.observation_log.observations_for_node(result.touched_node_ids[0])[0]
+        self.assertEqual(record.image_reference["object_key"], "drone/aa/5_9240.jpg")
+        self.assertEqual(record.scenario_timestamp, "2026-09-24T12:01:00Z")
+        self.assertEqual(record.location_provenance, "simulated-scenario-assignment")
+        self.assertEqual(record.declared_target_id, "osm-way-791288888")
+        self.assertEqual(record.target_association_provenance, "simulated-scenario-assignment")
+
+    def test_scenario_gps_requires_explicit_opt_in(self):
+        event = result_event(
+            {
+                "frame_id": "scenario.jpg", "source": "drone", "timestamp": time.time(),
+                "scenario_id": "scenario", "scenario_timestamp": "2026-01-01T00:00:00Z",
+                "gps": {"longitude": 77.69, "latitude": 12.71}, "target_id": "road",
+                "simulation_fields": ["scenario_timestamp", "gps", "target_id"],
+            },
+            "analyzed",
+            [{"class_id": 0, "class_name": "Slight", "confidence": 0.8, "bbox": [1, 2, 3, 4]}],
+            model_checkpoint_sha256="b" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "disabled"):
+            adapter.process_message(self.payload(event), self.state)
 
     def test_invalid_configuration(self):
         for path in ["", "core/gis/fixtures"]:

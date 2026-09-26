@@ -22,6 +22,11 @@ provenance.
 ### Data ingestion
 
 - CrisisMMD social records replayed as a live `social-posts` stream.
+- Responder-reviewed social alerts with explicit incoming, pending, confirmed,
+  and reported-false states; only confirmed reports create orange, node-linked
+  human-evidence hotspots.
+- Immutable temporal graph snapshots with freshness, explicit recovery,
+  dependency-cascade propagation, and field-level before/after explanations.
 - ISBDA drone JPG frames replayed through `drone-video`.
 - xBD satellite TIFF images converted to JPEG and published through
   `satellite-imagery`.
@@ -76,6 +81,8 @@ provenance.
 - Legacy YOLOv8 `last.pt`, CSV, and plots retained as historical training
   evidence but not used by the worker.
 - Kafka/MinIO worker: `drone-video` -> inference -> `ai-analysis-results`.
+- Per-detection image reference, scenario timestamp, simulated-GPS provenance,
+  declared target association, and serving-checkpoint SHA-256.
 - Serving-checkpoint metrics and training arguments, plus clearly labeled
   legacy plots and validation evidence.
 - Portable inference, training, and evaluation commands with no drive-letter
@@ -296,6 +303,14 @@ Selective consumer:
 
 ```powershell
 python -m consumer.interactive_consumer
+```
+
+Scenario detection observations (run before replaying drone events):
+
+```powershell
+python -m consumers.observation_consumer `
+  --gis-path scenarios\louisiana_east_flood\gis\infrastructure.geojson `
+  --allow-scenario-simulated-gps
 ```
 
 ## Outputs and local services
@@ -880,6 +895,10 @@ For production:
 - use embeddings only after inexpensive SHA-256 and pHash checks.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the complete data flow and Layer 4 extension points.
+The live drone/YOLO completion evidence is recorded in
+[docs/DRONE_YOLO_VALIDATION.md](docs/DRONE_YOLO_VALIDATION.md).
+Geolocation and exact graph-node traceability are recorded in
+[docs/GEOLOCATION_GIS_VALIDATION.md](docs/GEOLOCATION_GIS_VALIDATION.md).
 
 For repository handoff, see [create a branch and push](docs/BRANCH_AND_PUSH.md)
 and the [integration validation report](docs/VALIDATION_REPORT.md).

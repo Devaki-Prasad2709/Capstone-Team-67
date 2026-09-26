@@ -62,12 +62,21 @@ class ObservationRecord:
 
     building_id: Optional[str]
     node_id: Optional[int]      # None if it couldn't be associated to any node
+    image_reference: Optional[dict] = None
+    scenario_timestamp: Optional[str] = None
+    location_provenance: Optional[str] = None
+    declared_target_id: Optional[str] = None
+    target_association_provenance: Optional[str] = None
+    matched_gis_source_id: Optional[str] = None
+    association_kind: Optional[str] = None
+    association_distance_m: Optional[float] = None
+    source_content_hash: Optional[str] = None
 
 
 class ObservationLog:
     """
-    Append-only log, indexed by node_id for fast per-node aggregation.
-    In-memory for now (a dict of lists) -- swap the storage backend
+    Idempotent append-only log, indexed by observation_id and node_id.
+    Replays of an existing observation_id are ignored. In-memory for now -- swap the storage backend
     (e.g. a real DB/table) without changing the aggregation logic below,
     since `add()` and `aggregate_damage()` are the only two methods the
     rest of the pipeline calls.
@@ -76,17 +85,38 @@ class ObservationLog:
     def __init__(self):
         self._by_node: dict[int, list[ObservationRecord]] = {}
         self._all: list[ObservationRecord] = []
+        self._by_id: dict[str, ObservationRecord] = {}
 
     def add(self, record: ObservationRecord):
+        """Append once; return False for an already-seen observation ID."""
+        if record.observation_id in self._by_id:
+            return False
+        self._by_id[record.observation_id] = record
         self._all.append(record)
         if record.node_id is not None:
             self._by_node.setdefault(record.node_id, []).append(record)
+        return True
+
+    def get(self, observation_id: str) -> Optional[ObservationRecord]:
+        return self._by_id.get(observation_id)
+
+    def __len__(self) -> int:
+        return len(self._all)
 
     def observations_for_node(self, node_id: int) -> list:
         return list(self._by_node.get(node_id, []))
 
     def all_observed_node_ids(self) -> list:
         return list(self._by_node.keys())
+
+    def latest_timestamp(self, node_id: int, *, at_or_before: float | None = None):
+        """Newest accepted observation time, optionally excluding future data."""
+        timestamps = [
+            record.timestamp
+            for record in self._by_node.get(node_id, [])
+            if at_or_before is None or record.timestamp <= at_or_before
+        ]
+        return max(timestamps) if timestamps else None
 
     def aggregate_damage(self, node_id: int, now: float = None, tau: float = DEFAULT_DECAY_TAU_SECONDS) -> float:
         """

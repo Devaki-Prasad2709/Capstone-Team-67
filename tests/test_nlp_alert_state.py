@@ -28,6 +28,16 @@ class AlertStateTests(unittest.TestCase):
         self.assertEqual(dict(self.graph.nodes(data=True)), dict(self.before.nodes(data=True)))
         self.assertEqual(dict(self.graph.edges), dict(self.before.edges))
 
+    def test_explicit_incoming_state_has_no_confirmed_effects(self):
+        alert = self.store.receive_alert(
+            "incoming", self.resolved, source="social", source_id="post-incoming"
+        )
+        self.assertEqual(alert["status"], "INCOMING")
+        self.assertEqual(self.store.confirmed_hotspots()["features"], [])
+        self.assertEqual(self.store.graph_observations(), [])
+        pending = self.store.queue_for_review("incoming")
+        self.assertEqual(pending["status"], "PENDING_REVIEW")
+
     def test_pending_then_confirmed_hotspot(self):
         alert = self.create()
         self.assertEqual(alert["status"], "PENDING_REVIEW")
@@ -36,11 +46,13 @@ class AlertStateTests(unittest.TestCase):
         self.assertEqual(approved["status"], "CONFIRMED")
         feature = self.store.confirmed_hotspots()["features"][0]
         props = feature["properties"]
+        self.assertEqual(props["marker_color"], "orange")
         self.assertEqual(props["nlp_confidence"], self.resolved.confidence)
         self.assertTrue(props["responder_confirmation"]["confirmed"])
         self.assertEqual(props["source_id"], "post-1")
         self.assertEqual(props["original_text"], self.resolved.raw_text)
-        self.assertEqual(len(props["history"]), 2)
+        self.assertEqual(len(props["history"]), 3)
+        self.assertEqual(len(self.store.graph_observations()), 1)
         lon, lat = feature["geometry"]["coordinates"]
         x, y = wgs84_to_working(lon, lat, self.graph.graph["working_crs"])
         px, py = self.graph.nodes[self.resolved.node_id]["pos"]
@@ -56,6 +68,7 @@ class AlertStateTests(unittest.TestCase):
         self.assertEqual(len(state["reported_false_alerts"]), 1)
         self.assertEqual(state["pending_alerts"], [])
         self.assertEqual(state["confirmed_hotspots"]["features"], [])
+        self.assertEqual(state["graph_observations"], [])
         self.assertEqual(alert["report"], dict(self.resolved))
 
     def test_terminal_transitions_and_duplicates_rejected(self):

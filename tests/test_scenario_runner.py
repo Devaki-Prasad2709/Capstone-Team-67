@@ -194,7 +194,7 @@ def test_dispatcher_routes_only_real_input_interfaces():
     assert len(sent) == 8
 
 
-def test_telemetry_adapter_preserves_topology_and_damage_during_recovery():
+def test_telemetry_adapter_preserves_topology_and_applies_explicit_recovery():
     graph = nx.Graph()
     graph.add_node(0, load=0.1, capacity=1.0, damage=0.0)
     graph.add_node(1, load=0.2, capacity=1.0, damage=0.0)
@@ -203,12 +203,14 @@ def test_telemetry_adapter_preserves_topology_and_damage_during_recovery():
     degraded = apply_telemetry_event(graph, id_map, {
         "id": "telemetry-001", "timestamp": 1.0, "target_id": "road",
         "load": 0.72, "capacity": 0.8, "damage": 0.35,
+        "event_type": "road_degradation",
     })
     recovered = apply_telemetry_event(degraded, id_map, {
         "id": "telemetry-002", "timestamp": 2.0, "target_id": "road",
         "load": 0.44, "capacity": 0.8, "damage": 0.15,
+        "event_type": "road_recovery",
     })
     assert set(recovered.edges) == set(graph.edges)
     assert recovered.nodes[0]["load"] == 0.44
-    assert recovered.nodes[0]["damage"] == 0.35
+    assert recovered.nodes[0]["damage"] == 0.15
     assert graph.nodes[0]["damage"] == 0.0

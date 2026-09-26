@@ -38,6 +38,20 @@ drone-video -> AI worker -> ai-analysis-results -> Spark -> storage/processed/ai
 Results have one of four statuses: `analyzed`, `filtered`,
 `duplicate_skipped`, or `error`.
 
+For scenario events, every live detection retains its image/object reference,
+class, confidence, bounding box, scenario timestamp, explicitly simulated GPS,
+and declared GIS target. The result also records the SHA-256 identity of the
+checkpoint loaded by the worker, `live-checkpoint-inference`, and
+`prerecorded_output=false`. The observation consumer rejects scenario results
+that omit those provenance fields and accepts simulated coordinates only with
+the explicit `--allow-scenario-simulated-gps` switch.
+
+```powershell
+python -m consumers.observation_consumer `
+  --gis-path scenarios\louisiana_east_flood\gis\infrastructure.geojson `
+  --allow-scenario-simulated-gps
+```
+
 ## Redistribution note
 
 No `LICENSE` file was present in the upstream repository at the reviewed

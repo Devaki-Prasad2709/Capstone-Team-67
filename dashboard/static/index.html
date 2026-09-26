@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/ai.css">
   <link rel="stylesheet" href="/satellite.css">
+  <link rel="stylesheet" href="/social.css">
 </head>
 <body>
   <div class="shell">
@@ -18,6 +19,7 @@
         <button class="nav" data-view="spark"><span>⌁</span> Spark output</button>
         <button class="nav" data-view="ai"><span>AI</span> Damage analysis</button>
         <button class="nav" data-view="satellite-change"><span>Δ</span> Satellite change</button>
+        <button class="nav" data-view="social-alerts"><span>!</span> Social alerts</button>
         <button class="nav" data-view="media"><span>▧</span> Image storage</button>
         <button class="nav" data-view="logs"><span>≡</span> Live logs</button>
       </nav>
@@ -82,7 +84,7 @@
           <article class="metric blue"><span>mAP@50</span><strong id="metricMap50">—</strong><small>Preserved epoch 50</small></article>
           <article class="metric violet"><span>mAP@50–95</span><strong id="metricMap95">—</strong><small>Preserved epoch 50</small></article>
         </div>
-        <div class="ai-flow panel ai-live-flow"><div><span>01</span><strong>Drone event</strong><small>Kafka + MinIO reference</small></div><b>→</b><div><span>02</span><strong>Preprocess</strong><small>Motion, blur, pHash</small></div><b>→</b><div><span>03</span><strong>YOLOv8 Nano</strong><small>3 damage classes</small></div><b>→</b><div class="accent"><span>04</span><strong>AI result</strong><small>Kafka + Spark Parquet</small></div></div>
+        <div class="ai-flow panel ai-live-flow"><div><span>01</span><strong>Drone event</strong><small>Kafka + MinIO reference</small></div><b>→</b><div><span>02</span><strong>Preprocess</strong><small>Motion, blur, pHash</small></div><b>→</b><div><span>03</span><strong>YOLO26s</strong><small>3 damage classes</small></div><b>→</b><div class="accent"><span>04</span><strong>AI result</strong><small>Kafka + Spark Parquet</small></div></div>
         <div id="aiAlert" class="callout warning hidden"></div>
         <article class="panel table-panel"><div class="panel-head"><div><p class="eyebrow">LIVE INFERENCE</p><h3>Latest AI results</h3></div><span id="aiResultTotal" class="badge">0 results</span></div><div class="table-wrap"><table><thead id="aiHead"></thead><tbody id="aiBody"></tbody></table><div id="aiEmpty" class="empty">No AI results yet. Start AI, then publish drone frames.</div></div></article>
       </section>
@@ -103,6 +105,22 @@
             <article class="panel"><div class="panel-head"><div><p class="eyebrow">CHANGE GRID</p><h3 id="satelliteTileTitle">Tile</h3></div><span class="badge">Broad area only</span></div><div id="changeGrid" class="change-grid"></div><div class="change-legend"><span><i class="low"></i>Low</span><span><i class="moderate"></i>Moderate</span><span><i class="severe"></i>Severe</span><span><i class="unknown"></i>Insufficient coverage</span></div><p id="satelliteFootprint" class="footprint"></p><p class="interpretation">This layer is uncalibrated radiometric change evidence. It is not a destruction probability and is not passed into TGNN node features.</p></article>
           </div>
         </div>
+      </section>
+
+      <section class="view" id="social-alerts">
+        <div class="section-heading"><div><p class="eyebrow">RESPONDER REVIEW</p><h3>Social and NLP alerts</h3></div><span class="badge">Incoming → pending → confirmed / rejected</span></div>
+        <div id="socialAlertError" class="callout warning hidden"></div>
+        <div class="metric-grid">
+          <article class="metric blue"><span>Incoming</span><strong id="alertIncoming">0</strong><small>Being resolved</small></article>
+          <article class="metric violet"><span>Pending</span><strong id="alertPending">0</strong><small>Needs responder review</small></article>
+          <article class="metric orange"><span>Confirmed</span><strong id="alertConfirmed">0</strong><small>Orange map hotspots</small></article>
+          <article class="metric teal"><span>Rejected</span><strong id="alertRejected">0</strong><small>Retained for audit</small></article>
+        </div>
+        <div class="social-alert-layout">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">REVIEW QUEUE</p><h3>Pending reports</h3></div><span id="pendingAlertTotal" class="badge">0 pending</span></div><div id="pendingAlertRows" class="alert-review-list"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">CONFIRMED EVIDENCE</p><h3>Human-confirmed hotspots</h3></div><span class="hotspot-key"><i></i> Confirmed social report</span></div><div id="socialHotspotMap" class="hotspot-map"><div class="map-grid"></div><p>Confirm a resolved report to place an orange hotspot.</p></div><div id="graphObservationRows" class="graph-observation-list"></div></article>
+        </div>
+        <article class="panel audit-panel"><div class="panel-head"><div><p class="eyebrow">AUDIT TRAIL</p><h3>Rejected and duplicate reports</h3></div></div><div id="socialAuditRows" class="alert-audit-list"></div></article>
       </section>
 
       <section class="view" id="media">

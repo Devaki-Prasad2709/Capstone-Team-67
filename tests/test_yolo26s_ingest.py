@@ -73,6 +73,10 @@ class YOLO26sIngestTests(unittest.TestCase):
         self.assertIsNotNone(image, f"Could not decode integration image: {image_path}")
 
         detector = DamageDetector(MODEL, device=settings.ai_device or "cpu")
+        self.assertEqual(
+            detector.checkpoint_sha256,
+            "780241f6b42f9f0b0d83a8be8d3168e1ca864a756ff93907e72bbb7f9fe3cbf9",
+        )
         detections = detector.predict([image])[0]
         self.assertGreater(len(detections), 0, f"No detections for integration image: {image_path}")
         self.assertTrue(

@@ -47,7 +47,9 @@ without changes here.
 
 
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+import math
 
 from typing import Optional, Callable
 
@@ -201,6 +203,10 @@ class IngestResult:
 
     touched_node_ids: list
 
+    detections_duplicate: int = 0
+
+    accepted_observation_ids: list = field(default_factory=list)
+
 
 
 
@@ -313,6 +319,10 @@ def ingest_ai_analysis_result(
 
     skipped = 0
 
+    duplicates = 0
+
+    accepted_ids = []
+
 
 
     if event.get("status") != "analyzed":
@@ -333,6 +343,10 @@ def ingest_ai_analysis_result(
 
             touched_node_ids=[],
 
+            detections_duplicate=0,
+
+            accepted_observation_ids=[],
+
         )
 
 
@@ -344,6 +358,18 @@ def ingest_ai_analysis_result(
 
 
         geo = geolocator.locate(detection, drone_telemetry=drone_telemetry)
+
+        if (
+            isinstance(geo.latitude, bool)
+            or isinstance(geo.longitude, bool)
+            or not isinstance(geo.latitude, (int, float))
+            or not isinstance(geo.longitude, (int, float))
+            or not math.isfinite(geo.latitude)
+            or not math.isfinite(geo.longitude)
+            or not -90 <= geo.latitude <= 90
+            or not -180 <= geo.longitude <= 180
+        ):
+            raise ValueError("Detection GPS must be finite WGS84 latitude/longitude")
 
 
 
@@ -381,9 +407,10 @@ def ingest_ai_analysis_result(
 
 
 
+        observation_key = event.get("content_hash") or detection.frame_id
         record = ObservationRecord(
 
-            observation_id=f"{detection.frame_id}_{i}",
+            observation_id=f"{observation_key}_{i}",
 
             timestamp=ts_epoch,
 
@@ -413,11 +440,35 @@ def ingest_ai_analysis_result(
 
             node_id=resolved["node_id"],
 
+            image_reference=entry.get("image_reference"),
+
+            scenario_timestamp=entry.get("scenario_timestamp"),
+
+            location_provenance=entry.get("gps_provenance"),
+
+            declared_target_id=(entry.get("target_association") or {}).get("declared_target_id"),
+
+            target_association_provenance=(entry.get("target_association") or {}).get("provenance"),
+
+            matched_gis_source_id=resolved.get("gis_source_id"),
+
+            association_kind=resolved.get("association_kind"),
+
+            association_distance_m=resolved.get("distance_m"),
+
+            source_content_hash=event.get("content_hash"),
+
         )
 
-        obs_log.add(record)
+        if not obs_log.add(record):
+
+            duplicates += 1
+
+            continue
 
         touched.append(resolved["node_id"])
+
+        accepted_ids.append(record.observation_id)
 
         ingested += 1
 
@@ -434,6 +485,10 @@ def ingest_ai_analysis_result(
         detections_skipped_no_node=skipped,
 
         touched_node_ids=touched,
+
+        detections_duplicate=duplicates,
+
+        accepted_observation_ids=accepted_ids,
 
     )
 

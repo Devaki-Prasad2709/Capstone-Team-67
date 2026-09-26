@@ -82,6 +82,15 @@ def run(max_events: int | None = None) -> int:
         raise ConnectionError(f"Kafka unavailable at {settings.kafka_bootstrap_servers}") from exc
     storage: ObjectStorageClient | None = None
     processed = 0
+
+    def output_event(event, status, **kwargs):
+        return result_event(
+            event,
+            status,
+            model_checkpoint_sha256=detector.checkpoint_sha256,
+            **kwargs,
+        )
+
     try:
         for message in consumer:
             event = message.value
@@ -89,24 +98,24 @@ def run(max_events: int | None = None) -> int:
                 logger.warning("Skipping non-object event at offset %s", message.offset)
                 continue
             if event.get("is_duplicate"):
-                output = result_event(event, "duplicate_skipped", reason="producer_deduplication")
+                output = output_event(event, "duplicate_skipped", reason="producer_deduplication")
             else:
                 try:
                     if event.get("transfer_mode") == "object_storage" and storage is None:
                         storage = ObjectStorageClient()
                     prepared = pipeline.process_bytes(image_bytes(event, storage))
                     if not prepared.accepted:
-                        output = result_event(
+                        output = output_event(
                             event, "filtered", preprocessing=prepared.metadata, reason=prepared.reason
                         )
                     else:
                         detections = detector.predict([prepared.image])[0]
-                        output = result_event(
+                        output = output_event(
                             event, "analyzed", detections=detections, preprocessing=prepared.metadata
                         )
                 except Exception as exc:  # keep a bad frame from stopping the stream
                     logger.exception("AI processing failed for %s", event.get("frame_id"))
-                    output = result_event(event, "error", reason=str(exc))
+                    output = output_event(event, "error", reason=str(exc))
             if send_event(producer, RESULT_TOPIC, output, logger):
                 processed += 1
                 logger.info(

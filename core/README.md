@@ -11,11 +11,11 @@ declared through the repository requirements files.
 |---|---|
 | `gis/gis_loader.py` | Loads GeoJSON GIS data, reprojects WGS84 → working CRS (EPSG:32643). **Single entry point** for coordinate conversion. |
 | `gis/fixtures/demo_gis.geojson` | Clearly-labeled placeholder GIS data (small area near Bengaluru) — used only until your real GIS dataset (currently on USB) is available. Swap the file path in `gis_loader.load_gis()`; nothing else changes if the real data follows the same `feature_class` convention. |
-| `gis/building_association.py` | One-time building→infrastructure lookup + runtime point-in-polygon/nearest-road resolver. This is what turns a geolocated detection into a `node_id`. |
+| `gis/building_association.py` | One-time building-to-infrastructure lookup plus runtime point-in-polygon/nearest-road resolution. This maps a geolocated detection to a stable GIS source ID and the corresponding graph node ID. |
 | `graphs/gis_graph_builder.py` | **Replaces** the random generator in your original `graph_builder.py`. Produces the exact same node/edge attribute contract, so `helpers.py`/`tgnn.py` need zero changes. |
 | `observation/geolocator.py` | Pixel→GPS interface. `NullGeoLocator` fails loudly (no fabricated GPS). `ManualOverrideGeoLocator` is test-only, used in the demo. |
 | `observation/observation_log.py` | Append-only observation store + decay-weighted, max-based damage aggregation. |
-| `observation/state_update.py` | Applies aggregated damage → `effective_capacity` → `stress` onto the graph, producing G(t) from G(t-1). |
+| `observation/state_update.py` | Produces immutable temporal snapshots with damage, effective capacity, utilization, stress, status, timestamp/freshness, dependency cascades, and explainable before/after diffs. |
 | `overlay/gis_overlay.py` | Graph → GeoJSON for the dashboard's `/api/overlay/nodes` contract. **Single exit point** for coordinate conversion (working CRS → WGS84). |
 | `integration/pyg_bridge.py` | Thin wrapper sequencing graph snapshots into the list your `TGNN.forward()` expects — calls your existing `nx_to_pyg`, unmodified. |
 | `integration/tgnn_predictor.py` | Loads the committed checkpoint, validates temporal node order, and maps prediction rows back to GIS node IDs. |
@@ -26,8 +26,8 @@ declared through the repository requirements files.
 
 Ran `pipeline_demo.py` successfully through:
 1. Loading the demo GIS fixture and building G(0) — **17 nodes, 157 edges** (146 spatial, 11 dependency)
-2. Building association — correctly resolved all 3 demo buildings to their nearest road/hospital
-3. Simulating 3 drone passes (Severe damage, 3 different confidences/timestamps) over one building — correctly resolved to the same road node each time
+2. Building association — correctly resolves detections inside a footprint to that building's own graph node; detections outside buildings fall back to the nearest road within 150 metres
+3. Simulating 3 drone passes (Severe damage, 3 different confidences/timestamps) over one building — correctly resolves to the same building node each time
 4. Applying observations — damage went `0.000 → 0.608`, stress `0.350 → 1.000` (capped), via the decay/max aggregation formula, exactly matching the worked example in the architecture doc
 5. Building the dashboard overlay — correct WGS84 round-trip (output coordinates matched the input fixture's coordinates to float precision)
 
@@ -35,7 +35,7 @@ Ran `pipeline_demo.py` successfully through:
 
 ## Known, disclosed simplifications (see comments in code for detail)
 
-- **Building/road nearest-neighbor uses straight-line distance**, not network distance (no routable road topology yet — the fixture's road segments aren't connected into a routing graph). Swap `building_association._nearest()` once real road topology with intersections exists.
+- **Road fallback and one-time infrastructure associations use straight-line distance**, not network distance (no routable road topology yet). Building footprint matches do not use this fallback.
 - **Dependency edge `weight` is a flat 1.0** — a real "fraction of demand served" value needs utility service-area data we don't have. Disclosed in `gis_graph_builder.py`.
 - **`load` stays at its GIS baseline** — no real-time load estimation yet. Disclosed in `state_update.py`.
 - **`DEFAULT_CAPACITY_BY_TYPE` values are placeholders** — replace with real engineering lookup tables (road class capacity, substation ratings, hospital bed counts) as they become available.

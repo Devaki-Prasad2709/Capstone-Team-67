@@ -1,70 +1,244 @@
+"""Immutable temporal graph-state updates and dependency propagation.
+
+Every adapter updates a deep-copied snapshot. Node state is derived through the
+same formulas here, and dependency edges (provider -> dependent, edge_type=1)
+reduce service availability without pretending that physical damage propagated.
 """
-state_update.py
 
-Applies the Observation Log's aggregated damage into the graph, producing
-G(t) from G(t-1). This is the exact "YOLO must contribute to the existing
-stress=load+damage TGNN ideology" mechanism, made concrete:
-
-    damage_observed(node)  [from Observation Log, decay-aggregated]
-            -> combined with baseline/prior damage via max()
-            -> effective_capacity = capacity * (1 - damage)^k
-            -> stress = clamp(load / effective_capacity, 0, 1)
-
-This mutates a copy of the graph in place (per node) and returns it as G(t).
-It does NOT touch topology (nodes/edges) -- only the four state features
-(damage, stress; load and capacity are also exposed for tuning but load
-is not currently observation-driven, see note below).
-
-DISCLOSED ASSUMPTION: `k` (the damage->capacity-loss exponent) is a tunable
-constant, not a measured quantity. k=1 means damage reduces capacity
-linearly; k>1 means partial damage disproportionately reduces functional
-capacity (e.g. a single blocked lane can close a two-lane road). Currently
-set to 1.5 as a middle-ground default -- revisit once you have any real
-before/after capacity data to calibrate against.
-
-NOTE ON `load`: real-time load estimation (e.g. from population/service-area
-data reacting to an evolving disaster) is out of scope for the current
-integration milestone. `load` stays at its GIS-baseline value from
-gis_graph_builder.py unless/until a load-estimation source is added. This
-is intentional, not an oversight -- flagged here so it isn't mistaken for
-a bug later.
-"""
+from __future__ import annotations
 
 import copy
+import math
+
 
 DAMAGE_CAPACITY_EXPONENT_K = 1.5
+MIN_EFFECTIVE_CAPACITY = 1e-6
+DEFAULT_STALE_AFTER_SECONDS = 30 * 60
+DEGRADED_STRESS_THRESHOLD = 0.75
+DEGRADED_DAMAGE_THRESHOLD = 0.30
+FAILED_DAMAGE_THRESHOLD = 0.95
+
+STATE_FIELDS = (
+    "damage",
+    "load",
+    "capacity",
+    "effective_capacity",
+    "utilization",
+    "stress",
+    "status",
+    "status_label",
+    "dependency_factor",
+    "state_timestamp",
+    "last_observation_timestamp",
+    "freshness_seconds",
+    "freshness_status",
+)
 
 
-def apply_observations(G, observation_log, now: float = None):
+def _valid_timestamp(value, field="timestamp") -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"{field} must be a finite epoch number")
+    return float(value)
+
+
+def _freshness(last_observation_timestamp, now, stale_after_seconds):
+    if last_observation_timestamp is None:
+        return None, "missing"
+    age = max(0.0, now - float(last_observation_timestamp))
+    return age, "stale" if age > stale_after_seconds else "current"
+
+
+def update_node_freshness(
+    node: dict,
+    now: float,
+    stale_after_seconds: float = DEFAULT_STALE_AFTER_SECONDS,
+) -> None:
+    age, freshness = _freshness(
+        node.get("last_observation_timestamp"), now, stale_after_seconds
+    )
+    node["freshness_seconds"] = age
+    node["freshness_status"] = freshness
+
+
+def recompute_node_state(node: dict, *, timestamp: float | None = None) -> None:
+    """Recalculate all derived state fields in place from primary node values."""
+    capacity = float(node["capacity"])
+    load = float(node["load"])
+    damage = float(node["damage"])
+    if capacity <= 0 or load < 0 or not 0 <= damage <= 1:
+        raise ValueError("Node capacity/load/damage are outside valid ranges")
+    dependency_factor = float(node.get("dependency_factor", 1.0))
+    dependency_factor = min(1.0, max(0.0, dependency_factor))
+    intrinsic = capacity * (1.0 - damage) ** DAMAGE_CAPACITY_EXPONENT_K
+    effective = max(intrinsic * dependency_factor, MIN_EFFECTIVE_CAPACITY)
+    utilization = load / capacity
+    stress = min(1.0, load / effective)
+
+    if (
+        damage >= FAILED_DAMAGE_THRESHOLD
+        or stress >= 1.0 - 1e-12
+        or dependency_factor <= 0.01
+    ):
+        status, status_label = 0, "failed"
+    elif (
+        damage >= DEGRADED_DAMAGE_THRESHOLD
+        or stress >= DEGRADED_STRESS_THRESHOLD
+        or dependency_factor < 1.0 - 1e-12
+    ):
+        status, status_label = 1, "degraded"
+    else:
+        status, status_label = 1, "operational"
+
+    node.update(
+        {
+            "effective_capacity": effective,
+            "utilization": utilization,
+            "stress": stress,
+            "status": status,
+            "status_label": status_label,
+            "dependency_factor": dependency_factor,
+        }
+    )
+    if timestamp is not None:
+        node["state_timestamp"] = _valid_timestamp(timestamp, "state timestamp")
+
+
+def propagate_dependency_failures(graph, *, timestamp: float | None = None):
+    """Return a snapshot with provider availability propagated to dependents.
+
+    Dependency failure reduces dependent effective capacity and can therefore
+    raise stress/status. It never copies provider damage onto a dependent node.
+    Fixed-point iteration supports chains such as power -> telecom -> social.
     """
-    Returns a NEW graph (deep copy) representing G(t): topology unchanged,
-    damage/stress updated for every node the Observation Log has evidence
-    for. Nodes with no observations keep their previous damage/stress
-    (i.e. G(0)'s baseline, or whatever the last tick left them at).
-    """
-    G_t = copy.deepcopy(G)
+    updated = copy.deepcopy(graph)
+    dependency_nodes = {
+        target
+        for source, target, edge in updated.edges(data=True)
+        if edge.get("edge_type") == 1
+    }
+    for node_id in updated.nodes:
+        updated.nodes[node_id]["dependency_factor"] = 1.0
+        recompute_node_state(updated.nodes[node_id], timestamp=timestamp)
 
-    for node_id in observation_log.all_observed_node_ids():
-        if node_id not in G_t.nodes:
-            # Observation resolved to a node_id that isn't in this graph
-            # snapshot (e.g. stale reference after a GIS re-ingestion).
-            # Skip rather than silently creating a phantom node.
-            continue
+    for _ in range(max(1, len(updated))):
+        changed = False
+        for target in dependency_nodes:
+            providers = [
+                (source, edge)
+                for source, _, edge in updated.in_edges(target, data=True)
+                if edge.get("edge_type") == 1
+            ]
+            if not providers:
+                continue
+            availability = []
+            for source, edge in providers:
+                provider = updated.nodes[source]
+                base_capacity = max(float(provider["capacity"]), MIN_EFFECTIVE_CAPACITY)
+                available = min(1.0, max(0.0, provider["effective_capacity"] / base_capacity))
+                if provider["status_label"] == "failed":
+                    available = 0.0
+                weight = float(edge.get("weight", 1.0))
+                availability.append(1.0 - min(1.0, max(0.0, weight)) * (1.0 - available))
+            factor = min(availability)
+            node = updated.nodes[target]
+            if not math.isclose(float(node.get("dependency_factor", 1.0)), factor, abs_tol=1e-12):
+                node["dependency_factor"] = factor
+                recompute_node_state(node, timestamp=timestamp)
+                changed = True
+        if not changed:
+            break
+    return updated
 
-        damage_observed = observation_log.aggregate_damage(node_id, now=now)
 
-        prior_damage = G_t.nodes[node_id]["damage"]
-        damage = max(prior_damage, damage_observed)   # MAX rule, per design
+def apply_observations(
+    graph,
+    observation_log,
+    now: float | None = None,
+    *,
+    stale_after_seconds: float = DEFAULT_STALE_AFTER_SECONDS,
+):
+    """Return G(t) with accepted visual observations applied and cascaded."""
+    if now is None:
+        import time
 
-        capacity = G_t.nodes[node_id]["capacity"]
-        effective_capacity = capacity * (1.0 - damage) ** DAMAGE_CAPACITY_EXPONENT_K
-        effective_capacity = max(effective_capacity, 1e-6)  # avoid div-by-zero
+        now = time.time()
+    now = _valid_timestamp(now, "snapshot timestamp")
+    previous_snapshot = graph.graph.get("snapshot_timestamp")
+    if previous_snapshot is not None and now < float(previous_snapshot):
+        raise ValueError("Stale observation snapshot cannot overwrite newer graph state")
+    if stale_after_seconds < 0 or not math.isfinite(stale_after_seconds):
+        raise ValueError("stale_after_seconds must be a finite non-negative number")
+    updated = copy.deepcopy(graph)
+    updated.graph["snapshot_timestamp"] = now
+    updated.graph["snapshot_sequence"] = int(graph.graph.get("snapshot_sequence", 0)) + 1
 
-        load = G_t.nodes[node_id]["load"]
-        stress = min(1.0, load / effective_capacity)
+    observed_nodes = set(observation_log.all_observed_node_ids())
+    for node_id in updated.nodes:
+        node = updated.nodes[node_id]
+        if node_id in observed_nodes:
+            newest = observation_log.latest_timestamp(node_id, at_or_before=now)
+            if newest is not None:
+                observed_damage = observation_log.aggregate_damage(node_id, now=now)
+                node["damage"] = max(float(node.get("damage", 0.0)), observed_damage)
+                prior = node.get("last_observation_timestamp")
+                node["last_observation_timestamp"] = max(
+                    value for value in (prior, newest) if value is not None
+                )
+        update_node_freshness(node, now, stale_after_seconds)
+        node["dependency_factor"] = 1.0
+        recompute_node_state(node, timestamp=now)
 
-        G_t.nodes[node_id]["damage"] = damage
-        G_t.nodes[node_id]["stress"] = stress
-        G_t.nodes[node_id]["utilization"] = load / capacity if capacity > 0 else 0.0
+    return propagate_dependency_failures(updated, timestamp=now)
 
-    return G_t
+
+def explain_graph_transition(before, after, *, event_id: str, event_type: str) -> dict:
+    """Produce a JSON-ready before/after audit for one scenario event."""
+    before_nodes, after_nodes = set(before.nodes), set(after.nodes)
+    topology_changed = before_nodes != after_nodes or set(before.edges) != set(after.edges)
+    changes = []
+    for node_id in sorted(before_nodes & after_nodes):
+        previous, current = before.nodes[node_id], after.nodes[node_id]
+        fields = {}
+        for field in STATE_FIELDS:
+            old, new = previous.get(field), current.get(field)
+            if old != new:
+                entry = {"before": old, "after": new}
+                if (
+                    isinstance(old, (int, float))
+                    and not isinstance(old, bool)
+                    and isinstance(new, (int, float))
+                    and not isinstance(new, bool)
+                ):
+                    entry["delta"] = new - old
+                fields[field] = entry
+        if fields:
+            changes.append(
+                {
+                    "graph_node_id": node_id,
+                    "gis_source_id": current.get("gis_source_id"),
+                    "changes": fields,
+                }
+            )
+    changed_fields = sorted(
+        {field for change in changes for field in change["changes"]}
+    )
+    if topology_changed:
+        explanation = "Graph topology changed; inspect node/edge sets before accepting this transition."
+    elif changes:
+        explanation = (
+            f"{len(changes)} node(s) changed fields: {', '.join(changed_fields)}."
+        )
+    else:
+        explanation = "No graph topology or node-state fields changed for this event."
+    return {
+        "event_id": event_id,
+        "event_type": event_type,
+        "graph_changed": bool(changes or topology_changed),
+        "topology_changed": topology_changed,
+        "changed_node_count": len(changes),
+        "node_changes": changes,
+        "changed_fields": changed_fields,
+        "explanation": explanation,
+        "before_snapshot_timestamp": before.graph.get("snapshot_timestamp"),
+        "after_snapshot_timestamp": after.graph.get("snapshot_timestamp"),
+    }

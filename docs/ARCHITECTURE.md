@@ -36,7 +36,7 @@ Layer responsibilities are intentionally separate:
 | `satellite-imagery` | Base64 fallback or object URI for converted JPEG | Unique image `ready_for_ai` or exact `duplicate_skipped` |
 | `satellite-change-results` | GeoJSON grid, source references, timestamp, footprint, summary | Dashboard-only broad-area evidence; never a TGNN node feature |
 | `gis-data` | Reserved | Future |
-| `ai-analysis-results` | Detection classes, confidences, boxes, and status | Durable AI Parquet records |
+| `ai-analysis-results` | Live checkpoint identity; image reference; class, confidence, box; scenario time; GPS/target provenance | Durable AI Parquet records and detection observations |
 
 The interactive consumer reconstructs Base64 content or downloads the object reference. Spark deliberately removes `image_data` and temporary signed URLs before writing Parquet, preventing large or expiring fields from polluting metadata storage.
 
@@ -54,6 +54,21 @@ The fingerprint registry uses SQLite for this single-host capstone:
 
 Satellite pHash suppression is off by default because small before/after changes may be the disaster signal. A production multi-producer deployment would move fingerprint state to a shared database and approximate-nearest-neighbor index.
 
+Scenario drone GPS and target IDs are assignments, not claims about the ISBDA
+capture location. The YOLO worker copies that provenance into every detection.
+The observation adapter uses it only when explicitly enabled, preserves both
+the declared GIS target and the independently resolved graph association, and
+continues to reject unlabeled/fabricated coordinates.
+
+Geolocation association is deterministic and traceable. A point covered by a
+building footprint maps through that building's stable GIS source ID to its
+integer graph node. Otherwise, the nearest road within 150 metres is used;
+equal-distance roads are ordered by stable GIS source ID. Building boundaries
+and the 150-metre road boundary are inclusive. Each graph node stores its
+`gis_source_id`, and each idempotent observation stores the source image hash,
+image/object reference, matched GIS ID, association kind/distance, and graph
+node ID.
+
 ## Distributed data flow
 
 The Windows host runs ZooKeeper, Kafka, MinIO, and producers. Kafka advertises the address from `KAFKA_ADVERTISED_HOST`. A second Windows, macOS, or Linux device uses that address for the consumer, Spark, or AI layer. Same-LAN testing uses the Wi-Fi IPv4. Internet-separated teammates use the host's stable private Tailscale `100.x.x.x` address for both Kafka and MinIO.
@@ -70,7 +85,10 @@ Base64 remains useful for a first capstone smoke test. The implemented object-st
 
 Future interfaces naturally attach after each topic-specific Spark processor:
 
-- normalized social text -> NLP classifier or text embedding service;
+- normalized social text -> deterministic NLP/GIS resolution -> incoming and
+  pending responder review; confirmation creates an orange human-evidence
+  hotspot and a GIS/node-linked social observation. Rejection remains audit-only.
+  Neither outcome changes structural damage or TGNN inputs;
 - drone frame reference -> damage/fire/flood computer vision service;
 - satellite image reference -> change detection and affected-area model.
 

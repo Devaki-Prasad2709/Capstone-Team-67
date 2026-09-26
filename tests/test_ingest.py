@@ -63,7 +63,7 @@ def main():
     G0, id_map = build_graph_from_gis(gis_data, seed=42)
     building_lookup = build_building_lookup(gis_data, id_map)
     spatial_index = SpatialIndex(gis_data, building_lookup, id_map)
-    expected_node = building_lookup["B1"].nearest_road
+    expected_node = id_map["B1"]
     assert isinstance(expected_node, int) and expected_node in G0
 
     geolocator = ManualOverrideGeoLocator()
@@ -102,6 +102,9 @@ def main():
         assert record.bbox == tuple(entry["bbox"])
         assert record.timestamp == event["source_timestamp"]
         assert record.building_id == "B1"
+        assert record.matched_gis_source_id == "B1"
+        assert record.graph_node_id == expected_node
+        assert record.association_kind == "building"
         print(f"  {result.frame_id}: seen={result.detections_seen}, "
               f"ingested={result.detections_ingested}, "
               f"skipped={result.detections_skipped_no_node}, "

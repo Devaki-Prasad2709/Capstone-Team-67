@@ -99,14 +99,21 @@ def build_graph_from_gis(gis_data: GISData, seed: int = None):
     if seed is not None:
         random.seed(seed)
 
-    G = nx.DiGraph(working_crs=gis_data.working_crs)
+    G = nx.DiGraph(
+        working_crs=gis_data.working_crs,
+        snapshot_timestamp=None,
+        snapshot_sequence=0,
+    )
     id_map = {}
     node_id = 0
 
     # --- Infrastructure points become nodes directly ---
     for p in gis_data.infra_points:
         capacity = p.capacity if p.capacity is not None else DEFAULT_CAPACITY_BY_TYPE[p.node_type]
-        _add_node(G, node_id, node_type=p.node_type, pos=(p.geometry.x, p.geometry.y), capacity=capacity)
+        _add_node(
+            G, node_id, node_type=p.node_type, pos=(p.geometry.x, p.geometry.y),
+            capacity=capacity, gis_source_id=p.id,
+        )
         id_map[p.id] = node_id
         node_id += 1
 
@@ -121,7 +128,10 @@ def build_graph_from_gis(gis_data: GISData, seed: int = None):
         if math.isfinite(lanes) and lanes > 0:
             # more lanes -> proportionally higher capacity; disclosed heuristic
             capacity = min(1.0, DEFAULT_CAPACITY_BY_TYPE["road"] * (lanes / 2.0))
-        _add_node(G, node_id, node_type="road", pos=(mid.x, mid.y), capacity=capacity)
+        _add_node(
+            G, node_id, node_type="road", pos=(mid.x, mid.y), capacity=capacity,
+            gis_source_id=r.id,
+        )
         id_map[r.id] = node_id
         node_id += 1
 
@@ -129,8 +139,10 @@ def build_graph_from_gis(gis_data: GISData, seed: int = None):
     # their footprints provisionally as social nodes using existing defaults.
     for b in gis_data.buildings:
         centroid = b.geometry.centroid
-        _add_node(G, node_id, node_type="social", pos=(centroid.x, centroid.y),
-                  capacity=DEFAULT_CAPACITY_BY_TYPE["social"])
+        _add_node(
+            G, node_id, node_type="social", pos=(centroid.x, centroid.y),
+            capacity=DEFAULT_CAPACITY_BY_TYPE["social"], gis_source_id=b.id,
+        )
         id_map[b.id] = node_id
         node_id += 1
 
@@ -140,7 +152,7 @@ def build_graph_from_gis(gis_data: GISData, seed: int = None):
     return G, id_map
 
 
-def _add_node(G, node_id, node_type, pos, capacity):
+def _add_node(G, node_id, node_type, pos, capacity, gis_source_id=None):
     load = capacity * BASELINE_LOAD_FRACTION
     damage = 0.0
     effective_capacity = capacity  # no damage yet at G(0)
@@ -148,16 +160,24 @@ def _add_node(G, node_id, node_type, pos, capacity):
 
     G.add_node(
         node_id,
+        gis_source_id=gis_source_id,
         type=node_type,
         pos=pos,
         load=load,
         capacity=capacity,
         damage=damage,
+        effective_capacity=effective_capacity,
         stress=stress,
         utilization=load / capacity if capacity > 0 else 0.0,   # kept for compatibility;
         threshold=1.4,                                           # not consumed by nx_to_pyg
         resilience=1.0,                                          # or by TGNN (see helpers.py)
         status=1,
+        status_label="operational",
+        dependency_factor=1.0,
+        state_timestamp=None,
+        last_observation_timestamp=None,
+        freshness_seconds=None,
+        freshness_status="missing",
     )
 
 

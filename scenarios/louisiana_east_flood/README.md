@@ -73,3 +73,23 @@ publishes one `satellite-change-results` record. The dashboard's **Satellite
 change** view displays the source pair, `2026-09-24T12:00:30Z` timestamp,
 WGS84 overlap footprint, change grid, and 22/40 official flood-reference count.
 This broad-area evidence has no graph node IDs and is excluded from TGNN input.
+
+For drone-to-observation replay, start the AI worker and the provenance-aware
+observation consumer before the scenario runner:
+
+```powershell
+.venv\Scripts\python.exe -m ai.computer_vision.worker
+.venv\Scripts\python.exe -m consumers.observation_consumer `
+  --gis-path scenarios\louisiana_east_flood\gis\infrastructure.geojson `
+  --allow-scenario-simulated-gps
+```
+
+The AI result includes the serving checkpoint SHA-256 and marks its output as
+live inference. Each detection contains the MinIO/image reference, model class,
+confidence, bounding box, simulated scenario time/GPS provenance, and declared
+target ID. No detections are stored in the scenario package.
+
+For this frozen graph, the severe frame's assigned GPS falls inside building
+`osm-way-1064972993`. The association maps that stable GIS source ID to graph
+node `19`; repeated delivery of the same image/detection IDs is idempotent and
+does not append or reapply graph evidence.

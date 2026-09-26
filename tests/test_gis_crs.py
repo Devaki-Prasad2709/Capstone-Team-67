@@ -109,8 +109,10 @@ class GISCRSTests(unittest.TestCase):
             {"override_lon": -89.9999, "override_lat": 30.0002},
         )
         self.assertEqual(result.detections_ingested, 1)
-        record = log.observations_for_node(mapping["road_0"])[0]
+        record = log.observations_for_node(mapping["bldg_1"])[0]
         self.assertEqual(record.building_id, "bldg_1")
+        self.assertEqual(record.matched_gis_source_id, "bldg_1")
+        self.assertEqual(record.node_id, mapping["bldg_1"])
         self.assertEqual((record.working_x, record.working_y),
                          wgs84_to_working(-89.9999, 30.0002, data.working_crs))
         snapshot = apply_observations(graph, log, now=1000)

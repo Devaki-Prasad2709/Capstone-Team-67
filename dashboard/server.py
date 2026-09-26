@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dashboard.map_api import map_config
+from dashboard.social_alert_service import SocialAlertService
 
 from pathlib import Path
 from typing import Literal
@@ -35,11 +36,16 @@ PROCESS_NAMES = (
 
 app = FastAPI(title="Disaster Streaming Control Center", docs_url="/api/docs")
 manager = ProcessManager()
+social_alerts = SocialAlertService()
 
 
 class StartOptions(BaseModel):
     limit: int = Field(default=20, ge=1, le=10000)
     delay: float | None = Field(default=None, ge=0, le=60)
+
+
+class ResponderDecision(BaseModel):
+    responder_id: str = Field(min_length=1, max_length=200)
 
 
 def process_states() -> dict[str, dict[str, object]]:
@@ -158,6 +164,35 @@ def satellite_change_output() -> dict[str, object]:
             if isinstance(key, str) and key.startswith("satellite/"):
                 image["preview_url"] = "/api/object?key=" + key
     return {"latest": latest, "result_count": len(rows), "error": error}
+
+
+@app.get("/api/social/alerts")
+def social_alert_state() -> dict[str, object]:
+    rows, error = recent_topic_events("social-posts", 100)
+    social_alerts.ingest_events(rows)
+    state = social_alerts.state()
+    state["kafka_error"] = error
+    return state
+
+
+@app.post("/api/social/alerts/{alert_id}/{action}")
+def review_social_alert(
+    alert_id: str,
+    action: Literal["confirm", "reject", "report_false"],
+    decision: ResponderDecision,
+) -> dict[str, object]:
+    try:
+        alert = social_alerts.decide(alert_id, action, decision.responder_id)
+    except KeyError as exc:
+        raise HTTPException(404, "Unknown social alert") from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {
+        "ok": True,
+        "message": f"Alert {alert_id} changed to {alert['status']}",
+        "alert": alert,
+        "state": social_alerts.state(),
+    }
 
 
 @app.get("/api/objects")
