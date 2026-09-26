@@ -25,6 +25,7 @@ from dashboard.services import (
     docker_services,
     kafka_counts,
     minio_objects,
+    object_key_for_content_hash,
     object_client,
     parquet_preview,
     recent_topic_events,
@@ -207,6 +208,8 @@ def satellite_change_output() -> dict[str, object]:
     if latest:
         for image in (latest.get("source_images") or {}).values():
             key = image.get("object_key") if isinstance(image, dict) else None
+            if isinstance(image, dict) and not key:
+                key = object_key_for_content_hash("satellite", image.get("content_hash"))
             if isinstance(key, str) and key.startswith("satellite/"):
                 image["preview_url"] = "/api/object?key=" + key
     return {"latest": latest, "result_count": len(rows), "error": error}

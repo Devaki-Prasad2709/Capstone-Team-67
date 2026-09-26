@@ -102,3 +102,32 @@ def test_dashboard_contract_adds_safe_minio_previews():
     assert response["latest"]["source_images"]["pre"]["preview_url"] == (
         "/api/object?key=satellite/aa/pre.jpg"
     )
+
+
+def test_dashboard_contract_resolves_base64_sources_from_content_hash():
+    content_hash = "a" * 64
+    latest = {
+        "scenario_id": "louisiana-east-flood-v1",
+        "scenario_timestamp": "2026-09-24T12:00:30Z",
+        "source_images": {
+            "pre": {
+                "transfer_mode": "base64",
+                "object_key": None,
+                "content_hash": content_hash,
+            },
+        },
+    }
+    completed = {
+        "state": "completed",
+        "simulation_timestamp": "2026-09-24T12:05:30Z",
+    }
+    resolved_key = f"satellite/aa/{content_hash}_pre.jpg"
+    with (
+        patch("dashboard.server.recent_topic_events", return_value=([latest], None)),
+        patch("dashboard.server.scenario_runner.status", return_value=completed),
+        patch("dashboard.server.object_key_for_content_hash", return_value=resolved_key),
+    ):
+        response = satellite_change_output()
+    assert response["latest"]["source_images"]["pre"]["preview_url"] == (
+        "/api/object?key=" + resolved_key
+    )

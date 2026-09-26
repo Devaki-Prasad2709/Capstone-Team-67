@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import subprocess
 from datetime import date, datetime
@@ -142,6 +143,29 @@ def object_client():
         aws_secret_access_key=settings.object_storage_secret_key,
         config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
     )
+
+
+def object_key_for_content_hash(source: str, content_hash: object) -> str | None:
+    """Resolve a content-addressed MinIO object without trusting event filenames."""
+    if source not in {"drone", "satellite", "gis"}:
+        return None
+    if not isinstance(content_hash, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", content_hash):
+        return None
+    normalized_hash = content_hash.lower()
+    prefix = f"{source}/{normalized_hash[:2]}/{normalized_hash}_"
+    try:
+        response = object_client().list_objects_v2(
+            Bucket=settings.object_storage_bucket,
+            Prefix=prefix,
+            MaxKeys=1,
+        )
+    except Exception:
+        return None
+    objects = response.get("Contents") or []
+    if not objects:
+        return None
+    key = objects[0].get("Key")
+    return key if isinstance(key, str) and key.startswith(f"{source}/") else None
 
 
 def minio_objects(limit: int = 30) -> tuple[dict[str, dict[str, int]], list[dict[str, Any]], str | None]:
