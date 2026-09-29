@@ -10,6 +10,7 @@ from dashboard.scenario_service import DashboardScenarioService
 
 
 INDEX_HTML = Path(__file__).parents[1] / "dashboard" / "static" / "index.html"
+APP_JS = Path(__file__).parents[1] / "dashboard" / "static" / "app.js"
 
 
 def _fake_risk_report(snapshots, *args, **kwargs):
@@ -148,9 +149,21 @@ def test_operational_page_keeps_incident_information_in_required_order():
     ]
     positions = [html.index(item) for item in ordered_ids]
     assert positions == sorted(positions)
+    assert 'data-map-layer="satellite"' in html
     assert 'data-map-layer="structural"' in html
     assert 'data-map-layer="damage"' in html
     assert 'data-map-layer="risk"' in html
     assert 'data-map-layer="hotspots"' in html
     assert 'id="operationsLoading"' in html
     assert 'id="operationsError"' in html
+
+
+def test_operational_map_includes_satellite_change_overlay_and_caveat():
+    html = INDEX_HTML.read_text(encoding="utf-8")
+    javascript = APP_JS.read_text(encoding="utf-8")
+
+    assert 'id="mapSatelliteSummary"' in html
+    assert "Radiometric change, not confirmed damage" in html
+    assert "satellite-change-cells" in javascript
+    assert "result?.change" in javascript
+    assert "Radiometric change is not confirmed infrastructure damage." in javascript

@@ -18,7 +18,7 @@ The page presents:
 4. checkpoint-backed TGNN relative-risk scores;
 5. the five highest-ranked nodes and an explicit highest-risk marker;
 6. confirmed social hotspots and a pending-report review queue;
-7. the real SpaceNet pre/post change panel;
+7. the real SpaceNet pre/post change panel and toggleable map-grid overlay;
 8. start, pause, resume, reset, and speed controls for the scenario runner;
 9. provenance badges, layer controls, legend, and freshness timestamps;
 10. persistent manual building classification.
@@ -71,6 +71,15 @@ before starting it.
 | Telemetry | Load, capacity, damage, and recovery state | Simulated scenario telemetry |
 
 Satellite change remains separate from TGNN node features.
+
+The operational map renders the georeferenced 8x8 SpaceNet change cells below
+the structural roads and buildings. Cell color represents the existing
+`low`/`moderate`/`severe` radiometric-change categories, and opacity increases
+with `diff_score`. Selecting a cell shows its score, grid position, and
+provenance. A compact map card summarizes changed versus scored cells and
+explicitly warns that this is broad-area radiometric change, not confirmed
+damage to a particular road or building. The **Satellite change** layer toggle
+controls this overlay without affecting the separate pre/post evidence panel.
 
 ## Basemap requirements
 

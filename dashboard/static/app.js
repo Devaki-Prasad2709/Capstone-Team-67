@@ -13,6 +13,50 @@ function shortTime(value){if(!value)return'No live update';const date=new Date(v
 function sourceData(collection){return{type:'FeatureCollection',features:(collection?.features||[]).map(feature=>({type:'Feature',id:feature.id,geometry:feature.geometry,properties:Object.fromEntries(Object.entries(feature.properties||{}).map(([key,value])=>[key,value!==null&&typeof value==='object'?JSON.stringify(value):value]))}))}}
 function setMapData(name,data){const source=state.operationsMap?.getSource(name);if(source)source.setData(sourceData(data))}
 
+function ensureSatelliteMapLayer(){
+  const map=state.operationsMap;
+  if(!map||map.getSource('satellite-change'))return;
+  map.addSource('satellite-change',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({
+    id:'satellite-change-cells',
+    type:'fill',
+    source:'satellite-change',
+    paint:{
+      'fill-color':['match',['get','severity'],'severe','#db4f5b','moderate','#e9a33b','low','#2788a8','#465365'],
+      'fill-opacity':['interpolate',['linear'],['coalesce',['get','diff_score'],0],0,.08,.1,.25,.25,.48],
+      'fill-outline-color':'#d8e5f566'
+    }
+  },map.getLayer('structural-buildings')?'structural-buildings':undefined);
+  map.on('mouseenter','satellite-change-cells',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','satellite-change-cells',()=>map.getCanvas().style.cursor='');
+  map.on('click','satellite-change-cells',event=>{
+    const p=event.features?.[0]?.properties||{};
+    const score=Number(p.diff_score);
+    const scoreLabel=Number.isFinite(score)?score.toFixed(3):'unavailable';
+    new maplibregl.Popup({closeButton:true})
+      .setLngLat(event.lngLat)
+      .setHTML(`<strong>Broad-area satellite change</strong><small>${escapeHtml(p.severity||'unknown')} severity · difference score ${escapeHtml(scoreLabel)}</small><small>Grid row ${escapeHtml(p.row)}, column ${escapeHtml(p.col)}</small><small class="provenance-badge">REAL SPACENET · SIMULATED TIME</small><small>Radiometric change is not confirmed infrastructure damage.</small>`)
+      .addTo(map);
+  });
+  const toggle=$('[data-map-layer="satellite"]');
+  map.setLayoutProperty('satellite-change-cells','visibility',toggle?.checked===false?'none':'visible');
+}
+
+function renderMapSatelliteEvidence(payload){
+  ensureSatelliteMapLayer();
+  const result=payload?.latest;
+  setMapData('satellite-change',result?.change||{type:'FeatureCollection',features:[]});
+  const card=$('#mapSatelliteSummary');
+  if(!result){card.classList.add('hidden');return}
+  const summary=result.summary||{};
+  const changed=summary.changed_cell_count??0;
+  const total=summary.scored_cell_count??summary.cell_count??0;
+  $('#mapSatelliteChanged').textContent=`${changed} / ${total} cells changed`;
+  const max=summary.max_diff_score;
+  $('#mapSatelliteDetail').textContent=`Tile ${result.tile_id||'unknown'} · max difference ${max==null?'unavailable':Number(max).toFixed(3)} · ${shortTime(result.scenario_timestamp||result.timestamp*1000)}`;
+  card.classList.remove('hidden');
+}
+
 function initializeOperationsMap(config){if(state.mapReady)return state.mapReady;if(!window.maplibregl){state.mapReady=Promise.reject(new Error('Interactive map library did not load'));return state.mapReady}const style=config.basemap.style_url||config.basemap.style;state.operationsMap=new maplibregl.Map({container:'operationsMap',style,center:config.scenario.center,zoom:config.scenario.zoom,attributionControl:true});state.operationsMap.addControl(new maplibregl.NavigationControl(),'bottom-right');state.mapReady=new Promise((resolve,reject)=>{state.operationsMap.once('load',()=>{const map=state.operationsMap;map.addSource('structural',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'structural-buildings',type:'fill',source:'structural',filter:['==',['get','feature_class'],'building'],paint:{'fill-color':['case',['!=',['coalesce',['get','assigned_type'],''],''],'#aa8cff','#7890a9'],'fill-opacity':.38,'fill-outline-color':'#d8e5f5'}});map.addLayer({id:'structural-roads',type:'line',source:'structural',filter:['==',['get','feature_class'],'road_segment'],paint:{'line-color':'#55a9ff','line-width':4,'line-opacity':.78}});map.addSource('risk',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'risk-nodes',type:'circle',source:'risk',paint:{'circle-radius':['interpolate',['linear'],['get','predicted_risk'],0,5,1,18],'circle-color':['interpolate',['linear'],['get','predicted_risk'],0,'#28d7b0',.35,'#ffd166',.7,'#ff6d75',1,'#d3133a'],'circle-opacity':.82,'circle-stroke-color':['case',['==',['get','highest_risk'],true],'#ffffff','#08111f'],'circle-stroke-width':['case',['==',['get','highest_risk'],true],5,2]}});map.addSource('damage',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'damage-observations',type:'circle',source:'damage',paint:{'circle-radius':9,'circle-color':'#ff3045','circle-stroke-color':'#fff','circle-stroke-width':2}});map.addSource('hotspots',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'confirmed-hotspots',type:'circle',source:'hotspots',paint:{'circle-radius':11,'circle-color':'#ffad57','circle-stroke-color':'#fff','circle-stroke-width':3}});['structural-buildings','risk-nodes','damage-observations','confirmed-hotspots'].forEach(layer=>{map.on('mouseenter',layer,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',layer,()=>map.getCanvas().style.cursor='')});map.on('click','structural-buildings',event=>{const properties=event.features?.[0]?.properties||{},sourceId=properties.building_id;if(sourceId)selectOperationalBuilding(sourceId);showMapPopup(event.lngLat,properties)});map.on('click','risk-nodes',event=>showOperationalNode(event.features?.[0]?.properties||{},event.lngLat));map.on('click','damage-observations',event=>showMapPopup(event.lngLat,event.features?.[0]?.properties||{}));map.on('click','confirmed-hotspots',event=>showMapPopup(event.lngLat,event.features?.[0]?.properties||{}));if(config.scenario.bbox)map.fitBounds([[config.scenario.bbox[0],config.scenario.bbox[1]],[config.scenario.bbox[2],config.scenario.bbox[3]]],{padding:55,duration:0});resolve(map)});state.operationsMap.once('error',event=>{if(!state.operationsMap.loaded())reject(new Error(event.error?.message||'Basemap failed to load'))})});return state.mapReady}
 
 function showMapPopup(lngLat,properties){const title=properties.name||properties.gis_source_id||properties.building_id||properties.alert_id||properties.class_name||'Evidence';const detail=properties.original_text||properties.assigned_type||properties.status||properties.provenance_label||'';const provenance=properties.evidence_layer==='human_confirmed_social_report'?'SIMULATED SCENARIO REPORT':properties.provenance_label||'';new maplibregl.Popup({closeButton:true}).setLngLat(lngLat).setHTML(`<strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small>${provenance?`<small class="provenance-badge">${escapeHtml(provenance)}</small>`:''}`).addTo(state.operationsMap)}
@@ -24,7 +68,24 @@ async function updateOperationsMap(data,social,config){await initializeOperation
 function renderTopRisk(data){const rows=data.top_five_risk_nodes||[];$('#topRiskRows').innerHTML=rows.length?rows.map(item=>`<div class="risk-row" onclick="focusRiskNode('${escapeHtml(item.graph_node_id)}')"><span class="risk-rank">${item.risk_rank}</span><div><strong>${escapeHtml(item.gis_source_id)}</strong><small>${escapeHtml(item.node_type)} · ${escapeHtml(item.why)}</small></div><div class="risk-score">${(item.failure_risk_score*100).toFixed(1)}<small>score</small></div></div>`).join(''):'<div class="empty compact-empty">No TGNN scores available.</div>'}
 function renderOpsPending(social){const rows=social.pending_alerts||[];$('#opsPendingTotal').textContent=`${rows.length} pending`;$('#opsPendingRows').innerHTML=rows.length?rows.map(alert=>`<div class="ops-alert"><p>${escapeHtml(alert.report?.raw_text)}</p><small>${escapeHtml(alert.alert_id)} · node ${escapeHtml(alert.report?.node_id)} · SIMULATED REPORT</small><div class="ops-alert-actions"><button class="primary" onclick="reviewOperationalAlert('${escapeHtml(alert.alert_id)}','confirm')">Confirm</button><button class="secondary" onclick="reviewOperationalAlert('${escapeHtml(alert.alert_id)}','reject')">Reject</button></div></div>`).join(''):'<div class="empty compact-empty">No reports awaiting review.</div>'}
 window.reviewOperationalAlert=async(alertId,action)=>{try{await api(`/api/social/alerts/${encodeURIComponent(alertId)}/${action}`,{method:'POST',body:JSON.stringify({responder_id:'dashboard-responder'})});toast(`Alert ${action}ed`,true);await loadOperational()}catch(error){toast(error.message,false)}};
-function renderOpsSatellite(payload){const result=payload.latest;if(!result){$('#opsSatelliteEmpty').classList.remove('hidden');$('#opsSatelliteContent').classList.add('hidden');return}$('#opsSatelliteEmpty').classList.add('hidden');$('#opsSatelliteContent').classList.remove('hidden');const images=result.source_images||{},summary=result.summary||{},labels=result.reference_labels||{};$('#opsSatellitePre').src=images.pre?.preview_url||'';$('#opsSatellitePost').src=images.post?.preview_url||'';$('#opsSatelliteChanged').textContent=summary.changed_cell_count??'—';$('#opsSatelliteReference').textContent=labels.flooded_feature_count==null?'Reference labels unavailable':`${labels.flooded_feature_count} of ${labels.feature_count} labelled features flooded`;$('#opsSatelliteFreshness').textContent=`Freshness ${shortTime(result.scenario_timestamp||result.timestamp*1000)}`}
+function renderOpsSatellite(payload){
+  renderMapSatelliteEvidence(payload);
+  const result=payload.latest;
+  if(!result){
+    $('#opsSatelliteEmpty').classList.remove('hidden');
+    $('#opsSatelliteContent').classList.add('hidden');
+    $('#opsSatelliteFreshness').textContent='Awaiting result';
+    return;
+  }
+  $('#opsSatelliteEmpty').classList.add('hidden');
+  $('#opsSatelliteContent').classList.remove('hidden');
+  const images=result.source_images||{},summary=result.summary||{},labels=result.reference_labels||{};
+  $('#opsSatellitePre').src=images.pre?.preview_url||'';
+  $('#opsSatellitePost').src=images.post?.preview_url||'';
+  $('#opsSatelliteChanged').textContent=summary.changed_cell_count??'—';
+  $('#opsSatelliteReference').textContent=labels.flooded_feature_count==null?'Reference labels unavailable':`${labels.flooded_feature_count} of ${labels.feature_count} labelled features flooded`;
+  $('#opsSatelliteFreshness').textContent=`Freshness ${shortTime(result.scenario_timestamp||result.timestamp*1000)}`;
+}
 function renderTimeline(status){const complete=new Set((status.completed_events||[]).map(item=>item.event_id)),current=status.current_event?.event_id,all=[...(status.completed_events||[]),...(status.upcoming_events||[])];if(status.current_event&&!all.some(item=>item.event_id===current))all.push(status.current_event);all.sort((a,b)=>a.sequence-b.sequence);$('#timelineTrack').innerHTML=all.map(item=>`<span title="${escapeHtml(item.name)}" class="timeline-event ${complete.has(item.event_id)?'complete':''} ${current===item.event_id&&status.state==='running'?'current':''}"></span>`).join('');$('#scenarioClock').textContent=`${String(status.state).toUpperCase()} · ${shortTime(status.simulation_timestamp)}`;$('#scenarioCurrentEvent').textContent=status.current_event?.name?.replaceAll('_',' ')||'Not started';$('#scenarioProgress').textContent=`${status.completed_events?.length||0} of ${(status.completed_events?.length||0)+(status.upcoming_events?.length||0)} events · ${status.speed}×`;$('#scenarioSpeed').value=String(status.speed)}
 function renderProvenance(provenance){const names={structural_gis:'Structural GIS',drone_imagery:'Damage observations',satellite:'Satellite change',social:'Social reports',telemetry:'Infrastructure telemetry',risk:'TGNN risk'};$('#provenanceGrid').innerHTML=Object.entries(provenance||{}).map(([key,item])=>`<article class="provenance-card ${escapeHtml(item.kind)}"><span>${escapeHtml(item.kind).toUpperCase()}</span><strong>${escapeHtml(names[key]||key)}</strong><small>${escapeHtml(item.label)}</small></article>`).join('')}
 function fillOpsBuildings(buildings){const select=$('#opsBuildingSelect'),selected=select.value,features=buildings.buildings?.features||[];select.innerHTML='<option value="">Select on map or from list</option>'+features.map(feature=>{const p=feature.properties,label=p.assigned_type?`${p.building_source_id} · ${p.assigned_type}`:p.building_source_id;return`<option value="${escapeHtml(p.building_source_id)}">${escapeHtml(label)}</option>`}).join('');if(selected)select.value=selected}
@@ -32,6 +93,7 @@ async function selectOperationalBuilding(sourceId){$('#opsBuildingSelect').value
 $('#opsBuildingSelect').onchange=event=>{if(event.target.value)selectOperationalBuilding(event.target.value)};
 $('#opsSaveBuilding').onclick=async()=>{const sourceId=$('#opsBuildingSelect').value;if(!sourceId){toast('Select a building first.',false);return}try{await api(`/api/buildings/${encodeURIComponent(sourceId)}/classification`,{method:'POST',body:JSON.stringify({assigned_type:$('#opsBuildingType').value,operator:$('#opsBuildingOperator').value,notes:$('#opsBuildingNotes').value||null})});$('#opsBuildingNotes').value='';toast('Classification revision saved',true);await loadOperational();await selectOperationalBuilding(sourceId)}catch(error){toast(error.message,false)}};
 $$('[data-map-layer]').forEach(input=>input.onchange=()=>{const groups={structural:['structural-buildings','structural-roads'],damage:['damage-observations'],risk:['risk-nodes'],hotspots:['confirmed-hotspots']};(groups[input.dataset.mapLayer]||[]).forEach(layer=>{if(state.operationsMap?.getLayer(layer))state.operationsMap.setLayoutProperty(layer,'visibility',input.checked?'visible':'none')});if(input.dataset.mapLayer==='risk'&&state.highestMarker)state.highestMarker.getElement().style.display=input.checked?'':'none'});
+$$('[data-map-layer="satellite"]').forEach(input=>input.addEventListener('change',()=>{if(state.operationsMap?.getLayer('satellite-change-cells'))state.operationsMap.setLayoutProperty('satellite-change-cells','visibility',input.checked?'visible':'none')}));
 $$('[data-scenario-action]').forEach(button=>button.onclick=()=>controlScenario(button.dataset.scenarioAction));
 $('#scenarioSpeed').onchange=()=>controlScenario('speed');
 async function controlScenario(action){try{const speed=Number($('#scenarioSpeed').value);if(action==='start')await api('/api/scenario/speed',{method:'POST',body:JSON.stringify({speed})});const result=await api('/api/scenario/'+action,{method:'POST',body:JSON.stringify(action==='speed'?{speed}:{})});renderTimeline(result.status);toast(result.message,true)}catch(error){toast(error.message,false)}}

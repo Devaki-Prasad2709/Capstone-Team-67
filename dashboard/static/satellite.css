@@ -91,10 +91,56 @@
   background: #0b1929;
 }
 
+.map-satellite-summary {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  top: 14px;
+  width: 245px;
+  padding: 13px;
+  background: #0b1627e8;
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.map-satellite-summary span,
+.map-satellite-summary small,
+.map-satellite-summary em { display: block; }
+.map-satellite-summary span {
+  color: var(--blue);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+.map-satellite-summary strong {
+  display: block;
+  margin: 6px 0 3px;
+  color: var(--orange);
+  font-size: 22px;
+}
+.map-satellite-summary small { color: var(--muted); font-size: 10px; }
+.map-satellite-summary em {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+}
+.legend-satellite {
+  border-radius: 2px !important;
+  background: linear-gradient(135deg, #2788a8 0 33%, #e9a33b 33% 66%, #db4f5b 66%);
+}
+
 @media (max-width: 1050px) {
   .satellite-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 680px) {
   .satellite-pair { grid-template-columns: 1fr; }
+  .map-satellite-summary {
+    top: auto;
+    bottom: 105px;
+    max-width: calc(100% - 28px);
+  }
 }
