@@ -12,5 +12,6 @@ pydantic==2.13.4
 pyproj==3.7.1
 pyspark==3.5.5
 python-dotenv==1.0.1
+rasterio==1.4.3
 shapely==2.1.2
 uvicorn==0.34.0

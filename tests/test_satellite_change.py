@@ -4,12 +4,14 @@ import io
 from unittest.mock import patch
 
 from PIL import Image
+import pytest
 
 from core.satellite.change_contract import (
     SatellitePairAccumulator,
     build_change_result,
     validate_pair_event,
 )
+from core.satellite.normalizer import RasterReadError
 from dashboard.server import satellite_change_output
 
 
@@ -80,6 +82,19 @@ def test_duplicate_and_invalid_events_do_not_become_change_results():
         raise AssertionError("invalid pair event was accepted")
 
 
+def test_normalization_failure_propagates_through_change_contract():
+    pre, post = _event("pre", _jpeg(100)), _event("post", _jpeg(110))
+    failure = RasterReadError("payload is corrupt", input_role="PRE")
+    with patch(
+        "core.satellite.change_contract.normalize_transferred_pair",
+        side_effect=failure,
+    ):
+        with pytest.raises(RasterReadError) as error:
+            build_change_result(pre, post, lambda event: event["payload"])
+    assert error.value is failure
+    assert "[PRE]" in str(error.value)
+
+
 def test_dashboard_contract_adds_safe_minio_previews():
     latest = {
         "scenario_id": "louisiana-east-flood-v1",
@@ -131,3 +146,16 @@ def test_dashboard_contract_resolves_base64_sources_from_content_hash():
     assert response["latest"]["source_images"]["pre"]["preview_url"] == (
         "/api/object?key=" + resolved_key
     )
+
+
+def test_dashboard_contract_preserves_satellite_topic_error():
+    message = "[PRE] corrupt raster | Requirement: source raster must exist and be readable"
+    with (
+        patch("dashboard.server.recent_topic_events", return_value=([], message)),
+        patch("dashboard.server.scenario_runner.status", return_value={
+            "state": "completed",
+            "simulation_timestamp": "2026-09-24T12:05:30Z",
+        }),
+    ):
+        response = satellite_change_output()
+    assert response == {"latest": None, "result_count": 0, "error": message}

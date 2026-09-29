@@ -8,11 +8,10 @@ labels. Deliberately dashboard-only -- never touches the TGNN, per the
 locked architecture rule (satellite gives regional context at a spatial
 resolution the graph doesn't operate at).
 
-Method:
-  1. Load a pre-disaster and post-disaster image of the SAME area
-     (caller's responsibility that they're already roughly aligned --
-     see ALIGNMENT ASSUMPTION below).
-  2. Convert both to grayscale, tile into an NxN grid.
+Primary method:
+  1. Accept a geospatially aligned ``NormalizedSatellitePair`` from the
+     universal normalization boundary.
+  2. Tile its common luminance grid and valid-data mask into an NxN grid.
   3. For each tile, compute a simple structural difference score (mean
      absolute pixel difference, normalized to [0,1]).
   4. Bucket into low/moderate/severe using disclosed, tunable thresholds.
@@ -20,20 +19,17 @@ Method:
      dashboard's satellite overlay contract (coarse, low-opacity regional
      layer -- see dashboard requirements spec).
 
-ALIGNMENT ASSUMPTION (disclosed, not hidden): this assumes the pre/post
-images already cover the same geographic extent at the same resolution
-(e.g. both cropped from the same source, or both pre-orthorectified to the
-same bounds). It does NOT do image registration/alignment -- if your real
-pre/post pairs are taken from different angles/zooms, add a registration
-step before this, or the tile-level scores will be meaningless. This is
-exactly the kind of "no fake precision" disclosure the rest of this
-project has been careful about -- flagged rather than silently assumed
-correct.
+The legacy ``classify_area`` path remains for compatible same-size images and
+retains its disclosed alignment assumption. Production satellite processing
+uses ``classify_normalized_pair`` instead.
 """
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from PIL import Image
 import numpy as np
+from pyproj import Transformer
+
+from core.satellite.normalizer import NormalizedSatellitePair
 
 
 # Disclosed, tunable thresholds -- not measured, not calibrated against
@@ -101,6 +97,122 @@ def _tile_diff_scores(pre_img: np.ndarray, post_img: np.ndarray, grid_size: int)
             results.append(TileResult(row=row, col=col, diff_score=score, severity=_severity_label(score)))
 
     return results
+
+
+def classify_normalized_pair(
+    pair: NormalizedSatellitePair,
+    grid_size: int = DEFAULT_GRID_SIZE,
+    min_valid_fraction: float = 0.95,
+) -> dict:
+    """Score a normalized pair and emit a dashboard-facing WGS84 grid.
+
+    The universal normalizer owns raster compatibility and alignment.  This
+    function exclusively owns change scoring, severity labels, per-cell
+    coverage decisions, and conversion of normalized pixel boundaries to
+    geographic polygons.
+    """
+    if pair.pre.ndim != 2 or pair.post.ndim != 2:
+        raise ValueError("Broad-area classifier requires one normalized luminance band")
+    if pair.representation != "grayscale_uint8_0_255":
+        raise ValueError(
+            "Broad-area classifier requires grayscale_uint8_0_255 normalized input"
+        )
+    if pair.pre.shape != (pair.height, pair.width) or pair.post.shape != pair.pre.shape:
+        raise ValueError("Normalized PRE/POST arrays do not match their declared grid")
+    if pair.valid_mask.shape != pair.pre.shape or pair.valid_mask.dtype != np.bool_:
+        raise ValueError("Normalized valid mask does not match the raster grid")
+    if (
+        isinstance(grid_size, bool)
+        or not isinstance(grid_size, (int, np.integer))
+        or not 1 <= grid_size <= min(pair.height, pair.width)
+    ):
+        raise ValueError("grid_size must be a positive integer within normalized dimensions")
+    if (
+        not isinstance(min_valid_fraction, (int, float))
+        or not np.isfinite(min_valid_fraction)
+        or not 0 < min_valid_fraction <= 1
+    ):
+        raise ValueError("min_valid_fraction must be in (0, 1]")
+
+    to_wgs84 = Transformer.from_crs(pair.working_crs, "EPSG:4326", always_xy=True)
+    features = []
+    for row in range(grid_size):
+        y0, y1 = row * pair.height // grid_size, (row + 1) * pair.height // grid_size
+        for col in range(grid_size):
+            x0, x1 = col * pair.width // grid_size, (col + 1) * pair.width // grid_size
+            mask = pair.valid_mask[y0:y1, x0:x1]
+            valid_pixels = int(mask.sum())
+            valid_fraction = valid_pixels / mask.size
+            score, severity = None, "unknown"
+            if valid_pixels and valid_fraction >= min_valid_fraction:
+                before = pair.pre[y0:y1, x0:x1][mask]
+                after = pair.post[y0:y1, x0:x1][mask]
+                score = float(
+                    np.abs(before.astype(np.float32) - after.astype(np.float32)).mean()
+                    / 255.0
+                )
+                score = round(score, 4)
+                severity = _severity_label(score)
+
+            pixel_ring = ((x0, y1), (x1, y1), (x1, y0), (x0, y0), (x0, y1))
+            projected_ring = [pair.transform.pixel_corner(x, y) for x, y in pixel_ring]
+            geographic_ring = [list(to_wgs84.transform(x, y)) for x, y in projected_ring]
+            if not all(np.isfinite(value) for point in geographic_ring for value in point):
+                raise ValueError("Normalized cell could not be transformed safely to WGS84")
+            features.append({
+                "type": "Feature",
+                "geometry": {"type": "Polygon", "coordinates": [geographic_ring]},
+                "properties": {
+                    "row": row,
+                    "col": col,
+                    "diff_score": score,
+                    "severity": severity,
+                    "valid_fraction": valid_fraction,
+                    "valid_pixels": valid_pixels,
+                    "quality": (
+                        "sufficient_coverage" if score is not None else "insufficient_coverage"
+                    ),
+                },
+            })
+
+    footprint_pixels = (
+        (0, pair.height),
+        (pair.width, pair.height),
+        (pair.width, 0),
+        (0, 0),
+        (0, pair.height),
+    )
+    footprint = [
+        list(to_wgs84.transform(*pair.transform.pixel_corner(x, y)))
+        for x, y in footprint_pixels
+    ]
+    longitudes = [point[0] for point in footprint]
+    latitudes = [point[1] for point in footprint]
+    wgs84_bounds = (
+        min(longitudes), min(latitudes), max(longitudes), max(latitudes)
+    )
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        "metadata": {
+            "source": "universal_satellite_normalizer",
+            "crs": "EPSG:4326",
+            "working_crs": pair.working_crs,
+            "working_transform": pair.transform.as_tuple(),
+            "working_bounds": pair.bounds,
+            "overlap_bounds": wgs84_bounds,
+            "wgs84_footprint": {"type": "Polygon", "coordinates": [footprint]},
+            "normalized_size": [pair.width, pair.height],
+            "selected_bands": [asdict(band) for band in pair.selected_bands],
+            "output_bands": list(pair.output_bands),
+            "representation": pair.representation,
+            "min_valid_fraction": min_valid_fraction,
+            "valid_fraction": pair.valid_fraction,
+            "pre_provenance": asdict(pair.pre_provenance),
+            "post_provenance": asdict(pair.post_provenance),
+            "interpretation": "uncalibrated radiometric change; not destruction probability",
+        },
+    }
 
 
 def classify_area(
