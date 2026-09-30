@@ -1,26 +1,59 @@
 {
   "source_repository": "https://github.com/Devaki-Prasad2709/Capstone-Team-67",
-  "source_commit": "a2667d6f9d01e1c1fcb694936106e6490f70849e",
-  "training_run": "isbda_yolo26s_640_rescuenet_final",
-  "model_name": "drone_detector_yolo26s",
-  "architecture": "yolo26s",
-  "ultralytics_version": "8.4.138",
+  "source_commit": null,
+  "training_run": "rescuenet_yolo26s_seg_final",
+  "training_completed_at": "2026-09-30T01:09:16.378098+05:30",
+  "model_name": "drone_detector_yolo26s_seg",
+  "architecture": "yolo26s-seg",
+  "task": "segment",
+  "dataset": "RescueNet",
+  "ultralytics_version": "8.4.165",
   "epochs": 100,
-  "classes": ["Slight", "Severe", "Debris"],
+  "image_size": 640,
+  "classes": [
+    "water",
+    "building_no_damage",
+    "building_minor_damage",
+    "building_major_damage",
+    "building_total_destruction",
+    "vehicle",
+    "road_clear",
+    "road_blocked",
+    "tree",
+    "pool"
+  ],
   "final_metrics": {
-    "precision": 0.36917,
-    "recall": 0.28202,
-    "map50": 0.25171,
-    "map50_95": 0.10874
+    "precision": 0.74283,
+    "recall": 0.6666,
+    "map50": 0.72572,
+    "map50_95": 0.52265
+  },
+  "mask_metrics": {
+    "precision": 0.73554,
+    "recall": 0.66361,
+    "map50": 0.71121,
+    "map50_95": 0.46847
+  },
+  "held_out_test_metrics": {
+    "images": 450,
+    "instances": 2680,
+    "box": {
+      "precision": 0.675,
+      "recall": 0.647,
+      "map50": 0.685,
+      "map50_95": 0.494
+    },
+    "mask": {
+      "precision": 0.664,
+      "recall": 0.657,
+      "map50": 0.675,
+      "map50_95": 0.443
+    }
   },
   "metrics_source": "artifacts/drone_detector/weights/best.pt:train_metrics",
-  "legacy_artifacts": {
-    "artifacts/drone_detector/weights/last.pt": "YOLOv8 checkpoint with legacy damage_class_1/2/3 labels; not used for serving",
-    "artifacts/drone_detector/results.csv": "Metrics from the legacy YOLOv8 training run; retained as historical evidence"
-  },
   "sha256": {
-    "artifacts/drone_detector/weights/best.pt": "780241f6b42f9f0b0d83a8be8d3168e1ca864a756ff93907e72bbb7f9fe3cbf9",
-    "artifacts/drone_detector/weights/last.pt": "37615cba9c12704e636bdd10ffc6edee8b29b295aedce76e0643e69307b7b4a6",
-    "artifacts/drone_detector/results.csv": "895bd273fd02c9c3162fd19a9a6fba8930b2c516e8857c06def40e36410df229"
+    "artifacts/drone_detector/weights/best.pt": "2d687e94fa5c2ef445c0888794de99ea1155d880ddb9be8f9237617eb55068b5",
+    "artifacts/drone_detector/weights/last.pt": "fdfc6e26dd03c8768f75c14a148ea7f5c61e41cf11aa11ffc303a2392b655251",
+    "artifacts/drone_detector/results.csv": "60cdfe095ff9edf494aa7f76bcb877961970724aefe7a1a5e29c16554f62dfc0"
   }
 }

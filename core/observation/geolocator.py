@@ -43,6 +43,7 @@ class Detection:
     bbox: tuple            # (x1, y1, x2, y2) in pixel coordinates
     timestamp: str
     track_id: str = None   # filled in by a tracker upstream, if available
+    mask: list[list[float]] | None = None
 
 
 @dataclass

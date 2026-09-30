@@ -235,10 +235,12 @@ pHash catches visually equivalent recompressions/resizes within the configured
 Hamming threshold. Satellite pHash is disabled because small pre/post changes
 may be the signal.
 
-The serving checkpoint recognizes `Slight`, `Severe`, and `Debris`. Its SHA-256
-is `780241f6b42f9f0b0d83a8be8d3168e1ca864a756ff93907e72bbb7f9fe3cbf9`.
-Recorded training metrics are precision 0.3692, recall 0.2820, mAP50 0.2517,
-and mAP50-95 0.1087. These modest metrics are an explicit limitation.
+The serving checkpoint is the ten-class RescueNet YOLO26s segmentation model.
+Its SHA-256 is
+`2d687e94fa5c2ef445c0888794de99ea1155d880ddb9be8f9237617eb55068b5`.
+Embedded box metrics are precision 0.74283, recall 0.66660, mAP50 0.72572,
+and mAP50-95 0.52265. Embedded mask metrics are precision 0.73554, recall
+0.66361, mAP50 0.71121, and mAP50-95 0.46847.
 
 ### 7.2 Social/NLP and responder review
 

@@ -30,6 +30,7 @@ DETECTION = StructType([
     StructField("class_name", StringType()),
     StructField("confidence", DoubleType()),
     StructField("bbox", ArrayType(DoubleType())),
+    StructField("mask", ArrayType(ArrayType(DoubleType()))),
     StructField("image_reference", IMAGE_REFERENCE),
     StructField("scenario_timestamp", StringType()),
     StructField("gps", GPS),

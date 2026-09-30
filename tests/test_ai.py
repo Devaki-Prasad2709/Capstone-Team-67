@@ -132,7 +132,20 @@ class ArtifactIntegrityTests(unittest.TestCase):
     def test_preserved_model_and_metrics(self) -> None:
         self.assertEqual(
             verify(),
-            {"precision": 0.36917, "recall": 0.28202, "map50": 0.25171, "map50_95": 0.10874},
+            {
+                "box": {
+                    "precision": 0.74283,
+                    "recall": 0.6666,
+                    "map50": 0.72572,
+                    "map50_95": 0.52265,
+                },
+                "mask": {
+                    "precision": 0.73554,
+                    "recall": 0.66361,
+                    "map50": 0.71121,
+                    "map50_95": 0.46847,
+                },
+            },
         )
 
 

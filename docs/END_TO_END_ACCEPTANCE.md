@@ -1,5 +1,8 @@
 # End-to-end acceptance evidence
 
+> Historical acceptance run for the replaced three-class YOLO checkpoint.
+> Current segmentation verification is in `SEGMENTATION_VERIFICATION.md`.
+
 Date: 2026-09-26  
 Branch: `dibsei/baseline-blocker-fixes`  
 Acceptance runtime: `acceptance-20260926-1101`

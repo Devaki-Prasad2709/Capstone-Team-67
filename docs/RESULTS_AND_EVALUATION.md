@@ -1,5 +1,8 @@
 # Results and evaluation
 
+> Historical scenario result for the replaced three-class checkpoint. The
+> active segmentation model is documented in `SEGMENTATION_VERIFICATION.md`.
+
 Evaluation date: 2026-09-26  
 Scenario: `louisiana-east-flood-v1`  
 Branch: `dibsei/baseline-blocker-fixes`

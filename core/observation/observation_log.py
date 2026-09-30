@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
-# Severity lookup for the CURRENT YOLO classes (Slight/Severe/Debris).
+# Severity lookup for the current RescueNet classes plus legacy event names.
 # Disclosed, tunable constant -- not a measured quantity. Update this
 # mapping if/when YOLO's class list changes (e.g. adds "Person" -- which
 # would NOT go through this severity map at all; person detections feed
@@ -30,6 +30,16 @@ SEVERITY_MAP = {
     "Slight": 0.3,
     "Severe": 0.7,
     "Debris": 1.0,
+    "building_minor_damage": 0.3,
+    "building_major_damage": 0.7,
+    "building_total_destruction": 1.0,
+    "road_blocked": 0.7,
+    "building_no_damage": 0.0,
+    "road_clear": 0.0,
+    "water": 0.0,
+    "vehicle": 0.0,
+    "tree": 0.0,
+    "pool": 0.0,
 }
 
 # Decay time constant (seconds). Disclosed assumption -- tune based on how
@@ -71,6 +81,7 @@ class ObservationRecord:
     association_kind: Optional[str] = None
     association_distance_m: Optional[float] = None
     source_content_hash: Optional[str] = None
+    mask: Optional[list[list[float]]] = None
 
 
 class ObservationLog:

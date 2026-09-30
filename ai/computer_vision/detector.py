@@ -9,6 +9,14 @@ from typing import Any, Sequence
 import numpy as np
 
 
+RELEVANT_DAMAGE_CLASSES = {
+    "building_minor_damage",
+    "building_major_damage",
+    "building_total_destruction",
+    "road_blocked",
+}
+
+
 class DamageDetector:
     def __init__(
         self,
@@ -47,15 +55,20 @@ class DamageDetector:
             detections: list[dict[str, Any]] = []
             names = result.names
             if result.boxes is not None:
-                for box in result.boxes:
+                for index, box in enumerate(result.boxes):
                     class_id = int(box.cls.item())
-                    detections.append(
-                        {
-                            "class_id": class_id,
-                            "class_name": str(names.get(class_id, class_id)),
-                            "confidence": round(float(box.conf.item()), 6),
-                            "bbox": [round(float(value), 3) for value in box.xyxy[0].tolist()],
-                        }
-                    )
+                    class_name = str(names.get(class_id, class_id))
+                    detection = {
+                        "class_id": class_id,
+                        "class_name": class_name,
+                        "confidence": round(float(box.conf.item()), 6),
+                        "bbox": [round(float(value), 3) for value in box.xyxy[0].tolist()],
+                    }
+                    if result.masks is not None and class_name in RELEVANT_DAMAGE_CLASSES:
+                        detection["mask"] = [
+                            [round(float(x), 3), round(float(y), 3)]
+                            for x, y in result.masks.xy[index]
+                        ]
+                    detections.append(detection)
             output.append(detections)
         return output

@@ -1,5 +1,8 @@
 # Integration validation report
 
+> Historical validation for the replaced detector artifacts. See
+> `SEGMENTATION_VERIFICATION.md` for the active segmentation model.
+
 ## Baseline repair validation — 2026-09-24
 
 - `python -m pytest -q`: **53 passed, 2 real-data tests skipped**.

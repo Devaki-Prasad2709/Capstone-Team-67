@@ -135,6 +135,17 @@ CLASS_NAME_NORMALIZATION = {
 
     "Debris": "Debris",
 
+    "water": "water",
+    "building_no_damage": "building_no_damage",
+    "building_minor_damage": "building_minor_damage",
+    "building_major_damage": "building_major_damage",
+    "building_total_destruction": "building_total_destruction",
+    "vehicle": "vehicle",
+    "road_clear": "road_clear",
+    "road_blocked": "road_blocked",
+    "tree": "tree",
+    "pool": "pool",
+
 }
 
 
@@ -150,13 +161,16 @@ CLASS_NAME_NORMALIZATION = {
 # integrated against a guess.
 
 CLASS_ID_MAP = {
-
-    0: "Slight",
-
-    1: "Severe",
-
-    2: "Debris",
-
+    0: "water",
+    1: "building_no_damage",
+    2: "building_minor_damage",
+    3: "building_major_damage",
+    4: "building_total_destruction",
+    5: "vehicle",
+    6: "road_clear",
+    7: "road_blocked",
+    8: "tree",
+    9: "pool",
 }
 
 
@@ -242,6 +256,8 @@ def detection_from_ai_result_entry(event: dict, entry: dict) -> Detection:
         confidence=entry["confidence"],
 
         bbox=tuple(entry["bbox"]),
+
+        mask=entry.get("mask"),
 
         timestamp=event.get("source_timestamp") or event.get("processed_at"),
 
@@ -428,6 +444,8 @@ def ingest_ai_analysis_result(
 
             bbox=detection.bbox,
 
+            mask=detection.mask,
+
             latitude=geo.latitude,
 
             longitude=geo.longitude,
@@ -491,4 +509,3 @@ def ingest_ai_analysis_result(
         accepted_observation_ids=accepted_ids,
 
     )
-

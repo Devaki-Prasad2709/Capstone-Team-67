@@ -83,7 +83,7 @@ def main():
     ]
 
     for event in events:
-        assert event["model_name"] == "drone_detector_yolo26s"
+        assert event["model_name"] == "drone_detector_yolo26s_seg"
         result = ingest_ai_analysis_result(
             event=event,
             geolocator=geolocator,

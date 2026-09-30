@@ -35,23 +35,13 @@ BUNDLED_IMAGE = (
 
 
 def integration_image() -> Path:
-    """Use an explicit image, configured drone data, or the tracked fixture."""
+    """Use an explicit image or the tracked RescueNet validation fixture."""
     explicit = os.getenv("YOLO26S_TEST_IMAGE", "").strip()
     if explicit:
         path = Path(explicit).expanduser()
         if not path.is_file():
             raise FileNotFoundError(f"YOLO26S_TEST_IMAGE does not exist: {path}")
         return path
-
-    configured = Path(settings.drone_dataset_path).expanduser()
-    if settings.drone_dataset_path and configured.is_dir():
-        images = sorted(
-            path
-            for path in configured.rglob("*")
-            if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
-        )
-        if images:
-            return images[0]
 
     if not BUNDLED_IMAGE.is_file():
         raise FileNotFoundError(f"Bundled YOLO integration fixture is missing: {BUNDLED_IMAGE}")
@@ -75,13 +65,29 @@ class YOLO26sIngestTests(unittest.TestCase):
         detector = DamageDetector(MODEL, device=settings.ai_device or "cpu")
         self.assertEqual(
             detector.checkpoint_sha256,
-            "780241f6b42f9f0b0d83a8be8d3168e1ca864a756ff93907e72bbb7f9fe3cbf9",
+            "2d687e94fa5c2ef445c0888794de99ea1155d880ddb9be8f9237617eb55068b5",
         )
         detections = detector.predict([image])[0]
         self.assertGreater(len(detections), 0, f"No detections for integration image: {image_path}")
         self.assertTrue(
-            all(item["class_name"] in {"Slight", "Severe", "Debris"} for item in detections)
+            all(
+                item["class_name"]
+                in {
+                    "water",
+                    "building_no_damage",
+                    "building_minor_damage",
+                    "building_major_damage",
+                    "building_total_destruction",
+                    "vehicle",
+                    "road_clear",
+                    "road_blocked",
+                    "tree",
+                    "pool",
+                }
+                for item in detections
+            )
         )
+        self.assertTrue(any(item.get("mask") for item in detections))
 
         event = result_event(
             {
@@ -104,7 +110,7 @@ class YOLO26sIngestTests(unittest.TestCase):
         )
         updated = apply_observations(initial, observation_log, now=time.time())
 
-        self.assertEqual(event["model_name"], "drone_detector_yolo26s")
+        self.assertEqual(event["model_name"], "drone_detector_yolo26s_seg")
         self.assertEqual(result.detections_seen, len(detections))
         self.assertEqual(result.detections_ingested, len(detections))
         self.assertEqual(result.detections_skipped_no_node, 0)

@@ -6,6 +6,7 @@ import hashlib
 import sqlite3
 import threading
 import time
+from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -73,7 +74,7 @@ class ImageDeduplicator:
         return connection
 
     def _initialize(self) -> None:
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS image_fingerprints (
@@ -104,7 +105,7 @@ class ImageDeduplicator:
         if not settings.deduplication_enabled:
             return DeduplicationResult(False, image_id, sha256, sha256, phash)
 
-        with self._lock, self._connect() as connection:
+        with self._lock, closing(self._connect()) as connection, connection:
             connection.execute("BEGIN IMMEDIATE")
             exact = connection.execute(
                 "SELECT canonical_id, perceptual_hash, content_hash FROM image_fingerprints "
@@ -162,7 +163,7 @@ class ImageDeduplicator:
         """Remove an uncommitted fingerprint after transfer/Kafka failure."""
         if not settings.deduplication_enabled:
             return
-        with self._lock, self._connect() as connection:
+        with self._lock, closing(self._connect()) as connection, connection:
             connection.execute(
                 "DELETE FROM image_fingerprints WHERE source = ? AND canonical_id = ?",
                 (source, canonical_id),

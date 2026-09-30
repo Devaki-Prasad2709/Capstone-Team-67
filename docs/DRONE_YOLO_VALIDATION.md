@@ -1,5 +1,9 @@
 # Drone/YOLO integration validation
 
+> Historical result for the replaced three-class checkpoint. The active
+> segmentation model and current evaluation are documented in
+> `SEGMENTATION_VERIFICATION.md`.
+
 Validated live on 2026-09-26 using the frozen Louisiana scenario, local Kafka,
 MinIO, and the committed serving checkpoint. No detection arrays are stored in
 the scenario package or substituted by the runner.

@@ -11,7 +11,16 @@ ROOT = Path(__file__).resolve().parents[1]
 AI_ROOT = ROOT / "ai" / "computer_vision"
 
 
-def verify() -> dict[str, float]:
+def _metrics(embedded: dict[str, object], suffix: str) -> dict[str, float]:
+    return {
+        "precision": float(embedded[f"metrics/precision({suffix})"]),
+        "recall": float(embedded[f"metrics/recall({suffix})"]),
+        "map50": float(embedded[f"metrics/mAP50({suffix})"]),
+        "map50_95": float(embedded[f"metrics/mAP50-95({suffix})"]),
+    }
+
+
+def verify() -> dict[str, dict[str, float]]:
     manifest = json.loads((AI_ROOT / "artifact_manifest.json").read_text(encoding="utf-8"))
     for relative, expected in manifest["sha256"].items():
         path = AI_ROOT / relative
@@ -29,14 +38,10 @@ def verify() -> dict[str, float]:
     serving_checkpoint = AI_ROOT / "artifacts" / "drone_detector" / "weights" / "best.pt"
     checkpoint = YOLO(str(serving_checkpoint)).ckpt
     embedded = checkpoint.get("train_metrics") or {}
-    observed = {
-        "precision": float(embedded["metrics/precision(B)"]),
-        "recall": float(embedded["metrics/recall(B)"]),
-        "map50": float(embedded["metrics/mAP50(B)"]),
-        "map50_95": float(embedded["metrics/mAP50-95(B)"]),
-    }
-    if observed != manifest["final_metrics"]:
-        raise ValueError(f"Metric drift: {observed} != {manifest['final_metrics']}")
+    observed = {"box": _metrics(embedded, "B"), "mask": _metrics(embedded, "M")}
+    expected = {"box": manifest["final_metrics"], "mask": manifest["mask_metrics"]}
+    if observed != expected:
+        raise ValueError(f"Metric drift: {observed} != {expected}")
     return observed
 
 

@@ -43,8 +43,8 @@ allow only the two registered serving artifacts:
 - `ai/computer_vision/artifacts/drone_detector/weights/best.pt`
 - `tgnn/models/tgnn.pth`
 
-The canonical legacy `last.pt` is also excepted because its hash is registered
-in the artifact manifest and it is retained solely as lineage evidence.
+The matching segmentation-run `last.pt` is also excepted because its hash is
+registered in the artifact manifest for training lineage.
 Evaluation evidence under `results/evaluation_2026-09-26/` is an intentional
 versioned deliverable, not transient runtime output.
 
@@ -68,7 +68,7 @@ Registered serving identities:
 
 | Model | SHA-256 | Size |
 |---|---|---:|
-| YOLO26s damage detector | `780241f6b42f9f0b0d83a8be8d3168e1ca864a756ff93907e72bbb7f9fe3cbf9` | 20,298,181 bytes |
+| YOLO26s segmentation detector | `2d687e94fa5c2ef445c0888794de99ea1155d880ddb9be8f9237617eb55068b5` | 23,354,973 bytes |
 | TGNN | `ad40a02e91cfe414da23f585dcf237d7fd2b5f646f3ebc47c20cb7d73640cc88` | 969,915 bytes |
 
 ## Dependency reconstruction

@@ -7,7 +7,7 @@ from typing import Any
 
 
 RESULT_TOPIC = "ai-analysis-results"
-MODEL_NAME = "drone_detector_yolo26s"
+MODEL_NAME = "drone_detector_yolo26s_seg"
 
 
 def _gps_provenance(source_event: dict[str, Any]) -> str | None:
@@ -46,6 +46,7 @@ def result_event(
     preprocessing: dict[str, Any] | None = None,
     reason: str | None = None,
     model_checkpoint_sha256: str | None = None,
+    model_name: str | None = None,
 ) -> dict[str, Any]:
     context = _detection_context(source_event)
     detections = [{**item, **context} for item in (detections or [])]
@@ -61,7 +62,7 @@ def result_event(
         "canonical_image_id": source_event.get("canonical_image_id"),
         "status": status,
         "reason": reason,
-        "model_name": MODEL_NAME,
+        "model_name": model_name or MODEL_NAME,
         "model_checkpoint_sha256": model_checkpoint_sha256,
         "inference_provenance": (
             "live-checkpoint-inference" if status == "analyzed" else "checkpoint-worker-no-inference"

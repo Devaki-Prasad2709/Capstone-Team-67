@@ -1,33 +1,37 @@
 # AI integration and model lineage
 
-The computer-vision functionality was adapted from
-<https://github.com/Devaki-Prasad2709/Capstone-Team-67> at commit
-`e06e69aa7873ad95803378cc33e40cb546406cc0`.
+The active computer-vision worker serves the tracked RescueNet YOLO26s
+segmentation checkpoint at
+`ai/computer_vision/artifacts/drone_detector/weights/best.pt`.
 
-## Retained functionality
+## Active model
 
-- Image validation, resize, frame sampling, motion filtering, blur filtering,
-  bounded pHash near-duplicate filtering, and batching behavior.
-- YOLO26s serving inference for `Slight`, `Severe`, and `Debris` using
-  `best.pt`.
-- A legacy YOLOv8 `last.pt`, `results.csv`, and plots are retained as
-  historical evidence and are not used by the worker.
+- Model event name: `drone_detector_yolo26s_seg`
+- Architecture/task: YOLO26s-seg / instance segmentation
+- Checkpoint SHA-256: `2d687e94fa5c2ef445c0888794de99ea1155d880ddb9be8f9237617eb55068b5`
+- Classes: water, building damage (none/minor/major/total), vehicle, road
+  (clear/blocked), tree, and pool
+- Runtime output: class, confidence, bounding box, and a polygon for
+  damage-relevant classes
 
-Hard-coded `E:/...` paths were replaced with settings and CLI arguments. The
-new worker reads Kafka/MinIO events and publishes `ai-analysis-results`.
-Producer-side SQLite deduplication stays authoritative, so the AI worker's
-second pHash filter is disabled by default.
+The tracked `last.pt`, `results.csv`, box/mask curves, confusion matrices,
+batch previews, and validation previews come from the same
+`rescuenet_yolo26s_seg_final` training run. Their registered hashes are in
+`ai/computer_vision/artifact_manifest.json`.
 
-## Metric preservation
+## Embedded training metrics
 
-| Precision | Recall | mAP@50 | mAP@50-95 |
-| ---: | ---: | ---: | ---: |
-| 0.36917 | 0.28202 | 0.25171 | 0.10874 |
+| Output | Precision | Recall | mAP@50 | mAP@50-95 |
+| --- | ---: | ---: | ---: | ---: |
+| Boxes | 0.74283 | 0.66660 | 0.72572 | 0.52265 |
+| Masks | 0.73554 | 0.66361 | 0.71121 | 0.46847 |
 
-`python -m scripts.verify_ai_artifacts` verifies SHA-256 for all preserved
-artifacts, then compares the serving checkpoint's embedded `train_metrics`
-with the manifest. A new evaluation requires the original dataset and can
-vary with dependencies, hardware, or dataset contents.
+`python -m scripts.verify_ai_artifacts` checks all registered hashes and
+compares both box and mask metrics embedded in `best.pt` with the manifest.
+The independent held-out test and polygon checks are recorded in
+`docs/SEGMENTATION_VERIFICATION.md`.
+
+## Runtime route
 
 ```text
 drone-video -> AI worker -> ai-analysis-results -> Spark -> storage/processed/ai
@@ -39,23 +43,19 @@ Results have one of four statuses: `analyzed`, `filtered`,
 `duplicate_skipped`, or `error`.
 
 For scenario events, every live detection retains its image/object reference,
-class, confidence, bounding box, scenario timestamp, explicitly simulated GPS,
-and declared GIS target. The result also records the SHA-256 identity of the
-checkpoint loaded by the worker, `live-checkpoint-inference`, and
-`prerecorded_output=false`. The observation consumer rejects scenario results
-that omit those provenance fields and accepts simulated coordinates only with
-the explicit `--allow-scenario-simulated-gps` switch.
+class, confidence, bounding box, optional segmentation polygon, scenario
+timestamp, explicitly simulated GPS, and declared GIS target. The result also
+records the checkpoint SHA-256, `live-checkpoint-inference`, and
+`prerecorded_output=false`. The observation consumer accepts simulated
+coordinates only with `--allow-scenario-simulated-gps`.
 
-```powershell
-python -m consumers.observation_consumer `
-  --gis-path scenarios\louisiana_east_flood\gis\infrastructure.geojson `
-  --allow-scenario-simulated-gps
-```
+The frozen scenario's legacy ISBDA images were selected for the replaced
+three-class detector and are outside the RescueNet segmentation model's
+validation domain. They verify transport and inference wiring, not current
+model accuracy.
 
 ## Redistribution note
 
-No `LICENSE` file was present in the upstream repository at the reviewed
-commit. Before publishing publicly, confirm that the team may redistribute its
-code, weights, sample, and training evidence. The full training dataset is not
-duplicated here; one curated smoke-test image and approximately 32 MB of
-canonical model/training-lineage artifacts are retained.
+No `LICENSE` file was present in the reviewed upstream repository. Before
+publishing publicly, confirm that the team may redistribute its code, weights,
+sample imagery, and training evidence.
