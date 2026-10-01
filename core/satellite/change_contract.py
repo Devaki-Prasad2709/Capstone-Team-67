@@ -8,7 +8,8 @@ import time
 from collections import Counter
 from typing import Callable
 
-from core.satellite.spacenet_adapter import classify_transferred_pair
+from core.satellite.broad_area_classifier import classify_normalized_pair
+from core.satellite.normalizer import normalize_transferred_pair
 
 
 REQUIRED_PAIR_FIELDS = (
@@ -41,8 +42,11 @@ def _source_reference(event: dict) -> dict:
     return {
         key: event.get(key)
         for key in (
-            "image_id", "timestamp", "scenario_timestamp", "transfer_mode", "object_key",
-            "image_uri", "content_hash", "size_bytes", "bbox", "satellite_phase",
+            "image_id", "timestamp", "scenario_timestamp", "scenario_event_id",
+            "input_origin", "simulation_fields", "source_dataset",
+            "source_relative_path", "source_sha256", "source_size_bytes",
+            "transfer_mode", "object_key", "image_uri", "content_hash",
+            "size_bytes", "bbox", "satellite_phase",
         )
     }
 
@@ -80,14 +84,13 @@ def build_change_result(
         raise ValueError("Satellite pre/post tile IDs differ")
     if pre_event.get("scenario_id") != post_event.get("scenario_id"):
         raise ValueError("Satellite pre/post scenario IDs differ")
-    change = classify_transferred_pair(
+    normalized = normalize_transferred_pair(
         image_loader(pre_event),
         image_loader(post_event),
         pre_event["bbox"],
         post_event["bbox"],
-        grid_size=grid_size,
     )
-    overlap = change["metadata"]["overlap_bounds"]
+    change = classify_normalized_pair(normalized, grid_size=grid_size)
     digest = hashlib.sha256(
         f"{pre_event.get('content_hash')}:{post_event.get('content_hash')}".encode()
     ).hexdigest()[:16]
@@ -104,14 +107,7 @@ def build_change_result(
             "pre": _source_reference(pre_event),
             "post": _source_reference(post_event),
         },
-        "footprint": {
-            "type": "Polygon",
-            "coordinates": [[
-                [overlap[0], overlap[1]], [overlap[2], overlap[1]],
-                [overlap[2], overlap[3]], [overlap[0], overlap[3]],
-                [overlap[0], overlap[1]],
-            ]],
-        },
+        "footprint": change["metadata"]["wgs84_footprint"],
         "change": change,
         "summary": _summary(change),
         "reference_labels": {

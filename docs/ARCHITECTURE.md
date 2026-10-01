@@ -1,5 +1,8 @@
 # Architecture
 
+The reusable raster alignment, compatibility, mask, and failure contract is
+documented in [Universal Satellite Adapter](UNIVERSAL_SATELLITE_ADAPTER.md).
+
 ## Current implementation
 
 ```mermaid

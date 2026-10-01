@@ -126,6 +126,10 @@ class ScenarioEventFactory:
                     "bbox": definition["bbox"],
                     "input_origin": "real-spacenet8",
                     "simulation_fields": ["scenario_timestamp"],
+                    "source_dataset": self.satellite["dataset"],
+                    "source_relative_path": definition["relative_path"],
+                    "source_sha256": definition["sha256"],
+                    "source_size_bytes": definition["size_bytes"],
                     "reference_feature_count": self.satellite["reference"]["feature_count"],
                     "reference_flooded_feature_count": self.satellite["reference"]["flooded_feature_count"],
                 }
