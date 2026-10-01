@@ -1,5 +1,9 @@
 # Real-Time Post-Disaster Streaming and Assessment System
 
+The reusable satellite input, alignment, masking, and failure contract is
+documented in
+[`docs/UNIVERSAL_SATELLITE_ADAPTER.md`](docs/UNIVERSAL_SATELLITE_ADAPTER.md).
+
 A distributed capstone platform that replays real disaster datasets as live
 feeds, transports events through Kafka, stores imagery in MinIO, processes each
 modality with Spark Structured Streaming, and exposes the complete workflow in a

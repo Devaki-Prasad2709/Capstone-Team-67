@@ -32,6 +32,13 @@ def _event(phase: str, payload: bytes) -> dict:
         "tile_id": "2_23_44",
         "bbox": [-90.1, 29.7, -90.0, 29.8],
         "scenario_id": "scenario",
+        "scenario_event_id": f"satellite-{phase}",
+        "input_origin": "real-spacenet8",
+        "simulation_fields": ["scenario_timestamp"],
+        "source_dataset": "SpaceNet 8",
+        "source_relative_path": f"{phase.upper()}-event/{phase}.tif",
+        "source_sha256": phase * 32,
+        "source_size_bytes": len(payload) + 100,
         "content_hash": phase,
         "size_bytes": len(payload),
         "payload": payload,
@@ -47,6 +54,16 @@ def test_transported_pair_produces_separate_broad_area_contract():
     assert result["data_type"] == "broad_area_change"
     assert result["tgnn_integration"] == "none"
     assert result["timestamp"] == post["timestamp"]
+    assert result["source_images"]["pre"]["scenario_event_id"] == "satellite-pre"
+    assert result["source_images"]["post"]["input_origin"] == "real-spacenet8"
+    assert result["source_images"]["post"]["simulation_fields"] == [
+        "scenario_timestamp"
+    ]
+    assert result["source_images"]["pre"]["source_dataset"] == "SpaceNet 8"
+    assert result["source_images"]["post"]["source_relative_path"] == (
+        "POST-event/post.tif"
+    )
+    assert result["source_images"]["post"]["source_sha256"] == "post" * 32
     assert result["reference_labels"] == {
         "feature_count": 40,
         "flooded_feature_count": 22,

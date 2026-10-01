@@ -42,8 +42,11 @@ def _source_reference(event: dict) -> dict:
     return {
         key: event.get(key)
         for key in (
-            "image_id", "timestamp", "scenario_timestamp", "transfer_mode", "object_key",
-            "image_uri", "content_hash", "size_bytes", "bbox", "satellite_phase",
+            "image_id", "timestamp", "scenario_timestamp", "scenario_event_id",
+            "input_origin", "simulation_fields", "source_dataset",
+            "source_relative_path", "source_sha256", "source_size_bytes",
+            "transfer_mode", "object_key", "image_uri", "content_hash",
+            "size_bytes", "bbox", "satellite_phase",
         )
     }
 

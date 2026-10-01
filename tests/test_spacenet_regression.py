@@ -131,23 +131,34 @@ def test_spacenet_pair_uses_universal_geographic_normalization(case):
     assert pair.pre.shape == pair.post.shape == pair.valid_mask.shape
     assert pair.pre.shape == (pair.height, pair.width)
     assert pair.working_crs
-    assert pair.transform == pair.pre_provenance.normalized_transform
-    assert pair.transform == pair.post_provenance.normalized_transform
     assert pair.bounds == pair.transform.grid_bounds(pair.width, pair.height)
     assert pair.valid_mask.dtype == np.bool_
     assert pair.valid_mask.any()
     assert 0.0 < pair.valid_fraction <= 1.0
     assert pair.pre_provenance.source_path == str(pre_path)
     assert pair.post_provenance.source_path == str(post_path)
-    assert pair.pre_provenance.source_transform != pair.post_provenance.source_transform
+    assert (
+        pair.pre_provenance.metadata["transform"]
+        != pair.post_provenance.metadata["transform"]
+    )
+    assert (
+        pair.pre_provenance.metadata["normalization_path"]
+        == "reprojected_to_common_grid"
+    )
+    assert (
+        pair.post_provenance.metadata["normalization_path"]
+        == "reprojected_to_common_grid"
+    )
 
     result = classify_normalized_pair(pair, grid_size=case["grid_size"])
     assert result["type"] == "FeatureCollection"
     assert result["metadata"]["crs"] == "EPSG:4326"
-    assert result["metadata"]["normalized_grid"]["width"] == pair.width
-    assert result["metadata"]["normalized_grid"]["height"] == pair.height
-    assert result["metadata"]["source_provenance"]["pre"]["source_path"] == str(pre_path)
-    assert result["metadata"]["source_provenance"]["post"]["source_path"] == str(post_path)
+    assert result["metadata"]["working_crs"] == pair.working_crs
+    assert result["metadata"]["working_transform"] == pair.transform.as_tuple()
+    assert result["metadata"]["working_bounds"] == pair.bounds
+    assert result["metadata"]["normalized_size"] == [pair.width, pair.height]
+    assert result["metadata"]["pre_provenance"]["source_path"] == str(pre_path)
+    assert result["metadata"]["post_provenance"]["source_path"] == str(post_path)
 
     true_shared_footprint = _wgs84_footprint(pre_path).intersection(
         _wgs84_footprint(post_path)
