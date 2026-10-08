@@ -3,6 +3,24 @@
 Cleanup date: 2026-09-26  
 Branch: `dibsei/baseline-blocker-fixes`
 
+## Follow-up cleanup (2026-10-08)
+
+The repository was audited again after end-to-end and satellite integration
+runs. Two unused zero-byte placeholders were removed:
+
+- `ai/computer_vision/configs/training.yaml`
+- `consumers/test_consumer.py`
+
+Local pytest/Python caches, application logs, Spark checkpoints, generated
+Parquet output, SQLite sidecar files, and the temporary end-to-end deduplication
+database were also cleared. Persistent databases, registered model artifacts,
+external datasets, committed evaluation evidence, environment configuration,
+and the satellite end-to-end JSON evidence were retained.
+
+The remaining zero-byte tracked files are intentional `__init__.py` package
+markers. They are required for stable package discovery and are not incomplete
+implementations.
+
 ## Outcome
 
 The indexed repository was reduced from 3,382 files and roughly 475 MB of
