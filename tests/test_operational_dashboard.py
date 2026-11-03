@@ -234,7 +234,7 @@ def test_operational_page_keeps_incident_information_in_required_order():
     assert positions == sorted(positions)
     assert 'data-map-layer="satellite"' in html
     assert 'data-map-layer="structural"' in html
-    assert 'data-map-layer="damage"' in html
+    assert 'data-map-layer="damage"' not in html
     assert 'data-map-layer="risk"' in html
     assert 'data-map-layer="hotspots"' in html
     assert 'id="operationsLoading"' in html

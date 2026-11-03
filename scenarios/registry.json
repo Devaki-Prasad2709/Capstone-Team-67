@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "default_scenario_id": "louisiana-east-flood-v1",
+  "scenarios": [
+    {
+      "scenario_id": "louisiana-east-flood-v1",
+      "title": "Louisiana East Flood and Infrastructure Disruption",
+      "package_path": "scenarios/louisiana_east_flood",
+      "location": {"name": "Jean Lafitte, Jefferson Parish, Louisiana, USA", "center": [-90.08271496337172, 29.761131236894086], "bbox": [-90.08553068272339, 29.75831551754242, -90.07989924402005, 29.763946956245753], "crs": "EPSG:4326"},
+      "required_datasets": ["spacenet8", "isbda"],
+      "dataset_roots": {"satellite": "SPACENET8_DATASET_PATH", "drone": "ISBDA_DATASET_PATH"},
+      "enabled": true
+    },
+    {
+      "scenario_id": "mexico-earthquake-2017-v1",
+      "title": "Mexico City Earthquake Response",
+      "package_path": "scenarios/mexico_earthquake_2017",
+      "location": {"name": "Mexico City, Mexico", "center": [-99.1554846369184, 19.28890468969342], "bbox": [-99.15778560304025, 19.28660372357156, -99.15318367079654, 19.29120565581528], "crs": "EPSG:4326"},
+      "required_datasets": ["xbd", "crisis_mmd", "isbda"],
+      "dataset_roots": {"satellite": "XBD_DATASET_PATH", "social": "CRISISMMD_DATASET_PATH", "drone": "ISBDA_DATASET_PATH"},
+      "enabled": true
+    }
+  ]
+}

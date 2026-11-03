@@ -159,6 +159,61 @@ def test_event_factory_keeps_existing_wire_contracts(tmp_path):
     assert telemetry_event["source"] == "infrastructure_telemetry"
 
 
+def test_scenario_duplicate_drone_keeps_dedup_audit_but_reuses_bytes_for_inference(tmp_path):
+    satellite = json.loads((SCENARIO / "satellite" / "pair.json").read_text(encoding="utf-8"))
+    drone = json.loads((SCENARIO / "drone" / "selection.json").read_text(encoding="utf-8"))
+    spacenet_root = tmp_path / "spacenet"
+    isbda_root = tmp_path / "isbda"
+    _touch_registered_assets(spacenet_root, satellite, ("pre_event", "post_event"))
+    for asset in drone["images"]:
+        path = isbda_root / asset["relative_path"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"test")
+
+    def duplicate_drone(path, _dedup, _transfer):
+        return {
+            "frame_id": path.name,
+            "source": "drone",
+            "content_hash": "a" * 64,
+            "is_duplicate": True,
+            "canonical_image_id": "canonical.jpg",
+            "canonical_content_hash": "a" * 64,
+            "duplicate_method": "sha256",
+            "perceptual_distance": 0,
+            "transfer_mode": "none",
+        }
+
+    class TransferStub:
+        def attach(self, event, image_bytes, source, filename, fingerprint, content_type):
+            return {
+                **event,
+                "transfer_mode": "base64",
+                "image_data": "dGVzdA==",
+                "size_bytes": len(image_bytes),
+                "content_hash": fingerprint,
+                "is_duplicate": False,
+            }
+
+    factory = ScenarioEventFactory(
+        SCENARIO / "scenario.json",
+        spacenet_root=spacenet_root,
+        isbda_root=isbda_root,
+        deduplicator=ImageDeduplicator(tmp_path / "dedup.sqlite3"),
+        transfer=TransferStub(),
+        drone_builder=duplicate_drone,
+        satellite_builder=lambda *_args: {},
+    )
+
+    event = factory.drone("drone-001")
+
+    assert event["is_duplicate"] is True
+    assert event["duplicate_method"] == "sha256"
+    assert event["process_duplicate_for_scenario_replay"] is True
+    assert event["processing_status"] == "duplicate_reused_for_scenario_replay"
+    assert event["transfer_mode"] == "base64"
+    assert event["image_data"] == "dGVzdA=="
+
+
 class FakeProducer:
     def flush(self, timeout):
         self.flush_timeout = timeout

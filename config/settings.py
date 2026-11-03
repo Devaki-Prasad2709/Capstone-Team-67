@@ -44,6 +44,8 @@ class Settings:
     gis_dataset_path: str = os.getenv("GIS_DATASET_PATH", "")
     spacenet8_dataset_path: str = os.getenv("SPACENET8_DATASET_PATH", "")
     isbda_dataset_path: str = os.getenv("ISBDA_DATASET_PATH", "")
+    xbd_dataset_path: str = os.getenv("XBD_DATASET_PATH", "")
+    crisismmd_dataset_path: str = os.getenv("CRISISMMD_DATASET_PATH", "")
     final_scenario_path: str = os.getenv(
         "FINAL_SCENARIO_PATH", "scenarios/louisiana_east_flood/scenario.json"
     )

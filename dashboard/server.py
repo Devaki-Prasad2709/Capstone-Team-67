@@ -7,6 +7,7 @@ from dashboard.social_alert_service import SocialAlertService
 from dashboard.building_classification_service import BuildingClassificationService
 from dashboard.operational_service import OperationalDashboardService
 from dashboard.scenario_service import DashboardScenarioService
+from scenario_runtime import ScenarioRegistry
 from dashboard.cache_service import HealthCache, TopicTailCache
 from dashboard.projection_service import DashboardProjectionService
 from dashboard.materialized_state import DashboardMaterializedState
@@ -22,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import logging
 import time
+from threading import RLock
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
@@ -59,11 +61,18 @@ FINITE_PRODUCERS = ("social", "drone", "satellite", "gis")
 
 app = FastAPI(title="Disaster Streaming Control Center", docs_url="/api/docs")
 manager = ProcessManager()
+scenario_registry = ScenarioRegistry()
+active_registration = scenario_registry.get()
+scenario_context_lock = RLock()
 social_alerts = SocialAlertService()
-scenario_social_alerts = SocialAlertService()
-building_classifications = BuildingClassificationService()
-operational_dashboard = OperationalDashboardService(building_classifications)
-scenario_runner = DashboardScenarioService()
+scenario_social_alerts = SocialAlertService(active_registration.gis_path)
+building_classifications = BuildingClassificationService(active_registration.gis_path)
+operational_dashboard = OperationalDashboardService(
+    building_classifications,
+    gis_path=active_registration.gis_path,
+    scenario_path=active_registration.manifest_path,
+)
+scenario_runner = DashboardScenarioService(active_registration.manifest_path)
 topic_tails = TopicTailCache(
     lambda topic, limit: recent_topic_events(topic, limit), ttl_seconds=10.0
 )
@@ -87,7 +96,7 @@ dashboard_projection = DashboardProjectionService(
     building_service=building_classifications,
     materialized_state=materialized_state,
     topics=DASHBOARD_TOPICS,
-    map_config_loader=map_config,
+    map_config_loader=lambda: map_config(active_registration.manifest_path, active_registration.gis_path),
     object_key_resolver=object_key_for_content_hash,
 )
 last_successful_updates: dict[str, str | None] = {
@@ -121,6 +130,64 @@ class BuildingClassificationRequest(BaseModel):
 
 class ScenarioControlRequest(BaseModel):
     speed: float | None = Field(default=None, gt=0, le=100)
+
+
+def _observation_command(registration=None) -> list[str]:
+    """Build the scenario-bound observation worker command."""
+    registration = registration or active_registration
+    return python_module(
+        "consumers.observation_consumer",
+        "--gis-path",
+        str(registration.gis_path),
+        "--allow-scenario-simulated-gps",
+        "--group-id",
+        f"disaster-observation-dashboard-{registration.scenario_id}",
+    )
+
+
+def _classification_database(registration):
+    if registration.scenario_id == scenario_registry.default_scenario_id:
+        return settings.resolved_building_classification_database_path
+    safe_id = registration.scenario_id.replace("/", "-").replace("\\", "-")
+    return settings.project_root / "storage" / "gis" / f"building_classifications_{safe_id}.sqlite3"
+
+
+def _activate_scenario_context(scenario_id: str) -> None:
+    """Atomically replace every scenario-scoped service with one coherent context."""
+    global active_registration, scenario_social_alerts, building_classifications
+    global operational_dashboard, scenario_runner, dashboard_projection
+    registration = scenario_registry.get(scenario_id)
+    new_buildings = BuildingClassificationService(
+        registration.gis_path,
+        _classification_database(registration),
+    )
+    new_operational = OperationalDashboardService(
+        new_buildings,
+        gis_path=registration.gis_path,
+        scenario_path=registration.manifest_path,
+    )
+    new_runner = DashboardScenarioService(registration.manifest_path)
+    new_social = SocialAlertService(registration.gis_path)
+    new_projection = DashboardProjectionService(
+        operational_service=new_operational,
+        scenario_service=new_runner,
+        social_service=new_social,
+        building_service=new_buildings,
+        materialized_state=materialized_state,
+        topics=DASHBOARD_TOPICS,
+        map_config_loader=lambda: map_config(registration.manifest_path, registration.gis_path),
+        object_key_resolver=object_key_for_content_hash,
+    )
+    with scenario_context_lock:
+        active_registration = registration
+        building_classifications = new_buildings
+        operational_dashboard = new_operational
+        scenario_runner = new_runner
+        scenario_social_alerts = new_social
+        dashboard_projection = new_projection
+        topic_tails.clear()
+        readiness_cache.clear()
+        detail_cache.clear()
 
 
 def _scenario_rows_visible_at_current_time(rows: list[dict]) -> list[dict]:
@@ -313,20 +380,7 @@ def start_process(name: str, options: StartOptions) -> dict[str, object]:
     elif name == "satellite_change":
         command = python_module("core.satellite.change_worker")
     elif name == "observation":
-        command = python_module(
-            "consumers.observation_consumer",
-            "--gis-path",
-            str(
-                PROJECT_ROOT
-                / "scenarios"
-                / "louisiana_east_flood"
-                / "gis"
-                / "infrastructure.geojson"
-            ),
-            "--allow-scenario-simulated-gps",
-            "--group-id",
-            "disaster-observation-dashboard-v1",
-        )
+        command = _observation_command()
     elif name in FINITE_PRODUCERS:
         defaults = {
             "social": settings.social_delay,
@@ -611,7 +665,7 @@ def object_image(key: str = Query(min_length=1)) -> Response:
 
 @app.get("/api/map/config")
 def map_configuration() -> dict[str, object]:
-    return map_config()
+    return map_config(active_registration.manifest_path, active_registration.gis_path)
 
 
 @app.get("/api/operations")
@@ -642,7 +696,74 @@ def operational_snapshot() -> dict[str, object]:
 
 @app.get("/api/scenario")
 def scenario_status() -> dict[str, object]:
-    return scenario_runner.status()
+    return {**scenario_runner.status(), "scenario_id": active_registration.scenario_id, "title": active_registration.title}
+
+
+@app.get("/api/scenarios")
+def registered_scenarios() -> dict[str, object]:
+    rows = []
+    for registration in scenario_registry.list():
+        row = registration.public()
+        if registration.enabled:
+            readiness, _, cache = readiness_cache.get(
+                f"scenario:{registration.scenario_id}",
+                lambda registration=registration: (DashboardScenarioService(registration.manifest_path).readiness(), None),
+            )
+            row["readiness"] = readiness
+            row["readiness_cache"] = cache
+        row["active"] = registration.scenario_id == active_registration.scenario_id
+        rows.append(row)
+    return {"active_scenario_id": active_registration.scenario_id, "default_scenario_id": scenario_registry.default_scenario_id, "scenarios": rows}
+
+
+@app.post("/api/scenarios/{scenario_id}/activate", dependencies=[Depends(require_operator)])
+def activate_scenario(scenario_id: str) -> dict[str, object]:
+    current = scenario_runner.status()
+    if current.get("state") in {"running", "paused"}:
+        raise HTTPException(409, "Pause is not sufficient; reset the active replay before switching scenarios.")
+    observation_status = manager.status("observation")
+    observation_state = observation_status.get("state")
+    observation_was_managed = (
+        observation_state == "running"
+        and observation_status.get("ownership") == "dashboard"
+    )
+    if observation_state == "externally_running":
+        raise HTTPException(
+            409,
+            "The observation worker is externally managed. Stop it before switching scenarios.",
+        )
+    previous_registration = active_registration
+    if observation_was_managed:
+        stopped, message = manager.stop("observation")
+        if not stopped:
+            logger.error("Could not stop observation worker for scenario switch: %s", message)
+            raise HTTPException(409, "The observation worker could not be restarted for the scenario switch.")
+    try:
+        registration = scenario_registry.get(scenario_id)
+        readiness = DashboardScenarioService(registration.manifest_path).readiness()
+        if not readiness.get("valid"):
+            raise HTTPException(409, readiness.get("message", "Scenario is not ready."))
+        _activate_scenario_context(scenario_id)
+        if observation_was_managed:
+            started, message = manager.start("observation", _observation_command(registration))
+            if not started:
+                logger.error("Could not restart observation worker after scenario switch: %s", message)
+                _activate_scenario_context(previous_registration.scenario_id)
+                manager.start("observation", _observation_command(previous_registration))
+                raise HTTPException(500, "Scenario switching failed while restarting its observation worker.")
+    except HTTPException:
+        if observation_was_managed and manager.status("observation").get("state") != "running":
+            manager.start("observation", _observation_command(previous_registration))
+        raise
+    except KeyError as exc:
+        if observation_was_managed:
+            manager.start("observation", _observation_command(previous_registration))
+        raise HTTPException(404, "Unknown registered scenario") from exc
+    except ValueError as exc:
+        if observation_was_managed:
+            manager.start("observation", _observation_command(previous_registration))
+        raise HTTPException(422, str(exc)) from exc
+    return {"ok": True, "message": f"Activated {active_registration.title}", "scenario": active_registration.public(), "status": scenario_runner.status()}
 
 
 @app.post("/api/scenario/{action}", dependencies=[Depends(require_operator)])

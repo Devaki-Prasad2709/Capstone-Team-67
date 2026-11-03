@@ -21,8 +21,20 @@ def test_frontend_is_split_by_user_facing_responsibility():
     }
     assert expected <= {path.name for path in (STATIC / "modules").glob("*.js")}
     app = (STATIC / "app.js").read_text(encoding="utf-8")
-    assert '<script type="module" src="/app.js">' in (STATIC / "index.html").read_text(encoding="utf-8")
+    assert '<script type="module" src="/app.js?v=' in (STATIC / "index.html").read_text(encoding="utf-8")
     assert all(f"./modules/{name}" in app for name in expected)
+
+
+def test_navigation_does_not_abort_global_scenario_registry_request():
+    api_client = (STATIC / "modules" / "api-client.js").read_text(encoding="utf-8")
+    router = (STATIC / "modules" / "router.js").read_text(encoding="utf-8")
+    scenarios = (STATIC / "modules" / "scenario-controls.js").read_text(encoding="utf-8")
+
+    assert "global:scenarios" in scenarios
+    assert "startsWith('global:')" in api_client
+    assert "cancelRequests({includeGlobal: false})" in router
+    app = (STATIC / "app.js").read_text(encoding="utf-8")
+    assert "if (!$('#scenarioSelector')?.options.length) work.push(loadScenarioRegistry())" in app
 
 
 def test_dynamic_actions_use_delegation_not_inline_handlers():
@@ -82,6 +94,20 @@ def test_risk_scores_are_legible_and_satellite_overlay_clears_without_current_re
     assert "awaiting current replay evidence" not in satellite
     assert "setMapData?.('satellite-change', {type: 'FeatureCollection', features: []})" in satellite
     assert "card?.classList.add('hidden')" in satellite
+
+
+def test_drone_evidence_does_not_add_a_second_circle_over_the_risk_node():
+    operations = (STATIC / "modules" / "operations-map.js").read_text(encoding="utf-8")
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+
+    assert "id: 'damage-observations'" not in operations
+    assert "map.removeLayer('damage-observations')" in operations
+    assert "map.removeSource('damage')" in operations
+    assert 'data-map-layer="damage"' not in html
+    assert "drone/YOLO detection" not in html
+    assert "TGNN risk (teal → yellow → orange)" in html
+    assert "'#ff6d75'" not in operations
+    assert "'#d3133a'" not in operations
 
 
 def test_map_building_footprints_and_risk_nodes_share_classification_workflow():

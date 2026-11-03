@@ -1,0 +1,1309 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "xBD building labels plus OpenStreetMap road snapshot",
+    "bbox": [
+      -99.15778560304025,
+      19.28660372357156,
+      -99.15318367079654,
+      19.29120565581528
+    ],
+    "crs": "EPSG:4326",
+    "snapshot_retrieved_on": "2026-11-03",
+    "raw_sources_committed": false
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "road_segment",
+        "road_id": "osm-way-63059679",
+        "name": "Viaducto Tlalpan",
+        "highway": "secondary",
+        "lanes": "2",
+        "source": "OpenStreetMap API snapshot"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -99.15318367079654,
+            19.289266549637148
+          ],
+          [
+            -99.1533181,
+            19.2891789
+          ],
+          [
+            -99.1535202,
+            19.2890553
+          ],
+          [
+            -99.1545126,
+            19.2883747
+          ],
+          [
+            -99.1546099,
+            19.2883168
+          ],
+          [
+            -99.1550564,
+            19.2880291
+          ],
+          [
+            -99.1551909,
+            19.2879424
+          ],
+          [
+            -99.1554541,
+            19.2877729
+          ],
+          [
+            -99.1569276,
+            19.2868539
+          ],
+          [
+            -99.1571628,
+            19.2867059
+          ],
+          [
+            -99.1572774,
+            19.286633
+          ],
+          [
+            -99.1573259457591,
+            19.28660372357156
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "road_segment",
+        "road_id": "osm-way-533280131",
+        "name": "Viaducto Tlalpan",
+        "highway": "secondary",
+        "lanes": "2",
+        "source": "OpenStreetMap API snapshot"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -99.15661872534626,
+            19.28660372357156
+          ],
+          [
+            -99.1562448,
+            19.2868202
+          ],
+          [
+            -99.1562083,
+            19.2868435
+          ],
+          [
+            -99.1553038,
+            19.287424
+          ],
+          [
+            -99.1552588,
+            19.2874505
+          ],
+          [
+            -99.1543647,
+            19.288006
+          ],
+          [
+            -99.1539141,
+            19.2883007
+          ],
+          [
+            -99.1537133,
+            19.288432
+          ],
+          [
+            -99.1532357,
+            19.2887443
+          ],
+          [
+            -99.15318367079654,
+            19.288775143069476
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "road_segment",
+        "road_id": "osm-way-867815589",
+        "name": "OSM motorway 867815589",
+        "highway": "motorway",
+        "lanes": "2",
+        "source": "OpenStreetMap API snapshot"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -99.15318367079654,
+            19.289161709682965
+          ],
+          [
+            -99.1533442,
+            19.2890595
+          ],
+          [
+            -99.1541376,
+            19.2885671
+          ],
+          [
+            -99.1547612,
+            19.2881703
+          ],
+          [
+            -99.1548895,
+            19.2880797
+          ],
+          [
+            -99.1549927,
+            19.2879959
+          ],
+          [
+            -99.1550793,
+            19.2879304
+          ],
+          [
+            -99.1554207,
+            19.2877121
+          ],
+          [
+            -99.1558586,
+            19.2874127
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "road_segment",
+        "road_id": "osm-way-891764611",
+        "name": "Autopista Urbana Sur - Cuernavaca",
+        "highway": "motorway",
+        "lanes": "2",
+        "source": "OpenStreetMap API snapshot"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -99.1543954,
+            19.2882854
+          ],
+          [
+            -99.1569969444381,
+            19.28660372357156
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "road_segment",
+        "road_id": "osm-way-452807834",
+        "name": "Autopista Urbana Sur - Cuernavaca",
+        "highway": "motorway",
+        "lanes": "2",
+        "source": "OpenStreetMap API snapshot"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -99.15690419386691,
+            19.28660372357156
+          ],
+          [
+            -99.1543639,
+            19.2882171
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-93aa9b3c-6171-47f5-acfa-21e22cb88345",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15778471877998,
+              19.29027874926176
+            ],
+            [
+              -99.15773478594568,
+              19.29019526639963
+            ],
+            [
+              -99.15778461172732,
+              19.29016701622817
+            ],
+            [
+              -99.15778471877998,
+              19.29027874926176
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-a2581007-d0ff-4ae5-b8bc-18ee495006aa",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15653607235484,
+              19.28954784521981
+            ],
+            [
+              -99.156475428384,
+              19.28958610679889
+            ],
+            [
+              -99.15643767964637,
+              19.28951972717466
+            ],
+            [
+              -99.15649705476778,
+              19.28949056422347
+            ],
+            [
+              -99.15653607235484,
+              19.28954784521981
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-22d73a74-bd3b-4e6d-a9ba-e9354c29a5d5",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.1564093238856,
+              19.28960983265166
+            ],
+            [
+              -99.15637772439733,
+              19.28962896451639
+            ],
+            [
+              -99.15635501889537,
+              19.28959714260398
+            ],
+            [
+              -99.15639108955918,
+              19.28957800691507
+            ],
+            [
+              -99.1564093238856,
+              19.28960983265166
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-7cb05b88-f51e-480b-877d-97fdbfd66f20",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15647644920902,
+              19.28967042535015
+            ],
+            [
+              -99.15644388987826,
+              19.28968773854281
+            ],
+            [
+              -99.15642917350405,
+              19.28966106506337
+            ],
+            [
+              -99.15646077644958,
+              19.28964557219817
+            ],
+            [
+              -99.15647644920902,
+              19.28967042535015
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-57b6fddc-ff04-4233-9897-89bf6a9e652f",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15641231860444,
+              19.28973658898153
+            ],
+            [
+              -99.15635837325026,
+              19.28976635375909
+            ],
+            [
+              -99.15633758539363,
+              19.28973604645826
+            ],
+            [
+              -99.15633948693322,
+              19.28972057903271
+            ],
+            [
+              -99.15638673039827,
+              19.28969597526466
+            ],
+            [
+              -99.15641231860444,
+              19.28973658898153
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-642297a3-6d38-427b-b6bc-df3a2f5b2835",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15657973514784,
+              19.28977461334921
+            ],
+            [
+              -99.156524461669,
+              19.28980459895781
+            ],
+            [
+              -99.1565034143785,
+              19.28977562917683
+            ],
+            [
+              -99.15652842229537,
+              19.28975921300025
+            ],
+            [
+              -99.15652215400081,
+              19.28974615009413
+            ],
+            [
+              -99.15654341313041,
+              19.28973472683375
+            ],
+            [
+              -99.1565481752734,
+              19.28974280132402
+            ],
+            [
+              -99.15656400459137,
+              19.28973792934276
+            ],
+            [
+              -99.15657973514784,
+              19.28977461334921
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-d6628968-9921-4569-abd5-6dbe727d8ecf",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15664980659555,
+              19.28978049339551
+            ],
+            [
+              -99.1566122932632,
+              19.28980357325235
+            ],
+            [
+              -99.15658397694337,
+              19.2897617790406
+            ],
+            [
+              -99.15661878013432,
+              19.28973830123876
+            ],
+            [
+              -99.15664980659555,
+              19.28978049339551
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-7fd97fa8-2555-4795-a238-ce785fe3b9c0",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15658813963606,
+              19.28984409582132
+            ],
+            [
+              -99.15654600983441,
+              19.28987263752078
+            ],
+            [
+              -99.15654470467959,
+              19.28984352654954
+            ],
+            [
+              -99.15652551103689,
+              19.2898104886459
+            ],
+            [
+              -99.15655040780106,
+              19.28979560801373
+            ],
+            [
+              -99.15658813963606,
+              19.28984409582132
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-783a55a0-ab2b-42d8-a77f-9b6036fb111a",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.1565434206356,
+              19.28984481374773
+            ],
+            [
+              -99.15651931726903,
+              19.28986102584946
+            ],
+            [
+              -99.15650838677124,
+              19.28983652924262
+            ],
+            [
+              -99.15653234219721,
+              19.28982629789339
+            ],
+            [
+              -99.1565434206356,
+              19.28984481374773
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-d9a2f908-47d9-4131-873e-6dfc4a4e6a25",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15653034025051,
+              19.28982119419798
+            ],
+            [
+              -99.15650607979785,
+              19.28983375971046
+            ],
+            [
+              -99.15649484455368,
+              19.28981188900376
+            ],
+            [
+              -99.15651772170739,
+              19.28979859533365
+            ],
+            [
+              -99.15653034025051,
+              19.28982119419798
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-2eb7faaa-48bb-4fdf-9f3c-8faba69816a3",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15651455108497,
+              19.2898569456047
+            ],
+            [
+              -99.15647125153238,
+              19.28988017585407
+            ],
+            [
+              -99.15645816658159,
+              19.28985174262987
+            ],
+            [
+              -99.15650039465149,
+              19.28983259763039
+            ],
+            [
+              -99.15651455108497,
+              19.2898569456047
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-fabcb56f-716d-47cc-a475-b92a2dcdf156",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15650144436545,
+              19.28980561098715
+            ],
+            [
+              -99.15649023462781,
+              19.2898105801333
+            ],
+            [
+              -99.15649900553281,
+              19.28982574298294
+            ],
+            [
+              -99.15645693552169,
+              19.28984955565105
+            ],
+            [
+              -99.15644709050795,
+              19.28983570653936
+            ],
+            [
+              -99.15641546239407,
+              19.28985484244989
+            ],
+            [
+              -99.15639377805087,
+              19.28983006330671
+            ],
+            [
+              -99.15644720089654,
+              19.28979019535232
+            ],
+            [
+              -99.15644365025598,
+              19.28977196478253
+            ],
+            [
+              -99.15646837060197,
+              19.28975837780211
+            ],
+            [
+              -99.15650144436545,
+              19.28980561098715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-2c114f6f-ccad-40d2-85ef-5372d93fc52d",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15642706192735,
+              19.28977504223582
+            ],
+            [
+              -99.15638714471277,
+              19.28980104107764
+            ],
+            [
+              -99.15637668563296,
+              19.28978763009443
+            ],
+            [
+              -99.15641690884422,
+              19.28976031817283
+            ],
+            [
+              -99.15642706192735,
+              19.28977504223582
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-5bdea1c3-dd81-486d-91aa-f6f71a8850ea",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.1565336292731,
+              19.28972579312774
+            ],
+            [
+              -99.15647267231093,
+              19.28975866585497
+            ],
+            [
+              -99.15646468282893,
+              19.28975750574773
+            ],
+            [
+              -99.15644421929615,
+              19.28972411930014
+            ],
+            [
+              -99.15650762769603,
+              19.28968438864417
+            ],
+            [
+              -99.1565336292731,
+              19.28972579312774
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-2201ea2f-bd50-41c1-8960-72459a10da41",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15643636762252,
+              19.28968052048711
+            ],
+            [
+              -99.15641586483872,
+              19.28969788321365
+            ],
+            [
+              -99.1563852908329,
+              19.28965015077723
+            ],
+            [
+              -99.15641030099931,
+              19.2896361106652
+            ],
+            [
+              -99.15643636762252,
+              19.28968052048711
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-5b50cb7e-9a2d-472a-8675-cd68ac5f7b7a",
+        "name": "xBD labelled building",
+        "reference_damage": "major-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15514767407595,
+              19.2911706559152
+            ],
+            [
+              -99.15508842616461,
+              19.29120393486079
+            ],
+            [
+              -99.15503809016617,
+              19.29120397769498
+            ],
+            [
+              -99.15503058502046,
+              19.29119404062852
+            ],
+            [
+              -99.15501560775063,
+              19.29120399682673
+            ],
+            [
+              -99.15501557687493,
+              19.29120399685301
+            ],
+            [
+              -99.1549922685432,
+              19.29116199646903
+            ],
+            [
+              -99.15499276387382,
+              19.29115653113318
+            ],
+            [
+              -99.1549907575043,
+              19.29115178073527
+            ],
+            [
+              -99.15495794402396,
+              19.29111735584834
+            ],
+            [
+              -99.15498219935196,
+              19.2910985644719
+            ],
+            [
+              -99.15499246801524,
+              19.29110805995942
+            ],
+            [
+              -99.1550299780702,
+              19.29108094115269
+            ],
+            [
+              -99.15506353757087,
+              19.29111037568793
+            ],
+            [
+              -99.155101807501,
+              19.29109299802738
+            ],
+            [
+              -99.15514767407595,
+              19.2911706559152
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-2825f605-0a30-4005-9450-209c1bcba64c",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15639545466853,
+              19.28818798638626
+            ],
+            [
+              -99.15608223350618,
+              19.28836329697658
+            ],
+            [
+              -99.15599453675324,
+              19.28822333773072
+            ],
+            [
+              -99.1563123663742,
+              19.28804802334581
+            ],
+            [
+              -99.15639545466853,
+              19.28818798638626
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-872e07fe-15e1-4d00-aae5-ce8ab127cd90",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15385528605009,
+              19.28929275800331
+            ],
+            [
+              -99.15368343476365,
+              19.28938897815786
+            ],
+            [
+              -99.15356176688015,
+              19.28915578852189
+            ],
+            [
+              -99.15360386618529,
+              19.28911863803064
+            ],
+            [
+              -99.15373985293165,
+              19.28906092362563
+            ],
+            [
+              -99.15385528605009,
+              19.28929275800331
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-8593eced-8665-4e06-b012-25c1083ecfaf",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15357184978113,
+              19.29079082407215
+            ],
+            [
+              -99.15333510761909,
+              19.29089520969764
+            ],
+            [
+              -99.15326844414498,
+              19.29077855373873
+            ],
+            [
+              -99.15333976547109,
+              19.29074604227281
+            ],
+            [
+              -99.15330311134765,
+              19.29066124340726
+            ],
+            [
+              -99.15322939221055,
+              19.29069432619695
+            ],
+            [
+              -99.15316093647125,
+              19.29058450361572
+            ],
+            [
+              -99.15340906046596,
+              19.29046929145359
+            ],
+            [
+              -99.15347092982853,
+              19.29058879802551
+            ],
+            [
+              -99.15339061895556,
+              19.29062587170339
+            ],
+            [
+              -99.15343265990083,
+              19.29070041815137
+            ],
+            [
+              -99.15350877524594,
+              19.29066505596046
+            ],
+            [
+              -99.15357184978113,
+              19.29079082407215
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-f6b7d3b5-424d-4344-9eb9-643e954e7803",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.1533755944776,
+              19.29034616608497
+            ],
+            [
+              -99.15333467187132,
+              19.29045099356284
+            ],
+            [
+              -99.1530704050152,
+              19.29056945869605
+            ],
+            [
+              -99.15307017020282,
+              19.29031681207696
+            ],
+            [
+              -99.15317236670637,
+              19.29026009095484
+            ],
+            [
+              -99.1533755944776,
+              19.29034616608497
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-56b8fc19-18b6-48de-9e1d-e9330f9192a7",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15346966790504,
+              19.29011723939237
+            ],
+            [
+              -99.15338858159048,
+              19.29014927881977
+            ],
+            [
+              -99.1532106053995,
+              19.29010303905649
+            ],
+            [
+              -99.15316427048514,
+              19.29004846675283
+            ],
+            [
+              -99.15314968351323,
+              19.28999761552468
+            ],
+            [
+              -99.15315654234212,
+              19.2899670916982
+            ],
+            [
+              -99.15312741774736,
+              19.28991843251926
+            ],
+            [
+              -99.15306962433395,
+              19.28972948389553
+            ],
+            [
+              -99.15306960817416,
+              19.28971209675416
+            ],
+            [
+              -99.15324959734228,
+              19.28963930764185
+            ],
+            [
+              -99.1533768667179,
+              19.28989569798432
+            ],
+            [
+              -99.1533539147769,
+              19.2899015302221
+            ],
+            [
+              -99.15346966790504,
+              19.29011723939237
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-03bc0913-8551-4765-8475-a29089131f2e",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15778519336577,
+              19.29077407467808
+            ],
+            [
+              -99.15762061782243,
+              19.29086644763373
+            ],
+            [
+              -99.15756058280625,
+              19.29078736307552
+            ],
+            [
+              -99.15758574009423,
+              19.29076058303622
+            ],
+            [
+              -99.1577850717206,
+              19.2906471150174
+            ],
+            [
+              -99.15778519336577,
+              19.29077407467808
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-ffe275b4-b7df-4ba5-8d53-aad1808c1517",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15718279198424,
+              19.291202152628
+            ],
+            [
+              -99.15760632839364,
+              19.29097178532885
+            ],
+            [
+              -99.15766817536303,
+              19.2910645321366
+            ],
+            [
+              -99.15745362968275,
+              19.29117858246854
+            ],
+            [
+              -99.15746919479106,
+              19.29120190890913
+            ],
+            [
+              -99.15718279198424,
+              19.291202152628
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feature_class": "building",
+        "building_id": "xbd-building-ed8b5296-f65b-4371-9a7e-5fad45fa2d42",
+        "name": "xBD labelled building",
+        "reference_damage": "no-damage",
+        "source": "xBD post-event label"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -99.15662007628302,
+              19.29120263147958
+            ],
+            [
+              -99.15651705653964,
+              19.29103792166194
+            ],
+            [
+              -99.1565660417513,
+              19.29099022878889
+            ],
+            [
+              -99.15658045259217,
+              19.29097980991929
+            ],
+            [
+              -99.15664646386887,
+              19.29094223508856
+            ],
+            [
+              -99.1566879804625,
+              19.29092631584808
+            ],
+            [
+              -99.15685445779148,
+              19.29120243202903
+            ],
+            [
+              -99.15662007628302,
+              19.29120263147958
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

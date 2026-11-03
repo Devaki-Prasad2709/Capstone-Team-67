@@ -35,14 +35,14 @@
     <main>
       <header>
         <div><p class="eyebrow">REAL-TIME OPERATIONS</p><h1 id="pageTitle">Operational picture</h1></div>
-        <div class="header-actions refresh-controls"><span id="accessMode" class="access-mode observer">Observer</span><label id="operatorLogin" class="operator-login"><input id="operatorToken" type="password" autocomplete="off" placeholder="Operator token" aria-label="Operator token"><button id="operatorLoginButton" class="secondary">Unlock controls</button></label><button id="operatorLogoutButton" class="secondary hidden">Return to observer</button><span id="refreshState" class="refresh-state idle">Waiting</span><span id="lastUpdated">UI not refreshed</span><label class="auto-refresh-control"><input id="autoRefreshToggle" type="checkbox" checked> Auto-refresh</label><label class="refresh-interval-control"><select id="refreshInterval" aria-label="Auto-refresh interval"><option value="5000">5s</option><option value="10000" selected>10s</option><option value="30000">30s</option><option value="60000">60s</option></select></label><button class="icon-button" id="refreshButton" title="Refresh active view" aria-label="Refresh active view">↻</button></div>
+        <div class="header-actions refresh-controls"><div class="scenario-picker"><label for="scenarioSelector">Scenario</label><select id="scenarioSelector" aria-label="Active disaster scenario"></select><span id="scenarioReadiness" class="badge">Checking</span><button id="activateScenario" class="secondary">Activate</button></div><span id="accessMode" class="access-mode observer">Observer</span><label id="operatorLogin" class="operator-login"><input id="operatorToken" type="password" autocomplete="off" placeholder="Operator token" aria-label="Operator token"><button id="operatorLoginButton" class="secondary">Unlock controls</button></label><button id="operatorLogoutButton" class="secondary hidden">Return to observer</button><span id="refreshState" class="refresh-state idle">Waiting</span><span id="lastUpdated">UI not refreshed</span><label class="auto-refresh-control"><input id="autoRefreshToggle" type="checkbox" checked> Auto-refresh</label><label class="refresh-interval-control"><select id="refreshInterval" aria-label="Auto-refresh interval"><option value="5000">5s</option><option value="10000" selected>10s</option><option value="30000">30s</option><option value="60000">60s</option></select></label><button class="icon-button" id="refreshButton" title="Refresh active view" aria-label="Refresh active view">↻</button></div>
       </header>
 
       <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
       <section class="view active" id="operations">
         <div class="incident-heading">
-          <div><p class="eyebrow">LOUISIANA EAST FLOOD · LIVE COMMON OPERATING PICTURE</p><h2>What happened, what is at risk,<br><em>and current conditions.</em></h2><p id="incidentNarrative">Loading structural, field, human, and model evidence…</p></div>
+          <div><p id="activeScenarioHeading" class="eyebrow">ACTIVE SCENARIO · LIVE COMMON OPERATING PICTURE</p><h2>What happened, what is at risk,<br><em>and current conditions.</em></h2><p id="incidentNarrative">Loading structural, field, human, and model evidence…</p></div>
           <div class="incident-freshness"><span id="operationsState" class="badge">Loading</span><small>Source event time</small><strong id="sourceEventTime">—</strong><small>Graph snapshot time</small><strong id="graphFreshness">—</strong><small>TGNN inference time</small><strong id="riskFreshness">—</strong></div>
         </div>
         <div id="operationsError" class="callout warning hidden" role="alert" aria-live="assertive"></div>
@@ -52,9 +52,9 @@
           <div class="operations-grid">
             <article class="map-shell">
               <div id="operationsMap" role="application" tabindex="0" aria-label="Interactive disaster operations map. Use arrow keys and MapLibre controls to navigate."></div>
-              <div class="map-layer-control panel"><strong>Layers</strong><label><input type="checkbox" data-map-layer="satellite" checked> Satellite change</label><label><input type="checkbox" data-map-layer="structural" checked> Structural GIS</label><label><input type="checkbox" data-map-layer="damage" checked> Damage observations</label><label><input type="checkbox" data-map-layer="risk" checked> TGNN risk</label><label><input type="checkbox" data-map-layer="hotspots" checked> Confirmed social</label></div>
+              <div class="map-layer-control panel"><strong>Layers</strong><label><input type="checkbox" data-map-layer="satellite" checked> Satellite change</label><label><input type="checkbox" data-map-layer="structural" checked> Structural GIS</label><label><input type="checkbox" data-map-layer="risk" checked> TGNN risk</label><label><input type="checkbox" data-map-layer="hotspots" checked> Confirmed social</label></div>
               <div id="mapSatelliteSummary" class="map-satellite-summary panel hidden"><span>SATELLITE BROAD-AREA SIGNAL</span><strong id="mapSatelliteChanged">—</strong><small id="mapSatelliteCounts">—</small><small id="mapSatelliteDetail">Awaiting satellite result</small><small id="mapSatelliteProvenance" class="satellite-provenance">—</small><em>Radiometric change, not confirmed damage</em><button class="satellite-drilldown" data-satellite-drilldown>View satellite evidence</button></div>
-              <div class="map-legend panel"><strong>Legend</strong><span><i class="legend-road"></i>Road</span><span><i class="legend-building"></i>Building</span><span><i class="legend-satellite"></i>Satellite change</span><span><i class="legend-damage"></i>Damage evidence</span><span><i class="legend-risk"></i>Higher relative risk</span><span><i class="legend-highest"></i>Highest risk</span><span><i class="legend-social"></i>Confirmed social</span></div>
+              <div class="map-legend panel"><strong>Legend</strong><span><i class="legend-road"></i>Road</span><span><i class="legend-building"></i>Building footprint</span><span><i class="legend-satellite"></i>Satellite change cell</span><span><i class="legend-risk"></i>TGNN risk (teal → yellow → orange)</span><span><i class="legend-social"></i>Orange: confirmed social report</span></div>
               <div id="mapEmpty" class="map-state hidden">No geographic evidence is available.</div>
             </article>
             <aside class="operations-side">
@@ -148,7 +148,7 @@
             <article class="metric teal"><span>Scored cells</span><strong id="scoredCellCount">—</strong><small id="totalCellCount">of — grid cells</small></article>
             <article class="metric violet"><span>Unknown cells</span><strong id="unknownCellCount">—</strong><small>Insufficient valid coverage</small></article>
             <article class="metric orange"><span>Maximum difference</span><strong id="maxDiffScore">—</strong><small>Uncalibrated radiometric score</small></article>
-            <article class="metric blue"><span>Reference flooding</span><strong id="referenceFlooding">—</strong><small>Official SpaceNet labels</small></article>
+            <article class="metric blue"><span id="referenceLabelTitle">Reference labels</span><strong id="referenceFlooding">—</strong><small id="referenceLabelSource">Official dataset labels</small></article>
           </div>
           <div class="satellite-layout">
             <article class="panel satellite-source-panel"><div class="panel-head"><div><p class="eyebrow">SOURCE IMAGES</p><h3>Real SpaceNet pre/post pair</h3></div><span id="satelliteTimestamp" class="badge"></span></div><div class="satellite-pair"><figure><img id="satellitePreImage" alt="SpaceNet pre-event source"><figcaption id="satellitePreCaption"></figcaption></figure><figure><img id="satellitePostImage" alt="SpaceNet post-event source"><figcaption id="satellitePostCaption"></figcaption></figure></div></article>
@@ -204,6 +204,6 @@
     </main>
   </div>
   <script src="/vendor/maplibre-gl.js"></script>
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="/app.js?v=20261103-2"></script>
 </body>
 </html>

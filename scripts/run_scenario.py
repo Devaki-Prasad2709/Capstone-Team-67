@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import time
 from pathlib import Path
@@ -72,7 +73,7 @@ def _interactive(controller: ScenarioController) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", default=settings.final_scenario_path)
-    parser.add_argument("--spacenet-root", default=settings.spacenet8_dataset_path)
+    parser.add_argument("--satellite-root", "--spacenet-root", dest="satellite_root", default=None)
     parser.add_argument("--isbda-root", default=settings.isbda_dataset_path)
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument(
@@ -83,15 +84,18 @@ def main() -> None:
     args = parser.parse_args()
 
     scenario_path = _project_path(args.scenario)
-    if not args.spacenet_root or not args.isbda_root:
-        parser.error("SPACENET8_DATASET_PATH and ISBDA_DATASET_PATH must be configured")
-    spacenet_root = Path(args.spacenet_root).expanduser()
+    pair = json.loads((scenario_path.parent / "satellite" / "pair.json").read_text(encoding="utf-8"))
+    satellite_root_value = args.satellite_root or os.getenv(str(pair.get("dataset_root_env", "SPACENET8_DATASET_PATH")), "")
+    if not satellite_root_value or not args.isbda_root:
+        parser.error(f"{pair.get('dataset_root_env', 'SPACENET8_DATASET_PATH')} and ISBDA_DATASET_PATH must be configured")
+    spacenet_root = Path(satellite_root_value).expanduser()
     isbda_root = Path(args.isbda_root).expanduser()
     validation = validate_scenario(
         scenario_path,
         strict=True,
         spacenet_root=spacenet_root,
         isbda_root=isbda_root,
+        crisismmd_root=Path(settings.crisismmd_dataset_path).expanduser() if settings.crisismmd_dataset_path else None,
     )
     logger.info("Strict scenario validation passed: %s", validation["scenario_id"])
 

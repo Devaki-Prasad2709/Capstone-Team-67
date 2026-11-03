@@ -45,12 +45,14 @@ def _iso(epoch: float | None) -> str | None:
 class OperationalDashboardService:
     """Rebuild a deterministic graph view from bounded Kafka topic tails."""
 
-    def __init__(self, building_service, *, gis_path: Path = GIS_PATH):
+    def __init__(self, building_service, *, gis_path: Path = GIS_PATH, scenario_path: Path = SCENARIO_PATH):
         self.building_service = building_service
         self.gis_path = Path(gis_path)
-        self.scenario = json.loads(SCENARIO_PATH.read_text(encoding="utf-8"))
+        self.scenario_path = Path(scenario_path)
+        self.scenario_dir = self.scenario_path.parent
+        self.scenario = json.loads(self.scenario_path.read_text(encoding="utf-8"))
         self.timeline = json.loads(
-            (SCENARIO_DIR / "timeline.json").read_text(encoding="utf-8")
+            (self.scenario_dir / "timeline.json").read_text(encoding="utf-8")
         )
         self.structural = json.loads(self.gis_path.read_text(encoding="utf-8"))
         self._lock = RLock()

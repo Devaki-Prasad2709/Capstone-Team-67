@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "dataset": "xBD Mexico Earthquake",
+  "dataset_type": "xbd",
+  "input_origin": "real-xbd",
+  "tile_id": "mexico-earthquake_00000069",
+  "dataset_root_env": "XBD_DATASET_PATH",
+  "crs": "EPSG:4326",
+  "pre_event": {
+    "relative_path": "test/images/mexico-earthquake_00000069_pre_disaster.tif",
+    "sha256": "c95a5ae64d40198b6fe90f6d550f385127c3e81cfb6716e3d8dc54feff2dc988",
+    "size_bytes": 6304308,
+    "width": 1024,
+    "height": 1024,
+    "scenario_timestamp": "2026-09-19T13:14:00Z",
+    "bbox": [
+      -99.15778560304025,
+      19.28660372357156,
+      -99.15318367079654,
+      19.29120565581528
+    ]
+  },
+  "post_event": {
+    "relative_path": "test/images/mexico-earthquake_00000069_post_disaster.tif",
+    "sha256": "3fa2ed7e77d68fd9b9dcbd76b5ed66064138c1d1d4cccba5b4261fcc028f3b40",
+    "size_bytes": 6304308,
+    "width": 1024,
+    "height": 1024,
+    "scenario_timestamp": "2026-09-19T13:14:30Z",
+    "bbox": [
+      -99.15778560304025,
+      19.28660372357156,
+      -99.15318367079654,
+      19.29120565581528
+    ]
+  },
+  "annotation": {
+    "relative_path": "test/labels/mexico-earthquake_00000069_post_disaster.json",
+    "sha256": "3861c37c38cf4ba499ad1581846f775d81ce9df1e4c9dac6a516149ffd946f3b",
+    "size_bytes": 308206,
+    "scenario_timestamp": "2026-09-19T13:14:30Z"
+  },
+  "reference": {
+    "relative_path": "test/labels/mexico-earthquake_00000069_post_disaster.json",
+    "sha256": "3861c37c38cf4ba499ad1581846f775d81ce9df1e4c9dac6a516149ffd946f3b",
+    "size_bytes": 308206,
+    "feature_count": 333,
+    "damage_counts": {
+      "no-damage": 305,
+      "minor-damage": 12,
+      "major-damage": 16
+    }
+  },
+  "provenance": {
+    "imagery_and_labels": "real xBD",
+    "scenario_time": "simulated",
+    "raw_files_committed": false
+  }
+}

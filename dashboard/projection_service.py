@@ -143,14 +143,17 @@ class DashboardProjectionService:
                 ),
                 scenario,
             )
-            completed_event_ids = {
-                item.get("event_id")
+            completed_events = [
+                item
                 for item in (scenario.get("completed_events") or [])
                 if isinstance(item, dict)
-            }
-            risk_due = bool(
-                completed_event_ids
-                & {"timeline-09-risk", "timeline-12-risk-refresh"}
+            ]
+            # Scenario packages are free to use descriptive event IDs.  The
+            # stable contract for a TGNN milestone is its risk_set target, not
+            # a Louisiana-specific event name.
+            risk_due = any(
+                (item.get("target") or {}).get("kind") == "risk_set"
+                for item in completed_events
             )
             operational = self.operational_service.snapshot(
                 ai_rows, telemetry_rows, include_risk=risk_due

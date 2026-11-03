@@ -91,19 +91,19 @@ def test_operational_map_layers_and_incident_sections_are_recorded():
     assert re.findall(r'data-map-layer="([^"]+)"', html) == [
         "satellite",
         "structural",
-        "damage",
         "risk",
         "hotspots",
     ]
     for source in ("structural", "risk", "satellite-change"):
         assert f"addSource('{source}'" in javascript
-    assert "['damage', 'damage-observations'" in javascript
-    assert "['hotspots', 'confirmed-hotspots'" in javascript
+    assert "addSource('damage'" not in javascript
+    assert "id: 'damage-observations'" not in javascript
+    assert "addSource('hotspots'" in javascript
+    assert "id: 'confirmed-hotspots'" in javascript
     for layer in (
         "structural-buildings",
         "structural-roads",
         "risk-nodes",
-        "damage-observations",
         "confirmed-hotspots",
         "satellite-change-cells",
     ):

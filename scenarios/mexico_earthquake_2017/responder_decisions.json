@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "events": [
+    {
+      "event_id": "decision-001",
+      "offset_seconds": 135,
+      "scenario_timestamp": "2026-09-19T13:16:15Z",
+      "alert_id": "social-001",
+      "action": "confirm",
+      "responder_id": "scenario-responder-mx-01",
+      "input_origin": "simulation",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "action",
+        "responder_id"
+      ]
+    }
+  ]
+}

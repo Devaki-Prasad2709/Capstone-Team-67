@@ -11,7 +11,7 @@ import re
 
 from core.gis.gis_loader import wgs84_to_working
 from core.nlp.alert_state import AlertStore
-from core.nlp.landmark_alert_resolver import resolve_alert
+from core.nlp.landmark_alert_resolver import ResolvedPriorityAlert, resolve_alert
 
 
 class ContradictoryReport(ValueError):
@@ -77,6 +77,13 @@ class SocialAlertWorkflow:
                 or not -90 <= lat <= 90
             ):
                 raise ValueError("gps must contain finite WGS84 longitude/latitude")
+        target_ids = event.get("target_ids")
+        if target_ids is not None and (
+            not isinstance(target_ids, list)
+            or not target_ids
+            or any(not isinstance(item, str) or not item.strip() for item in target_ids)
+        ):
+            raise ValueError("target_ids must be a nonempty list of GIS source IDs")
 
     def ingest_event(self, event: dict) -> IngestOutcome:
         """Ingest once, recording INCOMING then PENDING_REVIEW transitions."""
@@ -112,6 +119,27 @@ class SocialAlertWorkflow:
                 self.gis_data.working_crs,
             )
         resolved = resolve_alert(event["text"], self.gis_data, self.id_map, reference_pos)
+        if resolved.node_id is None:
+            # Scenario and field adapters may provide an explicit, auditable GIS
+            # association. Use it only as a fallback when text resolution fails;
+            # never guess a node merely from an unresolved report.
+            declared_target = next(
+                (
+                    source_id
+                    for source_id in (event.get("target_ids") or [])
+                    if source_id in self.id_map
+                ),
+                None,
+            )
+            if declared_target is not None:
+                resolved = ResolvedPriorityAlert(
+                    raw_text=resolved.raw_text,
+                    is_distress=resolved.is_distress,
+                    node_id=self.id_map[declared_target],
+                    resolved_via="declared_target_id",
+                    matched_entity_name=declared_target,
+                    confidence=1.0,
+                )
         self.store.receive_alert(
             alert_id,
             resolved,

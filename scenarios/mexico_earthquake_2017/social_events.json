@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "events": [
+    {
+      "event_id": "social-001",
+      "offset_seconds": 120,
+      "scenario_timestamp": "2026-09-19T13:16:00Z",
+      "text": "RT @TravelLeisure: Deadly earthquake shakes Mexico City, causes buildings to crumble https://t.co/Ad7BYyR1b6 https://t.co/3Qu2wvMbWu",
+      "label": "earthquake",
+      "gps": {
+        "longitude": -99.15776803881766,
+        "latitude": 19.29021367729652
+      },
+      "target_ids": [
+        "xbd-building-93aa9b3c-6171-47f5-acfa-21e22cb88345",
+        "osm-way-63059679"
+      ],
+      "source_record_id": "910523417136316416",
+      "input_origin": "hybrid-real-crisismmd-simulated-context",
+      "real_fields": [
+        "text",
+        "source_record_id"
+      ],
+      "simulation_fields": [
+        "scenario_timestamp",
+        "gps",
+        "target_ids"
+      ]
+    }
+  ]
+}

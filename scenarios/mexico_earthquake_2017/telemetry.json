@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "events": [
+    {
+      "event_id": "telemetry-001",
+      "event_type": "road_degradation",
+      "offset_seconds": 150,
+      "scenario_timestamp": "2026-09-19T13:16:30Z",
+      "target_id": "osm-way-63059679",
+      "load": 0.76,
+      "capacity": 0.8,
+      "damage": 0.42,
+      "input_origin": "simulation",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "target_id",
+        "load",
+        "capacity",
+        "damage"
+      ]
+    },
+    {
+      "event_id": "telemetry-002",
+      "event_type": "road_recovery",
+      "offset_seconds": 300,
+      "scenario_timestamp": "2026-09-19T13:19:00Z",
+      "target_id": "osm-way-63059679",
+      "load": 0.46,
+      "capacity": 0.8,
+      "damage": 0.16,
+      "input_origin": "simulation",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "target_id",
+        "load",
+        "capacity",
+        "damage"
+      ]
+    }
+  ]
+}

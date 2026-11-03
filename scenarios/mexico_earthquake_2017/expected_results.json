@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "satellite": {
+    "reference_damage_counts": {
+      "no-damage": 305,
+      "minor-damage": 12,
+      "major-damage": 16
+    }
+  },
+  "isolation": {
+    "no_cross_scenario_evidence": true
+  },
+  "claims": {
+    "real": [
+      "xBD imagery and labels",
+      "xBD building footprints",
+      "OpenStreetMap road geometry",
+      "CrisisMMD report text",
+      "ISBDA image bytes"
+    ],
+    "simulated": [
+      "scenario timestamps",
+      "drone GPS",
+      "telemetry",
+      "CrisisMMD GPS and GIS association",
+      "responder decision"
+    ]
+  }
+}

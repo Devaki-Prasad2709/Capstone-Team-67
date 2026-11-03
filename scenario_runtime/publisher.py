@@ -91,6 +91,34 @@ class ScenarioEventFactory:
         if not image_path.is_file():
             raise FileNotFoundError(f"Scenario drone image is missing: {image_path}")
         event = self._drone_builder(image_path, self.deduplicator, self.transfer)
+        if event.get("is_duplicate"):
+            # A byte-identical image may legitimately be reused by a different
+            # scenario with a different simulated GPS/target association. Keep
+            # the deduplication evidence, but make the canonical bytes available
+            # so the real checkpoint can produce scenario-specific observations.
+            duplicate_fields = {
+                key: event.get(key)
+                for key in (
+                    "canonical_image_id",
+                    "canonical_content_hash",
+                    "duplicate_method",
+                    "perceptual_distance",
+                )
+            }
+            event = self.transfer.attach(
+                event,
+                image_path.read_bytes(),
+                "drone",
+                image_path.name,
+                str(event["content_hash"]),
+                "image/jpeg",
+            )
+            event.update(duplicate_fields)
+            event.update(
+                is_duplicate=True,
+                process_duplicate_for_scenario_replay=True,
+                processing_status="duplicate_reused_for_scenario_replay",
+            )
         event.update(self._provenance(definition))
         event.update(
             {
@@ -145,6 +173,7 @@ class ScenarioEventFactory:
                     is_duplicate=True,
                     processing_status="duplicate_reused_for_scenario_replay",
                 )
+            reference = self.satellite.get("reference") or {}
             event.update(
                 {
                     "timestamp": _epoch(definition["scenario_timestamp"]),
@@ -154,14 +183,15 @@ class ScenarioEventFactory:
                     "satellite_phase": phase.replace("_event", ""),
                     "tile_id": self.satellite["tile_id"],
                     "bbox": definition["bbox"],
-                    "input_origin": "real-spacenet8",
+                    "input_origin": self.satellite.get("input_origin", "real-spacenet8"),
                     "simulation_fields": ["scenario_timestamp"],
                     "source_dataset": self.satellite["dataset"],
                     "source_relative_path": definition["relative_path"],
                     "source_sha256": definition["sha256"],
                     "source_size_bytes": definition["size_bytes"],
-                    "reference_feature_count": self.satellite["reference"]["feature_count"],
-                    "reference_flooded_feature_count": self.satellite["reference"]["flooded_feature_count"],
+                    "reference_feature_count": reference.get("feature_count"),
+                    "reference_flooded_feature_count": reference.get("flooded_feature_count"),
+                    "reference_damage_counts": reference.get("damage_counts"),
                 }
             )
             events.append(event)
@@ -173,7 +203,7 @@ class ScenarioEventFactory:
             {
                 "tweet_id": definition["event_id"],
                 "tweet_text": definition["text"],
-                "label": "flood",
+                "label": definition.get("label", "flood"),
                 "event_name": self.scenario_id,
             }
         )

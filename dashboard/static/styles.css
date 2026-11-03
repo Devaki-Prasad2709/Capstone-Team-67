@@ -19,3 +19,8 @@
   .map-layer-control, .map-legend { max-width: calc(100% - 1rem); }
   #operationsMap { min-height: 440px; }
 }
+
+.scenario-picker { display: grid; grid-template-columns: auto minmax(210px, 1fr) auto auto; align-items: center; gap: .45rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--panel); }
+.scenario-picker label { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.scenario-picker select { max-width: 280px; }
+@media (max-width: 1100px) { .scenario-picker { grid-template-columns: 1fr auto auto; } .scenario-picker label { display: none; } }

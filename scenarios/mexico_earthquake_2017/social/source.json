@@ -1,0 +1,12 @@
+{
+  "dataset": "CrisisMMD v2.0",
+  "annotation_relative_path": "annotations/mexico_earthquake_final_data.tsv",
+  "annotation_sha256": "6d391cde3811b38896c5ea99892f0a8337710f9ffc2efd3b0e47765551d96b86",
+  "tweet_id": "910523417136316416",
+  "image_id": "910523417136316416_0",
+  "tweet_text": "RT @TravelLeisure: Deadly earthquake shakes Mexico City, causes buildings to crumble https://t.co/Ad7BYyR1b6 https://t.co/3Qu2wvMbWu",
+  "text_human": "infrastructure_and_utility_damage",
+  "image_human": "vehicle_damage",
+  "input_origin": "real-crisismmd",
+  "assigned_location_is_simulated": true
+}

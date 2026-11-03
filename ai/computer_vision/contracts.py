@@ -60,6 +60,11 @@ def result_event(
         "transfer_mode": source_event.get("transfer_mode"),
         "content_hash": source_event.get("content_hash"),
         "canonical_image_id": source_event.get("canonical_image_id"),
+        "is_duplicate": bool(source_event.get("is_duplicate")),
+        "duplicate_method": source_event.get("duplicate_method"),
+        "duplicate_reused_for_scenario_replay": bool(
+            source_event.get("process_duplicate_for_scenario_replay")
+        ),
         "status": status,
         "reason": reason,
         "model_name": model_name or MODEL_NAME,

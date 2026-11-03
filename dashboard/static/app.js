@@ -1,15 +1,15 @@
 import {$, $$, setTextIfChanged, state, titles, toast, cancelled} from './modules/core.js';
 import {api, cancelRequests} from './modules/api-client.js';
 import {activateView, initRouter} from './modules/router.js';
-import {initOperationsMap, loadOperational, setMapData} from './modules/operations-map.js';
-import {initScenarioControls} from './modules/scenario-controls.js';
+import {initOperationsMap, loadOperational, setMapData} from './modules/operations-map.js?v=20261103-2';
+import {initScenarioControls, loadScenarioRegistry} from './modules/scenario-controls.js';
 import {initSocialAlerts, loadSocialAlerts} from './modules/social-alerts.js';
 import {initSatelliteEvidence, loadSatelliteChange} from './modules/satellite-evidence.js';
 import {initBuildingClassifications, loadBuildings} from './modules/building-classifications.js';
 import {initDiagnostics, loadAI, loadGlobalHealth, loadLogs, loadObjects, loadSpark, renderStatus} from './modules/diagnostics.js';
 
 function applyOperatorControls() {
-  const operator = Boolean(state.access?.operator), selectors = ['#infraStart', '#infraStop', '#saveBuildingComponent', '[data-scenario-action]', '[data-system-scenario-action]', '.process-actions button', '.alert-actions button'];
+  const operator = Boolean(state.access?.operator), selectors = ['#infraStart', '#infraStop', '#activateScenario', '#saveBuildingComponent', '[data-scenario-action]', '[data-system-scenario-action]', '.process-actions button', '.alert-actions button'];
   $$(selectors.join(',')).forEach(control => { if (control.dataset.baseDisabled === undefined) control.dataset.baseDisabled = control.disabled ? 'true' : 'false'; control.disabled = !operator || control.dataset.baseDisabled === 'true'; if (!operator) control.title = 'Authenticated operator access is required.'; });
 }
 function renderAccess(access) {
@@ -27,7 +27,7 @@ function scheduleRefresh() { window.clearTimeout(state.refreshTimer); state.refr
 export async function requestRefresh({includeHealth = true, reason = 'manual'} = {}) {
   if (document.hidden) { scheduleRefresh(); return; }
   window.clearTimeout(state.refreshTimer); state.refreshTimer = null; const generation = (state.refreshGeneration || 0) + 1; state.refreshGeneration = generation; const view = state.activeView;
-  showRefreshState('refreshing', `Refreshing ${titles[view]}`); const work = []; if (includeHealth) work.push(loadHealth()); if (viewLoaders[view]) work.push(viewLoaders[view]());
+  showRefreshState('refreshing', `Refreshing ${titles[view]}`); const work = []; if (includeHealth) { work.push(loadHealth()); if (!$('#scenarioSelector')?.options.length) work.push(loadScenarioRegistry()); } if (viewLoaders[view]) work.push(viewLoaders[view]());
   const results = await Promise.allSettled(work); if (generation !== state.refreshGeneration) return; const failures = results.filter(result => result.status === 'rejected' && !cancelled(result.reason));
   if (failures.length) { const previous = state.lastSuccessfulRefresh[view]; showRefreshState('stale', previous ? 'Stale · refresh failed' : 'Refresh error'); setTextIfChanged('#lastUpdated', previous ? `Last UI refresh ${new Date(previous).toLocaleTimeString()}` : 'No successful UI refresh'); if (reason === 'manual') toast(failures[0].reason.message, false); }
   else if (results.some(result => result.status === 'fulfilled')) { const now = Date.now(); state.lastSuccessfulRefresh[view] = now; showRefreshState('live', 'Current'); setTextIfChanged('#lastUpdated', `UI refreshed ${new Date(now).toLocaleTimeString()}`); }
@@ -49,7 +49,7 @@ function bindShellEvents() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) { window.clearTimeout(state.refreshTimer); state.refreshTimer = null; cancelRequests(); showRefreshState('paused', 'Paused · tab hidden'); } else requestRefresh({includeHealth: true, reason: 'visible'}); });
 }
 function bootstrap() {
-  initRouter(() => requestRefresh({includeHealth: true, reason: 'navigation'})); initOperationsMap(); initScenarioControls();
+  initRouter(() => requestRefresh({includeHealth: true, reason: 'navigation'})); initOperationsMap(); initScenarioControls({refresh: () => requestRefresh({includeHealth: true, reason: 'scenario-switch'})});
   initSocialAlerts({refresh: () => requestRefresh({includeHealth: false, reason: 'action'}), applyOperatorControls}); initSatelliteEvidence(view => activateView(view)); initBuildingClassifications({setMapData}); initDiagnostics({refresh: () => requestRefresh({includeHealth: false, reason: 'tab'}), applyOperatorControls});
   installPerViewRefreshControls(); bindShellEvents(); if (!['localhost', '127.0.0.1', '::1'].includes(location.hostname)) $$('[data-local-only]').forEach(link => link.classList.add('hidden')); activateView('operations');
 }

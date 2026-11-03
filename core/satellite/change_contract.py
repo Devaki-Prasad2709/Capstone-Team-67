@@ -98,6 +98,12 @@ def build_change_result(
             f"{post_event.get('scenario_replay_id') or ''}"
         ).encode()
     ).hexdigest()[:16]
+    reference_labels = {
+        "feature_count": post_event.get("reference_feature_count"),
+        "flooded_feature_count": post_event.get("reference_flooded_feature_count"),
+    }
+    if post_event.get("reference_damage_counts") is not None:
+        reference_labels["damage_counts"] = post_event["reference_damage_counts"]
     return {
         "id": f"sat-change-{pre_event['tile_id']}-{digest}",
         "timestamp": float(post_event["timestamp"]),
@@ -115,10 +121,7 @@ def build_change_result(
         "footprint": change["metadata"]["wgs84_footprint"],
         "change": change,
         "summary": _summary(change),
-        "reference_labels": {
-            "feature_count": post_event.get("reference_feature_count"),
-            "flooded_feature_count": post_event.get("reference_flooded_feature_count"),
-        },
+        "reference_labels": reference_labels,
         "interpretation": "broad-area uncalibrated radiometric change; not destruction probability",
         "tgnn_integration": "none",
     }

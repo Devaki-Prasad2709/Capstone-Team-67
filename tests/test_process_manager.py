@@ -147,6 +147,6 @@ def test_observation_worker_uses_the_frozen_scenario_geojson():
     source = (Path(__file__).parents[1] / "dashboard" / "server.py").read_text(
         encoding="utf-8"
     )
-    assert '"gis"' in source
-    assert '"infrastructure.geojson"' in source
+    assert "active_registration.gis_path" in source
+    assert "disaster-observation-dashboard-" in source
     assert '"gis_snapshot.geojson"' not in source

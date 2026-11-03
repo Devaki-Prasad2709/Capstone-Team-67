@@ -1,4 +1,4 @@
-import {$, $$, escapeHtml, setHTMLIfChanged, setTextIfChanged, shortTime, toast} from './core.js';
+import {$, escapeHtml, setHTMLIfChanged, setTextIfChanged, shortTime, state, toast} from './core.js';
 import {api} from './api-client.js';
 
 export function renderTimeline(status = {}) {
@@ -14,6 +14,30 @@ export function renderTimeline(status = {}) {
   if ($('#scenarioSpeed')) $('#scenarioSpeed').value = String(status.speed);
   if ($('#systemScenarioSpeed')) $('#systemScenarioSpeed').value = String(status.speed);
   setTextIfChanged('#systemReplayState', `${String(status.state).toUpperCase()} · ${status.completed_events?.length || 0} completed`);
+  if (status.title) setTextIfChanged('#activeScenarioHeading', `${status.title.toUpperCase()} · LIVE COMMON OPERATING PICTURE`);
+}
+
+let registered = [];
+
+function renderScenarioChoice() {
+  const row = registered.find(item => item.scenario_id === $('#scenarioSelector')?.value);
+  if (!row) return;
+  const readiness = row.readiness || {};
+  setTextIfChanged('#scenarioReadiness', readiness.valid ? 'Ready' : (readiness.state || 'Unavailable'));
+  $('#scenarioReadiness').title = readiness.message || '';
+  const button = $('#activateScenario');
+  const baseDisabled = !row.enabled || !readiness.valid || row.active;
+  button.dataset.baseDisabled = String(baseDisabled);
+  button.disabled = baseDisabled || !state.access?.operator;
+  button.textContent = row.active ? 'Active' : 'Activate';
+}
+
+export async function loadScenarioRegistry() {
+  const payload = await api('/api/scenarios', {requestKey: 'global:scenarios', timeoutMs: 15000});
+  registered = payload.scenarios || [];
+  setHTMLIfChanged('#scenarioSelector', registered.map(item => `<option value="${escapeHtml(item.scenario_id)}" ${item.active ? 'selected' : ''}>${escapeHtml(item.title)}</option>`).join(''));
+  renderScenarioChoice();
+  return payload;
 }
 
 async function controlScenario(action, speedValue) {
@@ -25,7 +49,7 @@ async function controlScenario(action, speedValue) {
   } catch (error) { toast(error.message, false); }
 }
 
-export function initScenarioControls() {
+export function initScenarioControls({refresh} = {}) {
   document.addEventListener('click', event => {
     const button = event.target.closest('[data-scenario-action],[data-system-scenario-action]');
     if (!button) return;
@@ -34,4 +58,18 @@ export function initScenarioControls() {
   });
   $('#scenarioSpeed')?.addEventListener('change', () => controlScenario('speed'));
   $('#systemScenarioSpeed')?.addEventListener('change', () => controlScenario('speed', $('#systemScenarioSpeed').value));
+  $('#scenarioSelector')?.addEventListener('change', renderScenarioChoice);
+  $('#activateScenario')?.addEventListener('click', async () => {
+    try {
+      const scenarioId = $('#scenarioSelector').value;
+      const result = await api(`/api/scenarios/${encodeURIComponent(scenarioId)}/activate`, {method: 'POST', body: '{}', requestKey: 'action:activate-scenario', timeoutMs: 30000});
+      state.operations = null;
+      state.buildings = [];
+      state.mapDataSignatures.clear();
+      toast(result.message, true);
+      await loadScenarioRegistry();
+      await refresh?.();
+    } catch (error) { toast(error.message, false); }
+  });
+  loadScenarioRegistry().catch(error => toast(`Could not load scenarios: ${error.message}`, false));
 }

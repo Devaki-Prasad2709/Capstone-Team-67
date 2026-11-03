@@ -15,6 +15,7 @@ MUTATION_ROUTES = {
     "/api/social/alerts/{alert_id}/{action}",
     "/api/buildings/{building_source_id}/classification",
     "/api/scenario/{action}",
+    "/api/scenarios/{scenario_id}/activate",
 }
 
 

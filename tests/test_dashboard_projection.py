@@ -32,6 +32,20 @@ class ScenarioStub:
         }
 
 
+class ScenarioWithGenericRiskMilestoneStub:
+    def status(self):
+        return {
+            "state": "completed",
+            "simulation_timestamp": "2026-01-01T00:10:00Z",
+            "completed_events": [
+                {
+                    "event_id": "scenario-specific-tgnn-name",
+                    "target": {"kind": "risk_set", "ids": ["all"]},
+                }
+            ],
+        }
+
+
 class SocialStub:
     def __init__(self):
         self.rows = []
@@ -194,3 +208,35 @@ def test_projection_does_not_leak_previous_satellite_result_into_new_replay():
     assert snapshot["satellite"]["latest"] is None
     assert snapshot["satellite"]["result_count"] == 0
     assert "stale_previous_replay" not in snapshot["satellite"]
+
+
+def test_projection_uses_risk_target_contract_instead_of_scenario_specific_event_id():
+    common = {
+        "scenario_id": "scenario-1",
+        "scenario_timestamp": "2026-01-01T00:05:00Z",
+    }
+    rows = {
+        "ai-analysis-results": [],
+        "infrastructure-telemetry": [{**common, "id": "telemetry-1"}],
+        "social-posts": [],
+        "satellite-change-results": [],
+    }
+    operational = OperationalStub()
+    projection = DashboardProjectionService(
+        operational_service=operational,
+        scenario_service=ScenarioWithGenericRiskMilestoneStub(),
+        social_service=SocialStub(),
+        building_service=BuildingStub(),
+        materialized_state=MaterializedStub(rows),
+        topics={
+            "ai": "ai-analysis-results",
+            "telemetry": "infrastructure-telemetry",
+            "social": "social-posts",
+            "satellite": "satellite-change-results",
+        },
+        map_config_loader=lambda: {"scenario": {"id": "scenario-1"}},
+    )
+
+    projection.snapshot()
+
+    assert operational.include_risk is True

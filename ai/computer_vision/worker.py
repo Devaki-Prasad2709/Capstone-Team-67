@@ -97,7 +97,9 @@ def run(max_events: int | None = None) -> int:
             if not isinstance(event, dict):
                 logger.warning("Skipping non-object event at offset %s", message.offset)
                 continue
-            if event.get("is_duplicate"):
+            if event.get("is_duplicate") and not event.get(
+                "process_duplicate_for_scenario_replay"
+            ):
                 output = output_event(event, "duplicate_skipped", reason="producer_deduplication")
             else:
                 try:

@@ -1,0 +1,270 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "title": "Mexico City Earthquake Response",
+  "description": "A reproducible earthquake-response demonstration aligned to xBD Mexico tile 00000069.",
+  "location": {
+    "name": "Mexico City, Mexico",
+    "crs": "EPSG:4326",
+    "bbox": [
+      -99.15778560304025,
+      19.28660372357156,
+      -99.15318367079654,
+      19.29120565581528
+    ],
+    "center": [
+      -99.1554846369184,
+      19.288904689693418
+    ]
+  },
+  "clock": {
+    "mode": "simulated",
+    "scenario_start": "2026-09-19T13:14:00Z",
+    "speed": 1.0
+  },
+  "assets": [
+    {
+      "id": "structural-gis",
+      "kind": "gis",
+      "status": "ready",
+      "path": "gis/infrastructure.geojson",
+      "sha256": "632661f0933239e1d8de7869abc3140f6ae8dae7a3b0321a4841e7ba0ca397c8",
+      "original_dataset": "xBD labels and OpenStreetMap",
+      "original_path": "gis/infrastructure.geojson",
+      "input_origin": "real-xbd-osm-snapshot",
+      "simulation_fields": [
+        "scenario_timestamp"
+      ],
+      "geographic_footprint": "location.bbox",
+      "scenario_timestamp": "2026-09-19T13:14:00Z"
+    },
+    {
+      "id": "satellite-before-after",
+      "kind": "satellite",
+      "status": "ready",
+      "path": "satellite/pair.json",
+      "sha256": "1f9f4d71cb27b8be967f54d07fb2117e8cb4be02ae7d33cab68a28f52df6417c",
+      "original_dataset": "xBD Mexico Earthquake",
+      "original_path": "satellite/pair.json",
+      "input_origin": "real-xbd",
+      "simulation_fields": [
+        "scenario_timestamp"
+      ],
+      "geographic_footprint": "location.bbox",
+      "scenario_timestamp_range": [
+        "2026-09-19T13:14:00Z",
+        "2026-09-19T13:14:30Z"
+      ]
+    },
+    {
+      "id": "drone-images",
+      "kind": "drone",
+      "status": "ready",
+      "path": "drone/selection.json",
+      "sha256": "c159e9e3fad8e1e8b1c0d331cab11eef5dab28052247206f3863634cf96d640f",
+      "original_dataset": "ISBDA train split",
+      "original_path": "drone/selection.json",
+      "input_origin": "real-isbda",
+      "simulation_fields": [
+        "assigned_location",
+        "target_id",
+        "scenario_timestamp"
+      ],
+      "geographic_footprint": "source location absent; Mexico locations simulated",
+      "scenario_timestamp_range": [
+        "2026-09-19T13:15:00Z",
+        "2026-09-19T13:15:30Z"
+      ]
+    },
+    {
+      "id": "drone-events",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "drone_events.json",
+      "sha256": "c61e88496d80545516441a856b05c937f7b2d25d2c93b6ef7d236ae5701e440d",
+      "original_dataset": "scenario event definition",
+      "original_path": "drone_events.json",
+      "input_origin": "simulation",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "gps",
+        "target_id"
+      ],
+      "geographic_footprint": "assigned points inside location.bbox",
+      "scenario_timestamp_range": [
+        "2026-09-19T13:15:00Z",
+        "2026-09-19T13:15:30Z"
+      ]
+    },
+    {
+      "id": "social-source",
+      "kind": "social-source",
+      "status": "ready",
+      "path": "social/source.json",
+      "sha256": "9e61c7b83925b08c2471eaeec2fee7481b22c6c9330df8c6ec3b7b4286d3a074",
+      "original_dataset": "CrisisMMD v2.0",
+      "original_path": "social/source.json",
+      "input_origin": "real-crisismmd",
+      "simulation_fields": [
+        "assigned_location",
+        "target_ids",
+        "scenario_timestamp"
+      ],
+      "geographic_footprint": "source report has no verified tile location",
+      "scenario_timestamp": "2026-09-19T13:16:00Z"
+    },
+    {
+      "id": "social-events",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "social_events.json",
+      "sha256": "a0e444f552d817e62bcc1e483fca86a0adcb5e76d5dadbbbaec0498f8f5f603a",
+      "original_dataset": "CrisisMMD plus scenario assignment",
+      "original_path": "social_events.json",
+      "input_origin": "hybrid-real-crisismmd-simulated-context",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "gps",
+        "target_ids"
+      ],
+      "geographic_footprint": "assigned point inside location.bbox",
+      "scenario_timestamp": "2026-09-19T13:16:00Z"
+    },
+    {
+      "id": "responder-decisions",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "responder_decisions.json",
+      "sha256": "92bb5561566361fded7992a8a85bdcb46205baec5013947be99c4e7b2f5ad969",
+      "original_dataset": "scenario simulation",
+      "original_path": "responder_decisions.json",
+      "input_origin": "simulation",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "action",
+        "responder_id"
+      ],
+      "geographic_footprint": "linked to assigned report location",
+      "scenario_timestamp": "2026-09-19T13:16:15Z"
+    },
+    {
+      "id": "telemetry",
+      "kind": "event-stream",
+      "status": "ready",
+      "path": "telemetry.json",
+      "sha256": "ec18d99918224beb6b8005115759c991e7c6d5cf35c7db7151f9fff24e3f8e89",
+      "original_dataset": "scenario simulation",
+      "original_path": "telemetry.json",
+      "input_origin": "simulation",
+      "simulation_fields": [
+        "scenario_timestamp",
+        "target_id",
+        "load",
+        "capacity",
+        "damage"
+      ],
+      "geographic_footprint": "target GIS road inside location.bbox",
+      "scenario_timestamp_range": [
+        "2026-09-19T13:16:30Z",
+        "2026-09-19T13:19:00Z"
+      ]
+    },
+    {
+      "id": "timeline-contract",
+      "kind": "scenario-contract",
+      "status": "ready",
+      "path": "timeline.json",
+      "sha256": "9aa327dd47adc0e8c669dc6ce3dc3d1f6f82609b672c971418a54b436d669969",
+      "original_dataset": "engineering scenario contract",
+      "original_path": "timeline.json",
+      "input_origin": "engineering-contract",
+      "simulation_fields": [],
+      "geographic_footprint": "location.bbox",
+      "scenario_timestamp_range": [
+        "2026-09-19T13:14:00Z",
+        "2026-09-19T13:19:30Z"
+      ]
+    },
+    {
+      "id": "acceptance-criteria",
+      "kind": "validation",
+      "status": "ready",
+      "path": "expected_results.json",
+      "sha256": "56ce8d3c2d408257f5946227c1b7a831e4e6865fae2c4fb89046f5dd26de6214",
+      "original_dataset": "engineering acceptance contract",
+      "original_path": "expected_results.json",
+      "input_origin": "engineering-contract",
+      "simulation_fields": [],
+      "geographic_footprint": "not applicable",
+      "scenario_timestamp": "not_applicable"
+    }
+  ],
+  "bindings": {
+    "primary_road": "osm-way-63059679",
+    "secondary_road": "osm-way-533280131",
+    "affected_building": "xbd-building-93aa9b3c-6171-47f5-acfa-21e22cb88345",
+    "secondary_building": "xbd-building-a2581007-d0ff-4ae5-b8bc-18ee495006aa"
+  },
+  "timeline": [
+    {
+      "offset_seconds": 0,
+      "event": "baseline_gis_graph_loaded",
+      "source": "structural-gis"
+    },
+    {
+      "offset_seconds": 30,
+      "event": "satellite_post_event_change_detected",
+      "source": "satellite-before-after"
+    },
+    {
+      "offset_seconds": 60,
+      "event": "first_drone_observation_arrives",
+      "source": "drone-events"
+    },
+    {
+      "offset_seconds": 90,
+      "event": "severe_damage_observations_arrive",
+      "source": "drone-events"
+    },
+    {
+      "offset_seconds": 120,
+      "event": "social_distress_report_arrives_pending",
+      "source": "social-events"
+    },
+    {
+      "offset_seconds": 135,
+      "event": "responder_confirms_report",
+      "source": "responder-decisions"
+    },
+    {
+      "offset_seconds": 150,
+      "event": "road_telemetry_degrades",
+      "source": "telemetry"
+    },
+    {
+      "offset_seconds": 180,
+      "event": "graph_state_changes",
+      "source": "timeline-contract"
+    },
+    {
+      "offset_seconds": 210,
+      "event": "tgnn_recalculates_node_risks",
+      "source": "timeline-contract"
+    },
+    {
+      "offset_seconds": 240,
+      "event": "cascading_risk_pattern_becomes_visible",
+      "source": "timeline-contract"
+    },
+    {
+      "offset_seconds": 300,
+      "event": "recovery_information_arrives",
+      "source": "telemetry"
+    },
+    {
+      "offset_seconds": 330,
+      "event": "risk_is_recalculated_after_recovery",
+      "source": "timeline-contract"
+    }
+  ]
+}

@@ -14,8 +14,12 @@ from typing import Any
 ALLOWED_ASSET_STATUS = {"ready", "pending"}
 ALLOWED_ORIGINS = {
     "real-openstreetmap-snapshot",
+    "real-xbd-osm-snapshot",
     "real-spacenet8",
     "real-isbda",
+    "real-xbd",
+    "real-crisismmd",
+    "hybrid-real-crisismmd-simulated-context",
     "external-spacenet8-or-xbd",
     "external-isbda",
     "simulation",
@@ -52,6 +56,7 @@ def validate_scenario(
     strict: bool = False,
     spacenet_root: Path | None = None,
     isbda_root: Path | None = None,
+    crisismmd_root: Path | None = None,
 ) -> dict[str, Any]:
     """Return a validation summary, raising ValueError for contract violations.
 
@@ -146,29 +151,41 @@ def validate_scenario(
         pre_bbox = (pair.get("pre_event") or {}).get("bbox")
         post_bbox = (pair.get("post_event") or {}).get("bbox")
         if not bbox or not pre_bbox or not _bbox_close(bbox, pre_bbox):
-            errors.append("SpaceNet pre-event footprint does not match scenario bbox")
+            errors.append("Satellite pre-event footprint does not match scenario bbox")
         if not bbox or not post_bbox or not _bbox_close(bbox, post_bbox, tolerance=1e-5):
-            errors.append("SpaceNet post-event footprint does not align with scenario bbox")
+            errors.append("Satellite post-event footprint does not align with scenario bbox")
         reference = pair.get("reference") or {}
-        if reference.get("feature_count") != 40 or reference.get("flooded_feature_count") != 22:
-            errors.append("SpaceNet reference counts must remain 40 total / 22 flooded")
+        dataset_type = pair.get("dataset_type", "spacenet8")
+        if dataset_type == "spacenet8":
+            if reference.get("feature_count") != 40 or reference.get("flooded_feature_count") != 22:
+                errors.append("SpaceNet reference counts must remain 40 total / 22 flooded")
+        elif dataset_type == "xbd":
+            if not isinstance(reference.get("feature_count"), int) or reference["feature_count"] <= 0:
+                errors.append("xBD reference feature_count must be a positive integer")
+            if not isinstance(reference.get("damage_counts"), dict):
+                errors.append("xBD reference damage_counts are required")
+        else:
+            errors.append(f"satellite/pair.json: unsupported dataset_type {dataset_type!r}")
         if spacenet_root is not None:
             error_count = len(errors)
             spacenet_root = Path(spacenet_root).resolve()
-            for section in ("pre_event", "post_event", "annotation", "reference"):
+            external_sections = ("pre_event", "post_event", "annotation")
+            if reference.get("relative_path"):
+                external_sections += ("reference",)
+            for section in external_sections:
                 record = pair.get(section) or {}
                 source = spacenet_root / str(record.get("relative_path", ""))
                 if not source.is_file():
-                    errors.append(f"SpaceNet {section} file does not exist: {source}")
+                    errors.append(f"Satellite {section} file does not exist: {source}")
                     continue
                 digest = _sha256(source)
                 if digest != record.get("sha256"):
-                    errors.append(f"SpaceNet {section} checksum does not match pair.json")
+                    errors.append(f"Satellite {section} checksum does not match pair.json")
                 expected_size = record.get("size_bytes")
                 if expected_size is not None and source.stat().st_size != expected_size:
-                    errors.append(f"SpaceNet {section} size does not match pair.json")
+                    errors.append(f"Satellite {section} size does not match pair.json")
             if len(errors) == error_count:
-                verified_external_sources.append("spacenet8")
+                verified_external_sources.append(dataset_type)
 
     drone_selection_path = root / "drone" / "selection.json"
     drone_asset_ids: set[str] = set()
@@ -214,6 +231,17 @@ def validate_scenario(
                     errors.append(f"ISBDA {label} size does not match selection.json")
             if len(errors) == error_count:
                 verified_external_sources.append("isbda")
+
+    social_source_path = root / "social" / "source.json"
+    if social_source_path.exists() and crisismmd_root is not None:
+        source_contract = _read_json(social_source_path)
+        source = Path(crisismmd_root).resolve() / str(source_contract.get("annotation_relative_path", ""))
+        if not source.is_file():
+            errors.append(f"CrisisMMD annotation file does not exist: {source}")
+        elif _sha256(source) != source_contract.get("annotation_sha256"):
+            errors.append("CrisisMMD annotation checksum does not match social/source.json")
+        else:
+            verified_external_sources.append("crisis_mmd")
 
     for binding, source_id in (manifest.get("bindings") or {}).items():
         if source_id not in gis_ids:
@@ -335,14 +363,19 @@ def main() -> None:
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--strict", action="store_true", help="fail if any asset is pending")
     parser.add_argument(
-        "--spacenet-root",
+        "--satellite-root", "--spacenet-root", dest="spacenet_root",
         type=Path,
-        help="verify the registered external SpaceNet files and SHA-256 checksums",
+        help="verify the registered external SpaceNet/xBD files and SHA-256 checksums",
     )
     parser.add_argument(
         "--isbda-root",
         type=Path,
         help="verify the registered external ISBDA files and SHA-256 checksums",
+    )
+    parser.add_argument(
+        "--crisismmd-root",
+        type=Path,
+        help="verify the registered external CrisisMMD annotation checksum",
     )
     args = parser.parse_args()
     print(json.dumps(validate_scenario(
@@ -350,6 +383,7 @@ def main() -> None:
         strict=args.strict,
         spacenet_root=args.spacenet_root,
         isbda_root=args.isbda_root,
+        crisismmd_root=args.crisismmd_root,
     ), indent=2))
 
 

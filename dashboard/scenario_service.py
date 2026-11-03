@@ -19,6 +19,7 @@ class DashboardScenarioService:
     def __init__(self, scenario_path: Path | None = None):
         raw = scenario_path or Path(settings.final_scenario_path)
         self.scenario_path = raw if raw.is_absolute() else settings.project_root / raw
+        self.scenario = json.loads(self.scenario_path.read_text(encoding="utf-8"))
         self.timeline = json.loads(
             (self.scenario_path.parent / "timeline.json").read_text(encoding="utf-8")
         )
@@ -26,6 +27,25 @@ class DashboardScenarioService:
         self._dispatcher = None
         self._speed = float(self.timeline.get("speed", 1.0))
         self._lock = RLock()
+
+    def _dataset_roots(self) -> tuple[Path | None, Path | None]:
+        pair = json.loads(
+            (self.scenario_path.parent / "satellite" / "pair.json").read_text(encoding="utf-8")
+        )
+        satellite_env = pair.get("dataset_root_env", "SPACENET8_DATASET_PATH")
+        satellite_value = {
+            "SPACENET8_DATASET_PATH": settings.spacenet8_dataset_path,
+            "XBD_DATASET_PATH": settings.xbd_dataset_path,
+        }.get(satellite_env, "")
+        return (
+            Path(satellite_value).expanduser() if satellite_value else None,
+            Path(settings.isbda_dataset_path).expanduser() if settings.isbda_dataset_path else None,
+        )
+
+    def _social_dataset_root(self) -> Path | None:
+        if not (self.scenario_path.parent / "social" / "source.json").exists():
+            return None
+        return Path(settings.crisismmd_dataset_path).expanduser() if settings.crisismmd_dataset_path else None
 
     def _idle_status(self):
         return {
@@ -41,23 +61,28 @@ class DashboardScenarioService:
 
     def status(self):
         with self._lock:
-            return self._controller.status() if self._controller else self._idle_status()
+            result = self._controller.status() if self._controller else self._idle_status()
+            return {**result, "scenario_id": self.scenario["scenario_id"], "title": self.scenario["title"]}
 
     def readiness(self) -> dict:
         """Validate the frozen package without starting or mutating the replay."""
-        if not settings.spacenet8_dataset_path or not settings.isbda_dataset_path:
+        satellite_root, drone_root = self._dataset_roots()
+        social_required = (self.scenario_path.parent / "social" / "source.json").exists()
+        social_root = self._social_dataset_root()
+        if satellite_root is None or drone_root is None or (social_required and social_root is None):
             return {
                 "state": "unavailable",
                 "valid": False,
-                "message": "Strict scenario validation cannot run until both external dataset paths are configured.",
-                "action": "Set SPACENET8_DATASET_PATH and ISBDA_DATASET_PATH, then refresh readiness.",
+                "message": "Strict scenario validation cannot run until its registered external dataset paths are configured.",
+                "action": "Configure the satellite, drone, and any registered social dataset roots, then refresh readiness.",
             }
         try:
             result = validate_scenario(
                 self.scenario_path,
                 strict=True,
-                spacenet_root=Path(settings.spacenet8_dataset_path).expanduser(),
-                isbda_root=Path(settings.isbda_dataset_path).expanduser(),
+                spacenet_root=satellite_root,
+                isbda_root=drone_root,
+                crisismmd_root=social_root,
             )
         except (OSError, ValueError, KeyError, TypeError) as exc:
             logger.exception("Strict scenario readiness validation failed")
@@ -76,15 +101,15 @@ class DashboardScenarioService:
         }
 
     def _create(self):
-        spacenet = Path(settings.spacenet8_dataset_path).expanduser()
-        isbda = Path(settings.isbda_dataset_path).expanduser()
-        if not settings.spacenet8_dataset_path or not settings.isbda_dataset_path:
-            raise ValueError("Configure SPACENET8_DATASET_PATH and ISBDA_DATASET_PATH")
+        spacenet, isbda = self._dataset_roots()
+        if spacenet is None or isbda is None:
+            raise ValueError("Configure the scenario satellite and drone dataset roots")
         validation = validate_scenario(
             self.scenario_path,
             strict=True,
             spacenet_root=spacenet,
             isbda_root=isbda,
+            crisismmd_root=self._social_dataset_root(),
         )
         if not validation["valid"]:
             raise ValueError("Strict scenario validation failed")

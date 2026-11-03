@@ -4,7 +4,9 @@ import {cancelRequests} from './api-client.js';
 let navigate = () => {};
 
 export function activateView(view, {refresh = true} = {}) {
-  cancelRequests();
+  // Navigation should cancel stale view work, but registry/access/health
+  // requests are global shell state and must survive the initial route change.
+  cancelRequests({includeGlobal: false});
   state.activeView = view;
   $$('.nav[data-view]').forEach(element => {
     const active = element.dataset.view === view;

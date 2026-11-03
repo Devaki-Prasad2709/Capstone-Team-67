@@ -1,8 +1,11 @@
 import {state} from './core.js';
 
-export function cancelRequests() {
-  for (const request of state.requests.values()) request.controller.abort('cancelled');
-  state.requests.clear();
+export function cancelRequests({includeGlobal = true} = {}) {
+  for (const [key, request] of state.requests.entries()) {
+    if (!includeGlobal && String(key).startsWith('global:')) continue;
+    request.controller.abort('cancelled');
+    state.requests.delete(key);
+  }
 }
 
 export async function api(url, options = {}) {

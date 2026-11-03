@@ -14,12 +14,21 @@ drone-damage detector. Unique drone images can be analyzed in real time and
 published to `ai-analysis-results`; duplicates remain auditable without
 rerunning inference.
 
-The canonical demonstration is now defined by
+The default demonstration is defined by
 [`scenarios/louisiana_east_flood/scenario.json`](scenarios/louisiana_east_flood/scenario.json):
 a bounded Louisiana flood scenario with a frozen OpenStreetMap GIS snapshot,
 stable infrastructure IDs, and a deterministic twelve-step event timeline. See
 [`docs/FINAL_SCENARIO.md`](docs/FINAL_SCENARIO.md) for its readiness and data
 provenance.
+
+A second registered package,
+[`scenarios/mexico_earthquake_2017/scenario.json`](scenarios/mexico_earthquake_2017/scenario.json),
+uses real xBD Mexico-earthquake imagery and labels, xBD building footprints,
+a matching frozen OpenStreetMap road snapshot, real CrisisMMD report text, and
+three real ISBDA images whose Mexico GPS/targets are explicitly simulated.
+Select and activate either package from the dashboard header; replay, social,
+GIS, projection, TGNN, satellite, and building-classification state remain
+scoped to the selected scenario. Louisiana remains the registry default.
 
 For the authoritative system architecture, contracts, setup, operation,
 evaluation boundaries, deployment replacements, and troubleshooting guide, see
@@ -169,11 +178,20 @@ Validate the scenario package independently of Docker:
 
 ```powershell
 python -m scripts.validate_scenario scenarios\louisiana_east_flood\scenario.json
+python -m scripts.validate_scenario scenarios\mexico_earthquake_2017\scenario.json
 ```
 
 The real SpaceNet 8 satellite pair and three real ISBDA drone images are
 registered. The `--strict` scenario package gate now passes; the drone GPS
 assignments and scenario timestamps are explicitly simulated.
+
+For the Mexico package, configure `XBD_DATASET_PATH` and
+`CRISISMMD_DATASET_PATH` as shown in `.env.example`. The selected xBD tile is
+`mexico-earthquake_00000069`; it contains 333 labelled buildings, including 16
+major-damage labels. The committed scenario GIS keeps the 16 damaged and eight
+comparison building footprints plus five OSM roads inside the same raster
+footprint. CrisisMMD GPS and graph association, all telemetry, responder action,
+scenario timestamps, and all ISBDA Mexico locations are simulation fields.
 
 From **Pipeline control** in the dashboard:
 

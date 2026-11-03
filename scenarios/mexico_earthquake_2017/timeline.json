@@ -1,0 +1,394 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "mexico-earthquake-2017-v1",
+  "scenario_start": "2026-09-19T13:14:00Z",
+  "speed": 1.0,
+  "events": [
+    {
+      "sequence": 1,
+      "event_id": "timeline-01-baseline",
+      "name": "baseline_gis_graph_loaded",
+      "offset_seconds": 0,
+      "scenario_timestamp": "2026-09-19T13:14:00Z",
+      "input": {
+        "kind": "asset",
+        "source": "structural-gis",
+        "reference": "structural-gis"
+      },
+      "target": {
+        "kind": "graph",
+        "ids": [
+          "all"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "scenario_state_transition",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 2,
+      "event_id": "timeline-02-satellite",
+      "name": "satellite_post_event_change_detected",
+      "offset_seconds": 30,
+      "scenario_timestamp": "2026-09-19T13:14:30Z",
+      "input": {
+        "kind": "asset",
+        "source": "satellite-before-after",
+        "reference": "satellite-before-after"
+      },
+      "target": {
+        "kind": "broad_area",
+        "ids": [
+          "mexico-earthquake_00000069"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 3,
+      "event_id": "timeline-03-first",
+      "name": "first_drone_observation_arrives",
+      "offset_seconds": 60,
+      "scenario_timestamp": "2026-09-19T13:15:00Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "drone-events",
+        "reference": "drone-events"
+      },
+      "target": {
+        "kind": "gis_node",
+        "ids": [
+          "osm-way-63059679"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "scenario_state_transition",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 4,
+      "event_id": "timeline-04-severe",
+      "name": "severe_damage_observations_arrive",
+      "offset_seconds": 90,
+      "scenario_timestamp": "2026-09-19T13:15:30Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "drone-events",
+        "reference": "drone-events"
+      },
+      "target": {
+        "kind": "gis_nodes",
+        "ids": [
+          "xbd-building-93aa9b3c-6171-47f5-acfa-21e22cb88345",
+          "osm-way-533280131"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "scenario_state_transition",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 5,
+      "event_id": "timeline-05-social",
+      "name": "social_distress_report_arrives_pending",
+      "offset_seconds": 120,
+      "scenario_timestamp": "2026-09-19T13:16:00Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "social-events",
+        "reference": "social-events"
+      },
+      "target": {
+        "kind": "alert_and_gis_nodes",
+        "ids": [
+          "social-001",
+          "xbd-building-93aa9b3c-6171-47f5-acfa-21e22cb88345"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 6,
+      "event_id": "timeline-06-responder",
+      "name": "responder_confirms_report",
+      "offset_seconds": 135,
+      "scenario_timestamp": "2026-09-19T13:16:15Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "responder-decisions",
+        "reference": "responder-decisions"
+      },
+      "target": {
+        "kind": "alert",
+        "ids": [
+          "social-001"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 7,
+      "event_id": "timeline-07-road",
+      "name": "road_telemetry_degrades",
+      "offset_seconds": 150,
+      "scenario_timestamp": "2026-09-19T13:16:30Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "telemetry",
+        "reference": "telemetry"
+      },
+      "target": {
+        "kind": "gis_node",
+        "ids": [
+          "osm-way-63059679"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "scenario_state_transition",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 8,
+      "event_id": "timeline-08-graph",
+      "name": "graph_state_changes",
+      "offset_seconds": 180,
+      "scenario_timestamp": "2026-09-19T13:17:00Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "timeline-contract",
+        "reference": "timeline-contract"
+      },
+      "target": {
+        "kind": "graph_snapshot",
+        "ids": [
+          "G(180)"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "scenario_state_transition",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 9,
+      "event_id": "timeline-09-tgnn",
+      "name": "tgnn_recalculates_node_risks",
+      "offset_seconds": 210,
+      "scenario_timestamp": "2026-09-19T13:17:30Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "timeline-contract",
+        "reference": "timeline-contract"
+      },
+      "target": {
+        "kind": "risk_set",
+        "ids": [
+          "all"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 10,
+      "event_id": "timeline-10-cascading",
+      "name": "cascading_risk_pattern_becomes_visible",
+      "offset_seconds": 240,
+      "scenario_timestamp": "2026-09-19T13:18:00Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "timeline-contract",
+        "reference": "timeline-contract"
+      },
+      "target": {
+        "kind": "spatial_risk_cluster",
+        "ids": [
+          "top-risk-node-and-neighbors"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 11,
+      "event_id": "timeline-11-recovery",
+      "name": "recovery_information_arrives",
+      "offset_seconds": 300,
+      "scenario_timestamp": "2026-09-19T13:19:00Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "telemetry",
+        "reference": "telemetry"
+      },
+      "target": {
+        "kind": "gis_node",
+        "ids": [
+          "osm-way-63059679"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "scenario_state_transition",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    },
+    {
+      "sequence": 12,
+      "event_id": "timeline-12-risk",
+      "name": "risk_is_recalculated_after_recovery",
+      "offset_seconds": 330,
+      "scenario_timestamp": "2026-09-19T13:19:30Z",
+      "input": {
+        "kind": "stream_or_derived_event",
+        "source": "timeline-contract",
+        "reference": "timeline-contract"
+      },
+      "target": {
+        "kind": "risk_set",
+        "ids": [
+          "all"
+        ]
+      },
+      "expected_graph_effect": {
+        "mutation": "none",
+        "assertions": [
+          "preserve stable GIS IDs",
+          "apply only evidence allowed by the existing architecture"
+        ]
+      },
+      "expected_dashboard_effect": {
+        "view": "operations",
+        "assertions": [
+          "show this event at its scenario time",
+          "retain real-versus-simulated provenance"
+        ]
+      }
+    }
+  ]
+}

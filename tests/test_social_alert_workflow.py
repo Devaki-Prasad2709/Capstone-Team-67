@@ -80,6 +80,23 @@ def test_confirmation_creates_orange_hotspot_and_exact_graph_observation(workflo
     assert dict(instance.graph.nodes(data=True)) == dict(original_graph.nodes(data=True))
 
 
+def test_unresolved_text_uses_explicit_declared_gis_target_as_auditable_fallback(workflow):
+    instance, _, id_map = workflow
+    event = _event(text="Deadly earthquake causes buildings to crumble.")
+    event["target_ids"] = ["osm-way-1064972993"]
+
+    instance.ingest_event(event)
+    pending = instance.dashboard_state()["pending_alerts"][0]
+
+    assert pending["report"]["resolved_via"] == "declared_target_id"
+    assert pending["report"]["matched_entity_name"] == "osm-way-1064972993"
+    assert pending["report"]["node_id"] == id_map["osm-way-1064972993"]
+
+    confirmed = instance.decide("social-001", "confirm", responder_id="responder-1")
+    assert confirmed["status"] == "CONFIRMED"
+    assert instance.dashboard_state()["graph_observations"][0]["gis_source_id"] == "osm-way-1064972993"
+
+
 def test_rejection_is_auditable_without_hotspot_or_graph_observation(workflow):
     instance, _, _ = workflow
     instance.ingest_event(_event())
