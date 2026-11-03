@@ -1,0 +1,101 @@
+.control-settings {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.process-section-heading {
+  margin-top: 26px;
+}
+
+.process-status.externally_running {
+  color: var(--blue);
+}
+
+.process-status.exited,
+.process-failure {
+  color: var(--red);
+}
+
+.process-status.unknown {
+  color: var(--orange);
+}
+
+.process-failure {
+  display: block;
+  margin-top: 14px;
+  line-height: 1.4;
+}
+
+.process-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+.readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.readiness-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.readiness-card ul {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.readiness-card li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 9px;
+  align-items: start;
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.readiness-card li:first-child { border-top: 0; padding-top: 0; }
+.readiness-card li strong,
+.readiness-card li small,
+.readiness-card li em { display: block; }
+.readiness-card li strong { text-transform: capitalize; }
+.readiness-card li small { margin-top: 3px; color: var(--muted); line-height: 1.4; }
+.readiness-card li em { margin-top: 4px; color: var(--orange); font-size: 10px; font-style: normal; }
+
+.readiness-pill,
+.component-state {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.readiness-pill.healthy,
+.component-state.healthy { color: var(--teal); border-color: #28d7b055; }
+.readiness-pill.degraded,
+.component-state.degraded { color: var(--orange); border-color: #ffad5755; }
+.readiness-pill.stopped,
+.component-state.stopped { color: var(--blue); border-color: #55a9ff55; }
+.readiness-pill.unavailable,
+.component-state.unavailable { color: var(--red); border-color: #ff6d7555; }
+.readiness-pill.unknown,
+.component-state.unknown { color: var(--muted); }
+
+.connection i.degraded,
+.connection i.stopped { background: var(--orange); box-shadow: 0 0 0 5px #ffad5720; }
+.connection i.unavailable { background: var(--red); box-shadow: 0 0 0 5px #ff6d7520; }
+.connection i.unknown { background: var(--muted); box-shadow: 0 0 0 5px #8ca0ba20; }
+
+@media (max-width: 900px) {
+  .readiness-grid { grid-template-columns: 1fr; }
+}

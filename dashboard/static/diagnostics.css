@@ -1,0 +1,43 @@
+.object-list #objectRows {
+  background: #0b1627;
+}
+
+button.object-row {
+  appearance: none;
+  background: #0d192a;
+  border: 0;
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  display: block;
+  min-width: 0;
+  text-align: left;
+  width: 100%;
+}
+
+button.object-row strong {
+  color: #eef5ff;
+}
+
+button.object-row small {
+  color: #9eb2cc;
+  display: block;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+button.object-row:hover,
+button.object-row:focus-visible,
+button.object-row.active {
+  background: #172842;
+  color: #ffffff;
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.preview #imageMeta {
+  background: #0d192a;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #b8cae0;
+  padding: 10px;
+}

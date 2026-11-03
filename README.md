@@ -48,7 +48,8 @@ evaluation boundaries, deployment replacements, and troubleshooting guide, see
   worker and published as dashboard-only broad-area evidence on
   `satellite-change-results`.
 - GIS JPG/PNG map imagery replayed through `gis-data`.
-- Configurable stream delay and event limits for demonstrations.
+- Configurable finite replay delay and event limits for dataset producers;
+  processing workers run continuously unless an explicit diagnostic maximum is set.
 - Recursive dataset discovery from paths configured in `.env`.
 
 ### Kafka and object storage
@@ -114,7 +115,11 @@ evaluation boundaries, deployment replacements, and troubleshooting guide, see
   legends, freshness timestamps, and explicit loading/empty/error states.
 - Docker, Kafka, MinIO, and process health indicators.
 - Kafka topic event counts and MinIO object totals.
-- Start/stop controls for infrastructure, Spark, AI, and all producers.
+- Separate start/stop controls for finite producers and continuous Spark, AI, and
+  satellite-change workers, with restart-safe process status and external-process detection.
+- One cached Operations snapshot with a consistent scenario-time cutoff,
+  durable partition/offset materialization, input-keyed TGNN inference, and
+  timestamped cache diagnostics.
 - Producer limit and delay controls.
 - Spark Parquet tables and AI-readiness flow.
 - Live detections and preserved precision, recall, and mAP metrics.
@@ -378,10 +383,20 @@ ngrok http 8088
 ```
 
 The generated `https://...ngrok-free.dev` address changes when the free tunnel
-is recreated. The dashboard contains controls that can start and stop local
-processes. Prefer ngrok traffic-policy authentication, Tailscale, or another
-private network instead of publishing it anonymously. Never expose Kafka port
-`9092` or MinIO API port `9000` through router port forwarding.
+is recreated. Before sharing, generate a long random value and place it only in
+the untracked `.env` file:
+
+```dotenv
+DASHBOARD_OPERATOR_TOKEN=replace-with-a-long-random-token
+```
+
+Anonymous visitors to a network or ngrok hostname are read-only observers. An
+authorized teammate can enter the token in the dashboard to unlock operator
+controls for that browser tab. Do not put the token in the ngrok URL, commit it,
+or send it with screenshots. Localhost remains zero-configuration when the
+variable is empty. Prefer ngrok traffic-policy authentication, Tailscale, or
+another private network as an additional outer boundary. Never expose Kafka
+port `9092` or MinIO API port `9000` through router port forwarding.
 
 ## AI layer integration
 
@@ -436,7 +451,7 @@ disaster-streaming-system/
 |-- dashboard/
 |   |-- server.py              FastAPI backend
 |   |-- services.py            Kafka, Docker, MinIO, SQLite, and Parquet metrics
-|   |-- process_manager.py     Managed Spark and producer processes
+|   |-- process_manager.py     Persistent producer/worker process lifecycle and discovery
 |   `-- static/                Responsive dashboard frontend
 |-- data_source/               Social, drone, and satellite producers
 |-- docs/ARCHITECTURE.md       Detailed layer and event-contract documentation

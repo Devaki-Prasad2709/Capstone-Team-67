@@ -47,6 +47,7 @@ def _source_reference(event: dict) -> dict:
             "source_relative_path", "source_sha256", "source_size_bytes",
             "transfer_mode", "object_key", "image_uri", "content_hash",
             "size_bytes", "bbox", "satellite_phase",
+            "scenario_replay_id", "is_duplicate", "processing_status",
         )
     }
 
@@ -92,7 +93,10 @@ def build_change_result(
     )
     change = classify_normalized_pair(normalized, grid_size=grid_size)
     digest = hashlib.sha256(
-        f"{pre_event.get('content_hash')}:{post_event.get('content_hash')}".encode()
+        (
+            f"{pre_event.get('content_hash')}:{post_event.get('content_hash')}:"
+            f"{post_event.get('scenario_replay_id') or ''}"
+        ).encode()
     ).hexdigest()[:16]
     return {
         "id": f"sat-change-{pre_event['tile_id']}-{digest}",
@@ -101,6 +105,7 @@ def build_change_result(
         "source": "satellite_change_analysis",
         "data_type": "broad_area_change",
         "scenario_id": post_event.get("scenario_id"),
+        "scenario_replay_id": post_event.get("scenario_replay_id"),
         "scenario_timestamp": post_event.get("scenario_timestamp"),
         "tile_id": post_event["tile_id"],
         "source_images": {
@@ -130,9 +135,13 @@ class SatellitePairAccumulator:
 
     def accept(self, event: dict) -> dict | None:
         validate_pair_event(event)
-        if event.get("is_duplicate"):
+        if event.get("is_duplicate") and event.get("transfer_mode") == "none":
             return None
-        key = (event.get("scenario_id"), event["tile_id"])
+        key = (
+            event.get("scenario_id"),
+            event["tile_id"],
+            event.get("scenario_replay_id"),
+        )
         pair = self._pending.setdefault(key, {})
         pair[event["satellite_phase"]] = event
         if not {"pre", "post"} <= pair.keys():

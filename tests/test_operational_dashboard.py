@@ -14,24 +14,31 @@ APP_JS = Path(__file__).parents[1] / "dashboard" / "static" / "app.js"
 
 
 def _fake_risk_report(snapshots, *args, **kwargs):
-    graph = snapshots[-1]
-    nodes = []
-    total = len(graph)
-    for rank, node_id in enumerate(reversed(list(graph.nodes)), start=1):
-        nodes.append(
-            {
-                "tensor_row": node_id,
-                "graph_node_id": node_id,
-                "gis_source_id": graph.nodes[node_id]["gis_source_id"],
-                "node_type": graph.nodes[node_id]["type"],
-                "raw_logit": 0.0,
-                "operational_score": 0.5,
-                "failure_risk_score": (total - rank + 1) / total,
-                "risk_rank": rank,
-            }
-        )
+    timeline = []
+    for snapshot_index, graph in enumerate(snapshots):
+        nodes = []
+        total = len(graph)
+        recency_factor = 1 - 0.01 * (len(snapshots) - snapshot_index - 1)
+        for rank, node_id in enumerate(reversed(list(graph.nodes)), start=1):
+            nodes.append(
+                {
+                    "tensor_row": node_id,
+                    "graph_node_id": node_id,
+                    "gis_source_id": graph.nodes[node_id]["gis_source_id"],
+                    "node_type": graph.nodes[node_id]["type"],
+                    "raw_logit": 0.0,
+                    "operational_score": 0.5,
+                    "failure_risk_score": ((total - rank + 1) / total) * recency_factor,
+                    "risk_rank": rank,
+                }
+            )
+        timeline.append({
+            "snapshot_index": snapshot_index,
+            "snapshot_timestamp": None,
+            "nodes": nodes,
+        })
     return {
-        "timeline": [{"snapshot_index": 0, "snapshot_timestamp": None, "nodes": nodes}],
+        "timeline": timeline,
         "risk_interpretation": "uncalibrated_relative_failure_risk_score",
     }
 
@@ -54,11 +61,41 @@ def test_operational_contract_orders_risk_and_preserves_frozen_gis(tmp_path, mon
     }
     assert len(result["top_five_risk_nodes"]) == 5
     assert result["highest_risk_node"]["risk_rank"] == 1
+    assert result["highest_risk_node"]["previous_relative_risk_score"] is None
+    assert result["highest_risk_node"]["relative_risk_change"] is None
+    assert "why" not in result["highest_risk_node"]
     assert result["layers"]["tgnn_risk"]["features"][20]["properties"]["highest_risk"]
+    assert sum(
+        feature["properties"]["structural_feature_class"] == "building"
+        for feature in result["layers"]["tgnn_risk"]["features"]
+    ) == 16
     assert result["calibrated_probability"] is False
+    assert result["freshness"]["tgnn_inference"] == result["generated_at"]
     assert result["provenance"]["structural_gis"]["kind"] == "real"
     assert result["provenance"]["telemetry"]["kind"] == "simulated"
     assert hashlib.sha256(GIS_PATH.read_bytes()).hexdigest() == before
+
+
+def test_pre_inference_snapshot_has_no_tgnn_scores(tmp_path, monkeypatch):
+    import dashboard.operational_service as module
+
+    def unexpected_inference(*_args, **_kwargs):
+        raise AssertionError("TGNN must not run before the scenario inference milestone")
+
+    monkeypatch.setattr(module, "predict_node_risk_report", unexpected_inference)
+    buildings = BuildingClassificationService(
+        GIS_PATH, tmp_path / "classifications.sqlite3"
+    )
+    result = OperationalDashboardService(buildings).snapshot(
+        [], [], include_risk=False
+    )
+
+    assert result["layers"]["tgnn_risk"]["features"] == []
+    assert result["top_five_risk_nodes"] == []
+    assert result["highest_risk_node"] is None
+    assert result["counts"]["risk_nodes"] == 0
+    assert result["freshness"]["tgnn_inference"] is None
+    assert result["risk_interpretation"] is None
 
 
 def test_classification_refreshes_operational_structural_and_risk_layers(tmp_path, monkeypatch):
@@ -87,6 +124,47 @@ def test_classification_refreshes_operational_structural_and_risk_layers(tmp_pat
     assert risk["properties"]["assigned_building_type"] == "emergency_shelter"
 
 
+def test_unchanged_graph_inputs_do_not_rerun_tgnn(tmp_path, monkeypatch):
+    import dashboard.operational_service as module
+
+    calls = []
+
+    def counted_risk_report(snapshots, *args, **kwargs):
+        calls.append(len(snapshots))
+        return _fake_risk_report(snapshots, *args, **kwargs)
+
+    monkeypatch.setattr(module, "predict_node_risk_report", counted_risk_report)
+    buildings = BuildingClassificationService(
+        GIS_PATH, tmp_path / "classifications.sqlite3"
+    )
+    service = OperationalDashboardService(buildings)
+
+    first = service.snapshot([], [])
+    second = service.snapshot([], [])
+    source_id = buildings.gis_data.buildings[0].id
+    buildings.classify(source_id, "hospital", "operator-a")
+    classification_only = service.snapshot([], [])
+
+    assert len(calls) == 1
+    assert first["diagnostics"]["tgnn_cache_hit"] is False
+    assert second["diagnostics"]["tgnn_cache_hit"] is True
+    assert second["freshness"]["tgnn_inference"] == first["freshness"]["tgnn_inference"]
+    assert classification_only["diagnostics"]["tgnn_cache_hit"] is True
+
+    target_id = next(iter(buildings.id_map))
+    changed = [{
+        "id": "telemetry-new",
+        "scenario_id": "louisiana-east-flood-v1",
+        "timestamp": 1_790_236_950.0,
+        "target_id": target_id,
+        "load": 0.8,
+        "capacity": 0.9,
+        "damage": 0.2,
+    }]
+    service.snapshot([], changed)
+    assert len(calls) == 2
+
+
 def test_operational_replay_ignores_duplicate_telemetry_ids(tmp_path, monkeypatch):
     import dashboard.operational_service as module
 
@@ -113,6 +191,11 @@ def test_operational_replay_ignores_duplicate_telemetry_ids(tmp_path, monkeypatc
         "telemetry-repeat-001"
     ]
     assert result["errors"] == []
+    assert all(
+        item["previous_relative_risk_score"] is not None
+        and item["relative_risk_change"] is not None
+        for item in result["top_five_risk_nodes"]
+    )
 
 
 def test_map_defaults_to_the_frozen_scenario_extent(monkeypatch):
@@ -140,12 +223,12 @@ def test_operational_page_keeps_incident_information_in_required_order():
     html = INDEX_HTML.read_text(encoding="utf-8")
     ordered_ids = [
         'id="operationsMap"',
+        'id="mapSatelliteSummary"',
         'id="topRiskRows"',
         'id="opsPendingRows"',
-        'id="opsSatelliteContent"',
         'id="timelineTrack"',
         'id="provenanceGrid"',
-        'id="opsBuildingSelect"',
+        'id="opsBuildingComponentHost"',
     ]
     positions = [html.index(item) for item in ordered_ids]
     assert positions == sorted(positions)
@@ -160,10 +243,13 @@ def test_operational_page_keeps_incident_information_in_required_order():
 
 def test_operational_map_includes_satellite_change_overlay_and_caveat():
     html = INDEX_HTML.read_text(encoding="utf-8")
-    javascript = APP_JS.read_text(encoding="utf-8")
+    javascript = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [APP_JS, *sorted((APP_JS.parent / "modules").glob("*.js"))]
+    )
 
     assert 'id="mapSatelliteSummary"' in html
     assert "Radiometric change, not confirmed damage" in html
     assert "satellite-change-cells" in javascript
-    assert "result?.change" in javascript
+    assert "evidence.result.change" in javascript
     assert "Radiometric change is not confirmed infrastructure damage." in javascript

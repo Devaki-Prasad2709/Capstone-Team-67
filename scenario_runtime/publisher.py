@@ -15,7 +15,10 @@ from common.topics import DRONE_TOPIC, SATELLITE_TOPIC, SOCIAL_TOPIC, TELEMETRY_
 from config.settings import settings
 from core.observation.telemetry import validate_telemetry_event
 from data_source.drone.drone_producer import build_event as build_drone_event
-from data_source.satellite.satellite_producer import build_event as build_satellite_event
+from data_source.satellite.satellite_producer import (
+    build_event as build_satellite_event,
+    encode_tiff as encode_satellite_tiff,
+)
 from data_source.social.social_producer import standardize_record
 
 
@@ -115,6 +118,33 @@ class ScenarioEventFactory:
             )
             if event is None:
                 raise ValueError(f"Could not decode scenario satellite image: {image_path}")
+            if event.get("is_duplicate"):
+                encoded = encode_satellite_tiff(image_path, settings.satellite_jpeg_quality)
+                if encoded is None:
+                    raise ValueError(f"Could not prepare duplicate scenario image: {image_path}")
+                _, jpeg_bytes = encoded
+                duplicate_fields = {
+                    key: event.get(key)
+                    for key in (
+                        "canonical_image_id",
+                        "canonical_content_hash",
+                        "duplicate_method",
+                        "perceptual_distance",
+                    )
+                }
+                event = self.transfer.attach(
+                    event,
+                    jpeg_bytes,
+                    "satellite",
+                    f"{image_path.stem}.jpg",
+                    str(event["content_hash"]),
+                    "image/jpeg",
+                )
+                event.update(duplicate_fields)
+                event.update(
+                    is_duplicate=True,
+                    processing_status="duplicate_reused_for_scenario_replay",
+                )
             event.update(
                 {
                     "timestamp": _epoch(definition["scenario_timestamp"]),
@@ -227,6 +257,7 @@ class ScenarioKafkaDispatcher:
         else:
             payloads = [build(event_ids)]
         for payload in payloads:
+            payload["scenario_replay_id"] = timeline_event.get("scenario_replay_id")
             try:
                 encoded_size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
                 if encoded_size >= settings.max_message_bytes:

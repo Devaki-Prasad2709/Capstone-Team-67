@@ -143,6 +143,7 @@ def test_dashboard_api_functions_expose_current_and_historical_data(tmp_path, mo
     )
     monkeypatch.setattr(server, "building_classifications", service)
     source_id = service.gis_data.buildings[0].id
+    raw_hash = _sha256(SCENARIO_GIS)
 
     saved = server.classify_building(
         source_id,
@@ -161,3 +162,22 @@ def test_dashboard_api_functions_expose_current_and_historical_data(tmp_path, mo
     listing = server.buildings()
     assert listing["classified_count"] == 1
     assert listing["raw_gis_mutated"] is False
+
+    server.classify_building(
+        source_id,
+        server.BuildingClassificationRequest(
+            assigned_type="field hospital",
+            operator="incident-commander",
+            notes="Revised from the shared dashboard component",
+        ),
+    )
+    updated = server.building(source_id)
+    overlay_feature = next(
+        feature
+        for feature in server.buildings()["buildings"]["features"]
+        if feature["properties"]["building_source_id"] == source_id
+    )
+    assert overlay_feature["properties"]["assigned_type"] == "field_hospital"
+    assert updated["graph_node"]["assigned_building_type"] == "field_hospital"
+    assert [item["revision_number"] for item in updated["revision_history"]] == [1, 2]
+    assert _sha256(SCENARIO_GIS) == raw_hash

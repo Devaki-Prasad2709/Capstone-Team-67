@@ -5,10 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from threading import RLock
+import logging
 
 from config.settings import settings
 from scenario_runtime import ScenarioController, ScenarioEventFactory, ScenarioKafkaDispatcher
 from scripts.validate_scenario import validate_scenario
+
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardScenarioService:
@@ -38,6 +42,38 @@ class DashboardScenarioService:
     def status(self):
         with self._lock:
             return self._controller.status() if self._controller else self._idle_status()
+
+    def readiness(self) -> dict:
+        """Validate the frozen package without starting or mutating the replay."""
+        if not settings.spacenet8_dataset_path or not settings.isbda_dataset_path:
+            return {
+                "state": "unavailable",
+                "valid": False,
+                "message": "Strict scenario validation cannot run until both external dataset paths are configured.",
+                "action": "Set SPACENET8_DATASET_PATH and ISBDA_DATASET_PATH, then refresh readiness.",
+            }
+        try:
+            result = validate_scenario(
+                self.scenario_path,
+                strict=True,
+                spacenet_root=Path(settings.spacenet8_dataset_path).expanduser(),
+                isbda_root=Path(settings.isbda_dataset_path).expanduser(),
+            )
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            logger.exception("Strict scenario readiness validation failed")
+            return {
+                "state": "unavailable",
+                "valid": False,
+                "message": "Strict scenario validation failed.",
+                "action": "Verify mounted datasets, registered checksums and scenario manifests.",
+            }
+        return {
+            "state": "healthy",
+            "valid": True,
+            "message": f"Strict scenario validation passed for {result['asset_count']} registered assets.",
+            "action": None,
+            "details": result,
+        }
 
     def _create(self):
         spacenet = Path(settings.spacenet8_dataset_path).expanduser()

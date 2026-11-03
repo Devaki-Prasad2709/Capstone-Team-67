@@ -50,6 +50,8 @@ def test_controller_controls_simulated_time_and_event_queues():
     controller.start(background=False)
     assert controller.tick() == 1
     assert [item["event_id"] for item in published] == ["event-1"]
+    first_replay_id = published[0]["scenario_replay_id"]
+    assert first_replay_id
 
     clock.advance(4)
     assert controller.tick() == 0
@@ -74,6 +76,10 @@ def test_controller_controls_simulated_time_and_event_queues():
     assert status["state"] == "idle"
     assert status["current_event"] is None
     assert len(status["upcoming_events"]) == 3
+
+    controller.start(background=False)
+    assert controller.tick() == 1
+    assert published[-1]["scenario_replay_id"] != first_replay_id
 
 
 def test_controller_surfaces_dispatch_failure():

@@ -7,23 +7,38 @@ from dashboard.social_alert_service import SocialAlertService
 from dashboard.building_classification_service import BuildingClassificationService
 from dashboard.operational_service import OperationalDashboardService
 from dashboard.scenario_service import DashboardScenarioService
+from dashboard.cache_service import HealthCache, TopicTailCache
+from dashboard.projection_service import DashboardProjectionService
+from dashboard.materialized_state import DashboardMaterializedState
+from dashboard.readiness import (
+    freshness_readiness,
+    infrastructure_readiness,
+    overall_readiness,
+    processing_readiness,
+    source_readiness,
+)
 
 from datetime import datetime, timezone
 from pathlib import Path
+import logging
+import time
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from config.settings import settings
 from dashboard.process_manager import ProcessManager, python_module, spark_command
+from dashboard.security import operator_access, require_operator
 from dashboard.services import (
     dedup_summary,
     ai_model_summary,
     docker_services,
     kafka_counts,
+    incremental_topic_events,
+    minio_health_summary,
     minio_objects,
     object_key_for_content_hash,
     object_client,
@@ -35,21 +50,63 @@ from dashboard.services import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATIC_ROOT = Path(__file__).resolve().parent / "static"
+logger = logging.getLogger(__name__)
 PROCESS_NAMES = (
-    "spark", "ai", "satellite_change", "social", "drone", "satellite", "gis"
+    "spark", "ai", "satellite_change", "observation", "social", "drone", "satellite", "gis"
 )
+PROCESSING_WORKERS = ("spark", "ai", "satellite_change", "observation")
+FINITE_PRODUCERS = ("social", "drone", "satellite", "gis")
 
 app = FastAPI(title="Disaster Streaming Control Center", docs_url="/api/docs")
 manager = ProcessManager()
 social_alerts = SocialAlertService()
+scenario_social_alerts = SocialAlertService()
 building_classifications = BuildingClassificationService()
 operational_dashboard = OperationalDashboardService(building_classifications)
 scenario_runner = DashboardScenarioService()
+topic_tails = TopicTailCache(
+    lambda topic, limit: recent_topic_events(topic, limit), ttl_seconds=10.0
+)
+health_cache = HealthCache(ttl_seconds=10.0)
+readiness_cache = HealthCache(ttl_seconds=60.0)
+detail_cache = HealthCache(ttl_seconds=10.0)
+DASHBOARD_TOPICS = {
+    "ai": "ai-analysis-results",
+    "telemetry": "infrastructure-telemetry",
+    "social": "social-posts",
+    "satellite": "satellite-change-results",
+}
+materialized_state = DashboardMaterializedState(
+    lambda topic, checkpoints: incremental_topic_events(topic, checkpoints),
+    DASHBOARD_TOPICS,
+)
+dashboard_projection = DashboardProjectionService(
+    operational_service=operational_dashboard,
+    scenario_service=scenario_runner,
+    social_service=scenario_social_alerts,
+    building_service=building_classifications,
+    materialized_state=materialized_state,
+    topics=DASHBOARD_TOPICS,
+    map_config_loader=map_config,
+    object_key_resolver=object_key_for_content_hash,
+)
+last_successful_updates: dict[str, str | None] = {
+    "kafka": None,
+    "minio": None,
+    "tgnn": None,
+}
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled dashboard request failure: %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "The dashboard request failed. Check local server logs."})
 
 
 class StartOptions(BaseModel):
     limit: int = Field(default=20, ge=1, le=10000)
     delay: float | None = Field(default=None, ge=0, le=60)
+    max_events: int | None = Field(default=None, ge=1, le=10000)
 
 
 class ResponderDecision(BaseModel):
@@ -96,35 +153,140 @@ def process_states() -> dict[str, dict[str, object]]:
     return {name: manager.status(name) for name in PROCESS_NAMES}
 
 
+def _public_process_states(states: dict[str, dict[str, object]]) -> dict[str, dict[str, object]]:
+    """Retain actionable lifecycle state without exposing local exception detail."""
+    result = {}
+    for name, value in states.items():
+        public = dict(value)
+        if public.get("last_failure"):
+            public["last_failure"] = "Process failed; inspect local dashboard logs."
+        result[name] = public
+    return result
+
+
+def _scenario_readiness_check() -> tuple[dict[str, object], str | None]:
+    try:
+        checker = getattr(scenario_runner, "readiness", None)
+        if checker is None:
+            return {
+                "state": "unknown",
+                "valid": False,
+                "message": "Scenario validator is unavailable.",
+                "action": "Restore the dashboard scenario service.",
+            }, None
+        return checker(), None
+    except Exception as exc:
+        return {
+            "state": "unknown",
+            "valid": False,
+            "message": f"Scenario readiness could not be checked: {exc}",
+            "action": "Inspect the scenario validation logs and retry.",
+        }, str(exc)
+
+
 @app.get("/api/status")
 def status() -> dict[str, object]:
-    docker, docker_error = docker_services()
-    kafka, kafka_error = kafka_counts()
-    minio, _, minio_error = minio_objects(1)
+    started = time.perf_counter()
+    docker, docker_error, docker_cache = health_cache.get("docker", docker_services)
+    kafka, kafka_error, kafka_cache = health_cache.get("kafka", kafka_counts)
+    minio, minio_error, minio_cache = health_cache.get(
+        "minio", minio_health_summary
+    )
+    scenario_ready, scenario_error, scenario_cache = readiness_cache.get(
+        "scenario_readiness", _scenario_readiness_check
+    )
     dedup, dedup_error = dedup_summary()
+    for source, error in (
+        ("docker", docker_error),
+        ("kafka", kafka_error),
+        ("minio", minio_error),
+        ("dedup", dedup_error),
+        ("scenario", scenario_error),
+    ):
+        if error:
+            logger.warning("Dashboard %s readiness check failed: %s", source, error)
+    processes = _public_process_states(process_states())
+    if not kafka_error:
+        last_successful_updates["kafka"] = kafka_cache["cached_at"]
+    if not minio_error:
+        last_successful_updates["minio"] = minio_cache["cached_at"]
+    projection_freshness = dashboard_projection.cached_freshness()
+    if projection_freshness.get("tgnn_inference"):
+        last_successful_updates["tgnn"] = projection_freshness["tgnn_inference"]
+    infrastructure_ready = infrastructure_readiness(
+        docker, docker_error, kafka_error, minio_error
+    )
+    sources_ready = source_readiness(
+        {
+            "SPACENET8_DATASET_PATH": (settings.spacenet8_dataset_path, True),
+            "ISBDA_DATASET_PATH": (settings.isbda_dataset_path, True),
+            "AI_MODEL_PATH": (str(settings.resolved_ai_model_path), True),
+            "SOCIAL_DATASET_PATH": (settings.social_dataset_path, False),
+            "DRONE_DATASET_PATH": (settings.drone_dataset_path, False),
+            "SATELLITE_DATASET_PATH": (settings.satellite_dataset_path, False),
+            "GIS_DATASET_PATH": (settings.gis_dataset_path, False),
+        },
+        processes,
+    )
+    processing_ready = processing_readiness(processes)
+    freshness_ready = freshness_readiness(
+        last_successful_updates,
+        {"kafka": kafka_error, "minio": minio_error, "tgnn": None},
+    )
+    readiness_groups = {
+        "infrastructure": infrastructure_ready,
+        "processing": processing_ready,
+        "sources": sources_ready,
+        "scenario": scenario_ready,
+        "freshness": freshness_ready,
+    }
+    readiness = {
+        "overall": overall_readiness(readiness_groups),
+        **readiness_groups,
+    }
     return {
         "configuration": {
             "kafka": settings.kafka_bootstrap_servers,
             "minio": settings.object_storage_endpoint_url,
             "transfer_mode": settings.image_transfer_mode,
             "spark_offsets": settings.spark_starting_offsets,
-            "ai_model": str(settings.resolved_ai_model_path),
+            "ai_model": settings.resolved_ai_model_path.name,
         },
         "docker": docker,
         "kafka": kafka,
         "minio": minio,
         "dedup": dedup,
-        "processes": process_states(),
+        "processes": processes,
+        "readiness": readiness,
         "errors": {
-            "docker": docker_error,
-            "kafka": kafka_error,
-            "minio": minio_error,
-            "dedup": dedup_error,
+            "docker": "Docker health check failed." if docker_error else None,
+            "kafka": "Kafka health check failed." if kafka_error else None,
+            "minio": "MinIO health check failed." if minio_error else None,
+            "dedup": "Deduplication index check failed." if dedup_error else None,
+        },
+        "diagnostics": {
+            "request_duration_ms": round((time.perf_counter() - started) * 1000, 3),
+            "health_cache": {
+                "docker": docker_cache,
+                "kafka": kafka_cache,
+                "minio": minio_cache,
+                "scenario": scenario_cache,
+            },
         },
     }
 
 
-@app.post("/api/infrastructure/{action}")
+@app.get("/api/access")
+def access_mode(request: Request) -> dict[str, object]:
+    """Expose authorization mode without returning credentials or token material."""
+    access = operator_access(request)
+    return {
+        **access,
+        "minio_console_available": access["local_development"],
+    }
+
+
+@app.post("/api/infrastructure/{action}", dependencies=[Depends(require_operator)])
 def infrastructure(action: Literal["start", "stop"]) -> dict[str, object]:
     command = (
         ["docker", "compose", "--env-file", ".env", "up", "-d"]
@@ -132,22 +294,40 @@ def infrastructure(action: Literal["start", "stop"]) -> dict[str, object]:
         else ["docker", "compose", "stop"]
     )
     ok, message = run_command(command, 120)
+    health_cache.clear()
+    if not ok:
+        logger.error("Infrastructure %s failed: %s", action, message)
+        verb = "started" if action == "start" else "stopped"
+        message = f"Infrastructure could not be {verb}. Check local dashboard logs."
     return {"ok": ok, "message": message}
 
 
-@app.post("/api/process/{name}/start")
+@app.post("/api/process/{name}/start", dependencies=[Depends(require_operator)])
 def start_process(name: str, options: StartOptions) -> dict[str, object]:
     if name not in PROCESS_NAMES:
         raise HTTPException(404, "Unknown process")
     if name == "spark":
         command = spark_command()
     elif name == "ai":
-        command = python_module("ai.computer_vision.worker", "--limit", str(options.limit))
+        command = python_module("ai.computer_vision.worker")
     elif name == "satellite_change":
+        command = python_module("core.satellite.change_worker")
+    elif name == "observation":
         command = python_module(
-            "core.satellite.change_worker", "--limit", str(options.limit)
+            "consumers.observation_consumer",
+            "--gis-path",
+            str(
+                PROJECT_ROOT
+                / "scenarios"
+                / "louisiana_east_flood"
+                / "gis"
+                / "infrastructure.geojson"
+            ),
+            "--allow-scenario-simulated-gps",
+            "--group-id",
+            "disaster-observation-dashboard-v1",
         )
-    else:
+    elif name in FINITE_PRODUCERS:
         defaults = {
             "social": settings.social_delay,
             "drone": settings.drone_delay,
@@ -162,15 +342,23 @@ def start_process(name: str, options: StartOptions) -> dict[str, object]:
             "--delay",
             str(delay),
         )
+    if name in PROCESSING_WORKERS[1:] and options.max_events is not None:
+        command.extend(["--limit", str(options.max_events)])
     ok, message = manager.start(name, command)
+    if not ok:
+        logger.error("Could not start dashboard process %s: %s", name, message)
+        message = f"{name} could not be started. Check process status and local logs."
     return {"ok": ok, "message": message, "status": manager.status(name)}
 
 
-@app.post("/api/process/{name}/stop")
+@app.post("/api/process/{name}/stop", dependencies=[Depends(require_operator)])
 def stop_process(name: str) -> dict[str, object]:
     if name not in PROCESS_NAMES:
         raise HTTPException(404, "Unknown process")
     ok, message = manager.stop(name)
+    if not ok:
+        logger.error("Could not stop dashboard process %s: %s", name, message)
+        message = f"{name} could not be stopped. Check process status and local logs."
     return {"ok": ok, "message": message, "status": manager.status(name)}
 
 
@@ -183,24 +371,50 @@ def logs(name: str, lines: int = Query(default=150, ge=20, le=1000)) -> dict[str
 
 @app.get("/api/spark/{source}")
 def spark_output(source: Literal["social", "drone", "satellite", "gis", "ai"]) -> dict[str, object]:
-    rows, files, error = parquet_preview(source)
-    return {"source": source, "rows": rows, "files": files, "error": error}
+    def load():
+        rows, files, error = parquet_preview(source)
+        return {"rows": rows, "files": files}, error
+
+    payload, error, cache = detail_cache.get(f"parquet:{source}", load)
+    return {
+        "source": source,
+        **payload,
+        "error": error,
+        "diagnostics": {"parquet_cache": cache},
+    }
 
 
 @app.get("/api/ai")
 def ai_output() -> dict[str, object]:
     model, model_error = ai_model_summary()
-    rows, results_error = recent_topic_events("ai-analysis-results", 100)
+    rows, results_error, cache = topic_tails.get("ai-analysis-results", 100)
+    for row in rows:
+        detections = row.get("detections") or []
+        image_reference = (
+            detections[0].get("image_reference")
+            if detections and isinstance(detections[0], dict)
+            else {}
+        ) or {}
+        key = row.get("object_key") or image_reference.get("object_key")
+        content_hash = row.get("content_hash") or image_reference.get("content_hash")
+        if not key:
+            key = object_key_for_content_hash("drone", content_hash)
+        row["image_preview_url"] = (
+            "/api/object?key=" + key
+            if isinstance(key, str) and key.startswith("drone/")
+            else None
+        )
     return {
         "model": model,
         "results": rows,
         "errors": {"model": model_error, "results": results_error},
+        "diagnostics": {"kafka_tail": cache},
     }
 
 
 @app.get("/api/satellite/change")
 def satellite_change_output() -> dict[str, object]:
-    rows, error = recent_topic_events("satellite-change-results", 10)
+    rows, error, cache = topic_tails.get("satellite-change-results", 10)
     scenario_id = operational_dashboard.scenario["scenario_id"]
     rows = [row for row in rows if row.get("scenario_id") == scenario_id]
     rows = _scenario_rows_visible_at_current_time(rows)
@@ -212,39 +426,114 @@ def satellite_change_output() -> dict[str, object]:
                 key = object_key_for_content_hash("satellite", image.get("content_hash"))
             if isinstance(key, str) and key.startswith("satellite/"):
                 image["preview_url"] = "/api/object?key=" + key
-    return {"latest": latest, "result_count": len(rows), "error": error}
+    return {
+        "latest": latest,
+        "result_count": len(rows),
+        "error": error,
+        "diagnostics": {"kafka_tail": cache},
+    }
 
 
 @app.get("/api/social/alerts")
 def social_alert_state(scenario_only: bool = Query(False)) -> dict[str, object]:
-    rows, error = recent_topic_events("social-posts", 100)
+    materialization = materialized_state.refresh()
+    scenario_id = operational_dashboard.scenario["scenario_id"]
     if scenario_only:
-        scenario_id = operational_dashboard.scenario["scenario_id"]
-        rows = [row for row in rows if row.get("scenario_id") == scenario_id]
+        rows = materialized_state.events(
+            DASHBOARD_TOPICS["social"],
+            scenario_id=scenario_id,
+            replay_only=True,
+        )
         rows = _scenario_rows_visible_at_current_time(rows)
-    social_alerts.ingest_events(rows)
-    state = social_alerts.state()
-    state["kafka_error"] = error
+        service = scenario_social_alerts
+        reviews = materialized_state.reviews(
+            scope="scenario", scenario_id=scenario_id
+        )
+    else:
+        rows = materialized_state.events(DASHBOARD_TOPICS["social"])
+        rows = [row for row in rows if row.get("scenario_id") != scenario_id]
+        service = social_alerts
+        reviews = materialized_state.reviews(scope="production", scenario_id=None)
+    service.rebuild(rows, reviews)
+    state = service.state()
+    state["scope"] = "scenario" if scenario_only else "general"
+    state["scenario_id"] = scenario_id if scenario_only else None
+    state["kafka_error"] = materialization["sources"][DASHBOARD_TOPICS["social"]]["error"]
+    state["diagnostics"] = {"materialization": materialization}
     return state
 
 
-@app.post("/api/social/alerts/{alert_id}/{action}")
+def _hydrate_social_services() -> None:
+    """Restore both review scopes before a direct post-restart decision request."""
+    materialized_state.refresh()
+    scenario_id = operational_dashboard.scenario["scenario_id"]
+    scenario_rows = materialized_state.events(
+        DASHBOARD_TOPICS["social"],
+        scenario_id=scenario_id,
+        replay_only=True,
+    )
+    scenario_rows = _scenario_rows_visible_at_current_time(scenario_rows)
+    scenario_social_alerts.rebuild(
+        scenario_rows,
+        materialized_state.reviews(scope="scenario", scenario_id=scenario_id),
+    )
+    production_rows = [
+        row
+        for row in materialized_state.events(DASHBOARD_TOPICS["social"])
+        if row.get("scenario_id") != scenario_id
+    ]
+    social_alerts.rebuild(
+        production_rows,
+        materialized_state.reviews(scope="production", scenario_id=None),
+    )
+
+
+@app.post("/api/social/alerts/{alert_id}/{action}", dependencies=[Depends(require_operator)])
 def review_social_alert(
     alert_id: str,
     action: Literal["confirm", "reject", "report_false"],
     decision: ResponderDecision,
 ) -> dict[str, object]:
+    owners = [
+        service
+        for service in (scenario_social_alerts, social_alerts)
+        if service.has_alert(alert_id)
+    ]
+    if not owners:
+        _hydrate_social_services()
+        owners = [
+            service
+            for service in (scenario_social_alerts, social_alerts)
+            if service.has_alert(alert_id)
+        ]
+    if not owners:
+        raise HTTPException(404, "Unknown social alert")
+    if len(owners) > 1:
+        raise HTTPException(
+            409,
+            "Alert identity exists in both scenario and general scopes",
+        )
+    service = owners[0]
     try:
-        alert = social_alerts.decide(alert_id, action, decision.responder_id)
+        alert = service.decide(alert_id, action, decision.responder_id)
     except KeyError as exc:
         raise HTTPException(404, "Unknown social alert") from exc
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+    is_scenario = service is scenario_social_alerts
+    materialized_state.record_review(
+        scope="scenario" if is_scenario else "production",
+        scenario_id=(operational_dashboard.scenario["scenario_id"] if is_scenario else None),
+        alert_id=alert_id,
+        action=action,
+        responder_id=decision.responder_id,
+    )
+    dashboard_projection.invalidate()
     return {
         "ok": True,
         "message": f"Alert {alert_id} changed to {alert['status']}",
         "alert": alert,
-        "state": social_alerts.state(),
+        "state": service.state(),
     }
 
 
@@ -270,7 +559,7 @@ def building(building_source_id: str) -> dict[str, object]:
         raise HTTPException(404, "Unknown GIS building source ID") from exc
 
 
-@app.post("/api/buildings/{building_source_id}/classification")
+@app.post("/api/buildings/{building_source_id}/classification", dependencies=[Depends(require_operator)])
 def classify_building(
     building_source_id: str,
     assignment: BuildingClassificationRequest,
@@ -286,6 +575,7 @@ def classify_building(
         raise HTTPException(404, "Unknown GIS building source ID") from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+    dashboard_projection.invalidate()
     return {
         "ok": True,
         "message": f"Classification revision saved for {building_source_id}",
@@ -295,8 +585,16 @@ def classify_building(
 
 @app.get("/api/objects")
 def objects() -> dict[str, object]:
-    summary, rows, error = minio_objects()
-    return {"summary": summary, "objects": rows, "error": error}
+    def load():
+        summary, rows, error = minio_objects()
+        return {"summary": summary, "objects": rows}, error
+
+    payload, error, cache = detail_cache.get("minio_objects", load)
+    return {
+        **payload,
+        "error": error,
+        "diagnostics": {"object_list_cache": cache},
+    }
 
 
 @app.get("/api/object")
@@ -318,18 +616,28 @@ def map_configuration() -> dict[str, object]:
 
 @app.get("/api/operations")
 def operational_view() -> dict[str, object]:
-    ai_events, ai_error = recent_topic_events("ai-analysis-results", 200)
-    telemetry_events, telemetry_error = recent_topic_events(
-        "infrastructure-telemetry", 100
+    materialization = materialized_state.refresh()
+    scenario_id = operational_dashboard.scenario["scenario_id"]
+    ai_events = materialized_state.events(
+        DASHBOARD_TOPICS["ai"], scenario_id=scenario_id, replay_only=True
+    )
+    telemetry_events = materialized_state.events(
+        DASHBOARD_TOPICS["telemetry"], scenario_id=scenario_id, replay_only=True
     )
     ai_events = _scenario_rows_visible_at_current_time(ai_events)
     telemetry_events = _scenario_rows_visible_at_current_time(telemetry_events)
     result = operational_dashboard.snapshot(ai_events, telemetry_events)
     result["source_errors"] = {
-        "ai_analysis_results": ai_error,
-        "infrastructure_telemetry": telemetry_error,
+        "ai_analysis_results": materialization["sources"][DASHBOARD_TOPICS["ai"]]["error"],
+        "infrastructure_telemetry": materialization["sources"][DASHBOARD_TOPICS["telemetry"]]["error"],
     }
+    result.setdefault("diagnostics", {})["materialization"] = materialization
     return result
+
+
+@app.get("/api/operations/snapshot")
+def operational_snapshot() -> dict[str, object]:
+    return dashboard_projection.snapshot()
 
 
 @app.get("/api/scenario")
@@ -337,7 +645,7 @@ def scenario_status() -> dict[str, object]:
     return scenario_runner.status()
 
 
-@app.post("/api/scenario/{action}")
+@app.post("/api/scenario/{action}", dependencies=[Depends(require_operator)])
 def scenario_control(
     action: Literal["start", "pause", "resume", "reset", "speed"],
     options: ScenarioControlRequest,
@@ -345,11 +653,18 @@ def scenario_control(
     try:
         status = scenario_runner.control(action, options.speed)
         if action == "reset":
-            social_alerts.reset()
+            materialized_state.refresh(force=True)
+            materialized_state.reset_replay(
+                operational_dashboard.scenario["scenario_id"]
+            )
+            scenario_social_alerts.reset()
     except RuntimeError as exc:
-        raise HTTPException(409, str(exc)) from exc
+        logger.exception("Scenario action %s rejected in the current state", action)
+        raise HTTPException(409, "Scenario action is not valid in the current state.") from exc
     except (OSError, ValueError, KeyError) as exc:
-        raise HTTPException(422, str(exc)) from exc
+        logger.exception("Scenario action %s failed", action)
+        raise HTTPException(422, "Scenario action failed validation. Check local dashboard logs.") from exc
+    dashboard_projection.invalidate()
     return {"ok": True, "message": f"Scenario {action} accepted", "status": status}
 
 app.mount("/", StaticFiles(directory=STATIC_ROOT, html=True), name="dashboard")

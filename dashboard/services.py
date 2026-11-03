@@ -123,6 +123,67 @@ def recent_topic_events(topic: str, limit: int = 50) -> tuple[list[dict[str, Any
             consumer.close()
 
 
+def incremental_topic_events(
+    topic: str, checkpoints: dict[int, int]
+) -> tuple[list[dict[str, Any]], dict[int, int], str | None]:
+    """Read every event after durable partition checkpoints up to a fixed end offset."""
+    consumer = None
+    try:
+        consumer = KafkaConsumer(
+            bootstrap_servers=settings.kafka_bootstrap_servers,
+            group_id=None,
+            enable_auto_commit=False,
+            request_timeout_ms=4000,
+            api_version_auto_timeout_ms=3000,
+        )
+        partitions = consumer.partitions_for_topic(topic)
+        if not partitions:
+            return [], checkpoints, None
+        items = [TopicPartition(topic, number) for number in sorted(partitions)]
+        consumer.assign(items)
+        beginnings = consumer.beginning_offsets(items)
+        ends = consumer.end_offsets(items)
+        for item in items:
+            requested = int(checkpoints.get(item.partition, beginnings[item]))
+            consumer.seek(item, max(beginnings[item], min(requested, ends[item])))
+
+        rows: list[dict[str, Any]] = []
+        idle_polls = 0
+        while any(consumer.position(item) < ends[item] for item in items):
+            batches = consumer.poll(timeout_ms=750, max_records=500)
+            if not batches:
+                idle_polls += 1
+                if idle_polls >= 4:
+                    return rows, checkpoints, f"Timed out materializing {topic}"
+                continue
+            idle_polls = 0
+            for item, messages in batches.items():
+                for message in messages:
+                    if message.offset >= ends[item]:
+                        continue
+                    try:
+                        event = json.loads(message.value.decode("utf-8"))
+                    except (UnicodeDecodeError, json.JSONDecodeError):
+                        continue
+                    if isinstance(event, dict):
+                        event["_kafka_partition"] = message.partition
+                        event["_kafka_offset"] = message.offset
+                        rows.append(event)
+        next_offsets = {item.partition: int(ends[item]) for item in items}
+        rows.sort(
+            key=lambda item: (
+                int(item.get("_kafka_partition", 0)),
+                int(item.get("_kafka_offset", 0)),
+            )
+        )
+        return rows, next_offsets, None
+    except Exception as exc:
+        return [], checkpoints, str(exc)
+    finally:
+        if consumer is not None:
+            consumer.close()
+
+
 def ai_model_summary() -> tuple[dict[str, Any], str | None]:
     manifest = PROJECT_ROOT / "ai" / "computer_vision" / "artifact_manifest.json"
     try:
@@ -141,7 +202,13 @@ def object_client():
         region_name=settings.object_storage_region,
         aws_access_key_id=settings.object_storage_access_key,
         aws_secret_access_key=settings.object_storage_secret_key,
-        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path"},
+            connect_timeout=2,
+            read_timeout=3,
+            retries={"max_attempts": 1, "mode": "standard"},
+        ),
     )
 
 
@@ -166,6 +233,20 @@ def object_key_for_content_hash(source: str, content_hash: object) -> str | None
         return None
     key = objects[0].get("Key")
     return key if isinstance(key, str) and key.startswith(f"{source}/") else None
+
+
+def minio_health_summary() -> tuple[dict[str, dict[str, int | None]], str | None]:
+    """Check MinIO without listing every object; counts come from the dedup index."""
+    try:
+        object_client().head_bucket(Bucket=settings.object_storage_bucket)
+    except Exception as exc:
+        return {}, str(exc)
+    counts, count_error = dedup_summary()
+    summary = {
+        source: {"objects": int(counts.get(source, 0)), "bytes": None}
+        for source in ("drone", "satellite", "gis")
+    }
+    return summary, count_error
 
 
 def minio_objects(limit: int = 30) -> tuple[dict[str, dict[str, int]], list[dict[str, Any]], str | None]:

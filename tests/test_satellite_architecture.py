@@ -105,29 +105,52 @@ def test_result_topic_has_only_the_declared_producer_and_dashboard_consumer():
 
 def test_dashboard_routes_keep_satellite_graph_and_social_inputs_separate():
     topics = []
+    server.topic_tails.clear()
+
+    class MaterializedStub:
+        @staticmethod
+        def refresh():
+            return {
+                "sources": {
+                    topic: {"error": None}
+                    for topic in server.DASHBOARD_TOPICS.values()
+                }
+            }
+
+        @staticmethod
+        def events(topic, **kwargs):
+            topics.append(topic)
+            return []
+
+        @staticmethod
+        def reviews(**kwargs):
+            return []
 
     def recent(topic, _limit):
         topics.append(topic)
         return [], None
 
     with (
-        patch("dashboard.server.recent_topic_events", side_effect=recent),
+        patch("dashboard.server.materialized_state", MaterializedStub()),
         patch("dashboard.server.operational_dashboard.snapshot", return_value={}),
     ):
         server.operational_view()
     assert topics == ["ai-analysis-results", "infrastructure-telemetry"]
 
     topics.clear()
+    server.topic_tails.clear()
     with (
-        patch("dashboard.server.recent_topic_events", side_effect=recent),
+        patch("dashboard.server.materialized_state", MaterializedStub()),
         patch("dashboard.server.social_alerts.ingest_events") as ingest,
+        patch("dashboard.server.social_alerts.rebuild") as rebuild,
         patch("dashboard.server.social_alerts.state", return_value={}),
     ):
-        server.social_alert_state()
+        server.social_alert_state(False)
     assert topics == ["social-posts"]
-    ingest.assert_called_once_with([])
+    rebuild.assert_called_once_with([], [])
 
     topics.clear()
+    server.topic_tails.clear()
     with (
         patch("dashboard.server.recent_topic_events", side_effect=recent),
         patch("dashboard.server.scenario_runner.status", return_value={

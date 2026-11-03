@@ -67,12 +67,65 @@ class SocialAlertService:
                     if has_token:
                         self._seen_messages.add(token)
 
+    def rebuild(self, events: list[dict], reviews: list[dict]) -> None:
+        """Deterministically restore alerts and persisted responder decisions."""
+        self.reset()
+        # ingest_events accepts Kafka-tail order (newest first), while the
+        # durable materialization is stored oldest first.
+        newest_first = sorted(
+            events,
+            key=lambda item: (
+                str(item.get("scenario_timestamp", item.get("timestamp", ""))),
+                int(item.get("_kafka_partition", 0)),
+                int(item.get("_kafka_offset", 0)),
+            ),
+            reverse=True,
+        )
+        self.ingest_events(newest_first)
+        for review in reviews:
+            try:
+                self.decide(
+                    review["alert_id"],
+                    review["action"],
+                    review["responder_id"],
+                )
+            except (KeyError, ValueError):
+                # A review whose source event is unavailable remains durable in
+                # SQLite and can be applied when that event is materialized.
+                continue
+
     def decide(self, alert_id: str, action: str, responder_id: str) -> dict:
         with self._lock:
             return self.workflow.decide(alert_id, action, responder_id=responder_id)
+
+    def has_alert(self, alert_id: str) -> bool:
+        """Return whether this isolated workflow owns an alert identity."""
+        with self._lock:
+            try:
+                self.workflow.store.get_alert(alert_id)
+            except KeyError:
+                return False
+            return True
 
     def state(self) -> dict:
         with self._lock:
             state = self.workflow.dashboard_state()
             state["ingest_errors"] = list(self._ingest_errors)
+            node_to_gis = {}
+            for gis_source_id, graph_node_id in self.workflow.id_map.items():
+                node_to_gis.setdefault(graph_node_id, gis_source_id)
+            alerts = (
+                state["incoming_alerts"]
+                + state["pending_alerts"]
+                + state["confirmed_alerts"]
+                + state["reported_false_alerts"]
+            )
+            state["associations"] = [
+                {
+                    "alert_id": alert["alert_id"],
+                    "gis_source_id": node_to_gis.get(alert["report"].get("node_id")),
+                    "graph_node_id": alert["report"].get("node_id"),
+                }
+                for alert in alerts
+            ]
             return state

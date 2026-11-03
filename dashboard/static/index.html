@@ -3,75 +3,70 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>DisasterScope Control Center</title>
+  <title>DisasterScope — Operational picture</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/process-controls.css">
+  <link rel="stylesheet" href="/navigation.css">
   <link rel="stylesheet" href="/ai.css">
   <link rel="stylesheet" href="/satellite.css">
   <link rel="stylesheet" href="/social.css">
   <link rel="stylesheet" href="/building.css">
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="/operations.css">
+  <link rel="stylesheet" href="/diagnostics.css?v=20261103-minio-contrast-1">
+  <link rel="stylesheet" href="/vendor/maplibre-gl.css">
+  <link rel="stylesheet" href="/operations.css?v=20261102-risk-contrast-2">
 </head>
 <body>
   <div class="shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">DS</span><div><strong>DisasterScope</strong><small>Streaming control center</small></div></div>
-      <nav>
-        <button class="nav active" data-view="operations"><span>◎</span> Operations</button>
-        <button class="nav" data-view="overview"><span>⌂</span> System overview</button>
-        <button class="nav" data-view="pipeline"><span>▶</span> Pipeline control</button>
-        <button class="nav" data-view="spark"><span>⌁</span> Spark output</button>
-        <button class="nav" data-view="ai"><span>AI</span> Damage analysis</button>
-        <button class="nav" data-view="satellite-change"><span>Δ</span> Satellite change</button>
-        <button class="nav" data-view="buildings"><span>⌂</span> Buildings</button>
-        <button class="nav" data-view="social-alerts"><span>!</span> Social alerts</button>
-        <button class="nav" data-view="media"><span>▧</span> Image storage</button>
-        <button class="nav" data-view="logs"><span>≡</span> Live logs</button>
+      <nav aria-label="Primary dashboard navigation">
+        <div class="nav-group primary-intent"><button class="nav active" data-view="operations"><span>◎</span> Operations</button><div class="nav-summary"><span>Map</span><span>Top risks</span><span>Pending actions</span><span>Scenario timeline</span><span>Evidence freshness</span></div></div>
+        <div class="nav-group primary-intent"><button class="nav" data-view="system-control"><span>▶</span> System Control</button><div class="nav-summary"><span>Infrastructure health</span><span>Processing workers</span><span>Producers</span><span>Replay settings</span></div></div>
+        <div class="nav-group"><p class="nav-group-title">Evidence</p><button class="nav nav-child" data-view="ai"><span>AI</span> Drone / YOLO</button><button class="nav nav-child" data-view="satellite-change"><span>Δ</span> Satellite</button><button class="nav nav-child" data-view="social-alerts"><span>!</span> Social audit</button><button class="nav nav-child" data-view="buildings"><span>⌂</span> Buildings</button></div>
+        <div class="nav-group"><p class="nav-group-title">Diagnostics</p><button class="nav nav-child" data-view="diagnostics"><span>≋</span> Kafka counts</button><button class="nav nav-child" data-view="spark"><span>⌁</span> Spark output</button><button class="nav nav-child" data-view="media"><span>▧</span> MinIO browser</button><button class="nav nav-child" data-view="logs"><span>≡</span> Logs</button><a class="nav nav-child nav-link" href="/api/docs" target="_blank"><span>↗</span> API documentation</a></div>
       </nav>
       <div class="sidebar-foot">
         <div class="connection"><i id="globalDot"></i><span id="globalState">Checking system</span></div>
-        <a href="http://localhost:9001" target="_blank">Open MinIO console ↗</a>
+        <a href="http://localhost:9001" target="_blank" data-local-only>Open MinIO console ↗</a>
         <a href="/api/docs" target="_blank">Dashboard API ↗</a>
       </div>
     </aside>
 
     <main>
       <header>
-        <div><p class="eyebrow">REAL-TIME OPERATIONS</p><h1 id="pageTitle">System overview</h1></div>
-        <div class="header-actions"><span id="lastUpdated">Not refreshed</span><button class="icon-button" id="refreshButton" title="Refresh">↻</button></div>
+        <div><p class="eyebrow">REAL-TIME OPERATIONS</p><h1 id="pageTitle">Operational picture</h1></div>
+        <div class="header-actions refresh-controls"><span id="accessMode" class="access-mode observer">Observer</span><label id="operatorLogin" class="operator-login"><input id="operatorToken" type="password" autocomplete="off" placeholder="Operator token" aria-label="Operator token"><button id="operatorLoginButton" class="secondary">Unlock controls</button></label><button id="operatorLogoutButton" class="secondary hidden">Return to observer</button><span id="refreshState" class="refresh-state idle">Waiting</span><span id="lastUpdated">UI not refreshed</span><label class="auto-refresh-control"><input id="autoRefreshToggle" type="checkbox" checked> Auto-refresh</label><label class="refresh-interval-control"><select id="refreshInterval" aria-label="Auto-refresh interval"><option value="5000">5s</option><option value="10000" selected>10s</option><option value="30000">30s</option><option value="60000">60s</option></select></label><button class="icon-button" id="refreshButton" title="Refresh active view" aria-label="Refresh active view">↻</button></div>
       </header>
 
-      <div id="toast" role="status"></div>
+      <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
       <section class="view active" id="operations">
         <div class="incident-heading">
-          <div><p class="eyebrow">LOUISIANA EAST FLOOD · LIVE COMMON OPERATING PICTURE</p><h2>What happened, what is at risk,<br><em>and why.</em></h2><p id="incidentNarrative">Loading structural, field, human, and model evidence…</p></div>
-          <div class="incident-freshness"><span id="operationsState" class="badge">Loading</span><small>Graph freshness</small><strong id="graphFreshness">—</strong><small>Risk freshness</small><strong id="riskFreshness">—</strong></div>
+          <div><p class="eyebrow">LOUISIANA EAST FLOOD · LIVE COMMON OPERATING PICTURE</p><h2>What happened, what is at risk,<br><em>and current conditions.</em></h2><p id="incidentNarrative">Loading structural, field, human, and model evidence…</p></div>
+          <div class="incident-freshness"><span id="operationsState" class="badge">Loading</span><small>Source event time</small><strong id="sourceEventTime">—</strong><small>Graph snapshot time</small><strong id="graphFreshness">—</strong><small>TGNN inference time</small><strong id="riskFreshness">—</strong></div>
         </div>
-        <div id="operationsError" class="callout warning hidden"></div>
+        <div id="operationsError" class="callout warning hidden" role="alert" aria-live="assertive"></div>
         <div id="operationsLoading" class="operations-loading"><span></span><p>Building the operational picture from live contracts…</p></div>
         <div id="operationsContent" class="hidden">
           <div class="section-heading"><div><p class="eyebrow">01 · INTERACTIVE BASEMAP</p><h3>Structural GIS, observations, risk, and confirmed reports</h3></div><span class="hint">Select a building or node for details</span></div>
           <div class="operations-grid">
             <article class="map-shell">
-              <div id="operationsMap" aria-label="Interactive disaster operations map"></div>
+              <div id="operationsMap" role="application" tabindex="0" aria-label="Interactive disaster operations map. Use arrow keys and MapLibre controls to navigate."></div>
               <div class="map-layer-control panel"><strong>Layers</strong><label><input type="checkbox" data-map-layer="satellite" checked> Satellite change</label><label><input type="checkbox" data-map-layer="structural" checked> Structural GIS</label><label><input type="checkbox" data-map-layer="damage" checked> Damage observations</label><label><input type="checkbox" data-map-layer="risk" checked> TGNN risk</label><label><input type="checkbox" data-map-layer="hotspots" checked> Confirmed social</label></div>
-              <div id="mapSatelliteSummary" class="map-satellite-summary panel hidden"><span>SPACENET BROAD-AREA SIGNAL</span><strong id="mapSatelliteChanged">—</strong><small id="mapSatelliteDetail">Awaiting satellite result</small><em>Radiometric change, not confirmed damage</em></div>
+              <div id="mapSatelliteSummary" class="map-satellite-summary panel hidden"><span>SATELLITE BROAD-AREA SIGNAL</span><strong id="mapSatelliteChanged">—</strong><small id="mapSatelliteCounts">—</small><small id="mapSatelliteDetail">Awaiting satellite result</small><small id="mapSatelliteProvenance" class="satellite-provenance">—</small><em>Radiometric change, not confirmed damage</em><button class="satellite-drilldown" data-satellite-drilldown>View satellite evidence</button></div>
               <div class="map-legend panel"><strong>Legend</strong><span><i class="legend-road"></i>Road</span><span><i class="legend-building"></i>Building</span><span><i class="legend-satellite"></i>Satellite change</span><span><i class="legend-damage"></i>Damage evidence</span><span><i class="legend-risk"></i>Higher relative risk</span><span><i class="legend-highest"></i>Highest risk</span><span><i class="legend-social"></i>Confirmed social</span></div>
               <div id="mapEmpty" class="map-state hidden">No geographic evidence is available.</div>
             </article>
             <aside class="operations-side">
-              <article class="panel"><div class="panel-head"><div><p class="eyebrow">02 · TGNN RISK</p><h3>Top-five risk nodes</h3></div><span class="badge">Relative, not probability</span></div><div id="topRiskRows" class="risk-list"></div><p class="model-caveat">Scores are uncalibrated and used only for ranking and temporal comparison.</p></article>
+              <article class="panel"><div class="panel-head"><div><p class="eyebrow">02 · TGNN RISK</p><h3>Top-five risk nodes</h3></div><div class="risk-guidance"><span class="badge">Uncalibrated relative index</span><button class="risk-help" aria-label="Explain TGNN relative risk scores" aria-describedby="riskExplanation">?</button><span id="riskExplanation" class="risk-tooltip" role="tooltip">The 0.000–1.000 score supports relative ranking and comparison between snapshots. Listed conditions describe current state and are not model feature attributions.</span></div></div><div id="topRiskRows" class="risk-list"></div><p class="model-caveat">Calibration warning: TGNN relative risk scores are uncalibrated. Use them only for ranking and temporal comparison; the model also uses temporal and graph context.</p></article>
               <article class="panel"><div class="panel-head"><div><p class="eyebrow">03 · RESPONDER QUEUE</p><h3>Pending social alerts</h3></div><span id="opsPendingTotal" class="badge">0 pending</span></div><div id="opsPendingRows" class="ops-pending-list"></div></article>
             </aside>
           </div>
-          <div class="section-heading"><div><p class="eyebrow">04 · SATELLITE CHANGE</p><h3>Broad-area SpaceNet evidence</h3></div><span id="opsSatelliteFreshness" class="hint">Awaiting result</span></div>
-          <article class="panel ops-satellite"><div id="opsSatelliteEmpty" class="empty compact-empty">No satellite change result yet.</div><div id="opsSatelliteContent" class="hidden"><div class="ops-satellite-images"><figure><img id="opsSatellitePre" alt="Pre-event satellite image"><figcaption>REAL SPACENET · PRE-EVENT · SIMULATED TIME</figcaption></figure><figure><img id="opsSatellitePost" alt="Post-event satellite image"><figcaption>REAL SPACENET · POST-EVENT · SIMULATED TIME</figcaption></figure></div><div class="ops-satellite-summary"><strong id="opsSatelliteChanged">—</strong><span>changed grid cells</span><p id="opsSatelliteReference">—</p><small>Broad-area radiometric evidence; not a TGNN node feature.</small></div></div></article>
-          <div class="section-heading"><div><p class="eyebrow">05 · SCENARIO TIMELINE</p><h3>Controlled replay through production interfaces</h3></div><span id="scenarioClock" class="badge">—</span></div>
+          <div class="section-heading"><div><p class="eyebrow">04 · SCENARIO TIMELINE</p><h3>Controlled replay through production interfaces</h3></div><span id="scenarioClock" class="badge">—</span></div>
           <article class="panel timeline-panel"><div class="timeline-controls"><button class="primary" data-scenario-action="start">Start</button><button class="secondary" data-scenario-action="pause">Pause</button><button class="secondary" data-scenario-action="resume">Resume</button><button class="secondary" data-scenario-action="reset">Reset</button><label>Playback speed<select id="scenarioSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10" selected>10×</option><option value="20">20×</option></select></label></div><div class="timeline-track" id="timelineTrack"></div><div class="timeline-now"><strong id="scenarioCurrentEvent">Not started</strong><span id="scenarioProgress">0 of 12 events</span></div></article>
-          <div class="section-heading"><div><p class="eyebrow">06 · EVIDENCE PROVENANCE</p><h3>What is real, simulated, or model-derived</h3></div></div><div id="provenanceGrid" class="provenance-grid"></div>
-          <div class="section-heading"><div><p class="eyebrow">07 · MANUAL CLASSIFICATION</p><h3>Assign an operational building type</h3></div><span class="hint">Stored separately from frozen OSM</span></div>
-          <div class="ops-building-layout"><article class="panel building-form"><label>Selected building<select id="opsBuildingSelect"><option value="">Select on map or from list</option></select></label><label>Assigned type<input id="opsBuildingType" maxlength="64" placeholder="shelter, field hospital, warehouse…"></label><label>Operator<input id="opsBuildingOperator" maxlength="200" placeholder="Responder name or ID"></label><label>Optional notes<textarea id="opsBuildingNotes" maxlength="2000" rows="3"></textarea></label><button class="primary" id="opsSaveBuilding">Save classification revision</button></article><article class="panel"><div class="panel-head"><div><p class="eyebrow">SELECTED FEATURE</p><h3 id="opsSelectedTitle">Nothing selected</h3></div><span id="opsSelectedBadge" class="badge">—</span></div><div id="opsSelectedDetail" class="selected-detail empty compact-empty">Click a building or risk node on the map.</div></article></div>
+          <div class="section-heading"><div><p class="eyebrow">05 · EVIDENCE PROVENANCE</p><h3>What is real, simulated, or model-derived</h3></div></div><div id="provenanceGrid" class="provenance-grid"></div>
+          <div class="section-heading"><div><p class="eyebrow">06 · MANUAL CLASSIFICATION</p><h3>Selected building classification</h3></div><span class="hint">Click a building on the map · frozen OSM remains unchanged</span></div>
+          <div id="opsBuildingComponentHost" class="building-component-host"><div class="empty panel compact-empty">Click a building footprint on the map to classify it.</div></div>
         </div>
       </section>
 
@@ -81,29 +76,41 @@
           <div class="hero-flow"><div>Datasets</div><b>→</b><div>Kafka</div><b>→</b><div>MinIO</div><b>→</b><div>Spark</div><b>→</b><div>AI</div></div>
         </div>
 
-        <div class="section-heading"><div><p class="eyebrow">INFRASTRUCTURE</p><h3>Service health</h3></div><span class="hint">Auto-refreshes every 5 seconds</span></div>
+        <div class="section-heading"><div><p class="eyebrow">COMPLETE SCENARIO READINESS</p><h3>What is ready, stopped, degraded, or unavailable</h3></div><span id="overallReadiness" class="readiness-pill unknown">Checking readiness</span></div>
+        <div id="readinessMessage" class="callout">Readiness checks have not completed.</div>
+        <div id="readinessGrid" class="readiness-grid"></div>
+
+        <div class="section-heading"><div><p class="eyebrow">INFRASTRUCTURE</p><h3>Service health</h3></div><span class="hint">Uses the configured auto-refresh interval</span></div>
         <div class="service-grid" id="serviceGrid"></div>
 
+      </section>
+
+      <section class="view" id="pipeline">
+        <div class="section-heading"><div><p class="eyebrow">ONE-CLICK CONTROL</p><h3>Run the streaming pipeline</h3></div><div class="button-row"><button class="secondary" id="infraStop">Stop infrastructure</button><button class="primary" id="infraStart">Start infrastructure</button></div></div>
+        <div class="callout"><span>1</span><div><strong>Recommended order</strong><p>Start infrastructure → start processing workers → start producers. Workers run continuously; producer replay controls are finite.</p></div></div>
+        <div class="section-heading process-section-heading"><div><p class="eyebrow">REPLAY SETTINGS</p><h3>Scenario playback</h3></div><span id="systemReplayState" class="badge">Checking scenario</span></div>
+        <article class="panel system-replay-controls"><div class="button-row"><button class="primary" data-system-scenario-action="start">Start</button><button class="secondary" data-system-scenario-action="pause">Pause</button><button class="secondary" data-system-scenario-action="resume">Resume</button><button class="secondary" data-system-scenario-action="reset">Reset</button></div><label>Playback speed<select id="systemScenarioSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10" selected>10×</option><option value="20">20×</option></select></label></article>
+        <div class="control-settings panel"><label>Events per producer<input id="eventLimit" type="number" min="1" max="10000" value="20"></label><label>Social delay<input id="socialDelay" type="number" min="0" max="60" step="0.1" value="1"></label><label>Drone delay<input id="droneDelay" type="number" min="0" max="60" step="0.1" value="0.5"></label><label>Satellite delay<input id="satelliteDelay" type="number" min="0" max="60" step="0.1" value="5"></label><label>GIS delay<input id="gisDelay" type="number" min="0" max="60" step="0.1" value="1"></label><label>AI/satellite diagnostic max events<input id="workerMaxEvents" type="number" min="1" max="10000" placeholder="Unlimited"></label></div>
+        <div class="section-heading process-section-heading"><div><p class="eyebrow">CONTINUOUS</p><h3>Processing workers</h3></div><span class="hint">No event limit unless diagnostic max-events is set</span></div>
+        <div class="process-grid" id="workerProcessGrid"></div>
+        <div class="section-heading process-section-heading"><div><p class="eyebrow">FINITE REPLAY</p><h3>Producers</h3></div><span class="hint">Uses event count and per-source delay</span></div>
+        <div class="process-grid" id="producerProcessGrid"></div>
+      </section>
+
+      <section class="view" id="diagnostics">
+        <div class="section-heading"><div><p class="eyebrow">IMPLEMENTATION DIAGNOSTICS</p><h3>Kafka counts and pipeline activity</h3></div><a class="secondary link-button" href="/api/docs" target="_blank">Open API documentation ↗</a></div>
         <div class="metric-grid">
           <article class="metric teal"><span>Social events</span><strong id="socialCount">—</strong><small>Kafka · social-posts</small></article>
           <article class="metric orange"><span>Drone events</span><strong id="droneCount">—</strong><small>Kafka · drone-video</small></article>
           <article class="metric blue"><span>Satellite events</span><strong id="satelliteCount">—</strong><small>Kafka · satellite-imagery</small></article>
           <article class="metric orange"><span>GIS events</span><strong id="gisCount">—</strong><small>Kafka · gis-data</small></article>
           <article class="metric teal"><span>AI results</span><strong id="aiCount">—</strong><small>Kafka · ai-analysis-results</small></article>
-          <article class="metric violet"><span>Stored images</span><strong id="storedCount">—</strong><small>MinIO · unique objects</small></article>
+          <article class="metric violet"><span>Stored images</span><strong id="storedCount">—</strong><small>MinIO · canonical objects</small></article>
         </div>
-
         <div class="two-column">
           <article class="panel"><div class="panel-head"><div><p class="eyebrow">FLOW</p><h3>Pipeline activity</h3></div><span class="badge">Object storage mode</span></div><div id="activityList" class="activity-list"></div></article>
           <article class="panel"><div class="panel-head"><div><p class="eyebrow">QUALITY</p><h3>Deduplication</h3></div></div><div class="donut-row"><div class="donut"><span id="canonicalTotal">0</span><small>canonical</small></div><div class="legend"><p><i class="drone"></i> Drone <b id="dedupDrone">0</b></p><p><i class="satellite"></i> Satellite <b id="dedupSatellite">0</b></p><small>Repeated frames are referenced, not uploaded twice.</small></div></div></article>
         </div>
-      </section>
-
-      <section class="view" id="pipeline">
-        <div class="section-heading"><div><p class="eyebrow">ONE-CLICK CONTROL</p><h3>Run the streaming pipeline</h3></div><div class="button-row"><button class="secondary" id="infraStop">Stop infrastructure</button><button class="primary" id="infraStart">Start infrastructure</button></div></div>
-        <div class="callout"><span>1</span><div><strong>Recommended order</strong><p>Start infrastructure → start Spark → start producers. Spark uses <code>latest</code> offsets, so events sent before Spark starts will not appear on a fresh checkpoint.</p></div></div>
-        <div class="control-settings panel"><label>Events per producer<input id="eventLimit" type="number" min="1" max="10000" value="20"></label><label>Social delay<input id="socialDelay" type="number" min="0" max="60" step="0.1" value="1"></label><label>Drone delay<input id="droneDelay" type="number" min="0" max="60" step="0.1" value="0.5"></label><label>Satellite delay<input id="satelliteDelay" type="number" min="0" max="60" step="0.1" value="5"></label></div>
-        <div class="process-grid" id="processGrid"></div>
       </section>
 
       <section class="view" id="spark">
@@ -115,15 +122,20 @@
 
       <section class="view" id="ai">
         <div class="section-heading"><div><p class="eyebrow">COMPUTER VISION</p><h3>Drone damage analysis</h3></div><span id="modelState" class="badge">Checking model</span></div>
+        <article class="panel ai-model-provenance"><div><span>Evaluation dataset</span><strong id="aiDataset">—</strong></div><div><span>Model checkpoint</span><strong id="aiCheckpointHash">—</strong></div><div><span>Architecture</span><strong id="aiArchitecture">—</strong></div></article>
+        <div class="section-heading ai-section-heading"><div><p class="eyebrow">PRIMARY OFFLINE EVALUATION</p><h3>Held-out test metrics</h3></div><span id="heldOutDatasetSize" class="badge">Not reported</span></div>
         <div class="metric-grid ai-metrics">
-          <article class="metric teal"><span>Precision</span><strong id="metricPrecision">—</strong><small>Preserved epoch 50</small></article>
-          <article class="metric orange"><span>Recall</span><strong id="metricRecall">—</strong><small>Preserved epoch 50</small></article>
-          <article class="metric blue"><span>mAP@50</span><strong id="metricMap50">—</strong><small>Preserved epoch 50</small></article>
-          <article class="metric violet"><span>mAP@50–95</span><strong id="metricMap95">—</strong><small>Preserved epoch 50</small></article>
+          <article class="metric teal"><span>Test precision</span><strong id="metricPrecision">—</strong><small>Held-out bounding boxes</small></article>
+          <article class="metric orange"><span>Test recall</span><strong id="metricRecall">—</strong><small>Held-out bounding boxes</small></article>
+          <article class="metric blue"><span>Test mAP@50</span><strong id="metricMap50">—</strong><small>Held-out bounding boxes</small></article>
+          <article class="metric violet"><span>Test mAP@50–95</span><strong id="metricMap95">—</strong><small>Held-out bounding boxes</small></article>
         </div>
-        <div class="ai-flow panel ai-live-flow"><div><span>01</span><strong>Drone event</strong><small>Kafka + MinIO reference</small></div><b>→</b><div><span>02</span><strong>Preprocess</strong><small>Motion, blur, pHash</small></div><b>→</b><div><span>03</span><strong>YOLO26s</strong><small>3 damage classes</small></div><b>→</b><div class="accent"><span>04</span><strong>AI result</strong><small>Kafka + Spark Parquet</small></div></div>
+        <article class="panel ai-training-metrics"><div><p class="eyebrow">TRAINING-RUN METRICS</p><h3>Final validation epoch</h3><small>Offline training evidence only; these values are not live scenario accuracy.</small></div><dl><dt>Precision</dt><dd id="trainingPrecision">—</dd><dt>Recall</dt><dd id="trainingRecall">—</dd><dt>mAP@50</dt><dd id="trainingMap50">—</dd><dt>mAP@50–95</dt><dd id="trainingMap95">—</dd></dl></article>
+        <div class="section-heading ai-section-heading"><div><p class="eyebrow">LIVE SCENARIO INFERENCE</p><h3>Checkpoint detections</h3></div><span class="badge">Inference outcomes, not evaluation accuracy</span></div>
+        <div class="ai-flow panel ai-live-flow"><div><span>01</span><strong>Drone event</strong><small>Kafka + MinIO reference</small></div><b>→</b><div><span>02</span><strong>Preprocess</strong><small>Motion, blur, pHash</small></div><b>→</b><div><span>03</span><strong>YOLO26s</strong><small>RescueNet classes</small></div><b>→</b><div class="accent"><span>04</span><strong>AI result</strong><small>Kafka + Spark Parquet</small></div></div>
         <div id="aiAlert" class="callout warning hidden"></div>
-        <article class="panel table-panel"><div class="panel-head"><div><p class="eyebrow">LIVE INFERENCE</p><h3>Latest AI results</h3></div><span id="aiResultTotal" class="badge">0 results</span></div><div class="table-wrap"><table><thead id="aiHead"></thead><tbody id="aiBody"></tbody></table><div id="aiEmpty" class="empty">No AI results yet. Start AI, then publish drone frames.</div></div></article>
+        <article class="panel ai-filters"><label>Detection class<select id="aiClassFilter"><option value="">All classes</option></select></label><label>Target association<input id="aiTargetFilter" placeholder="Filter target ID"></label><label>Minimum confidence<input id="aiConfidenceFilter" type="number" min="0" max="1" step="0.05" value="0"></label><label>Processing status<select id="aiStatusFilter"><option value="">All statuses</option></select></label></article>
+        <article class="panel ai-results-panel"><div class="panel-head"><div><p class="eyebrow">EVIDENCE CARDS</p><h3>Latest AI results</h3></div><span id="aiResultTotal" class="badge">0 results</span></div><div id="aiResultCards" class="ai-result-cards"></div><div id="aiEmpty" class="empty">No AI results yet. Start the AI worker, then publish drone frames.</div></article>
       </section>
 
       <section class="view" id="satellite-change">
@@ -134,33 +146,38 @@
           <div class="satellite-summary metric-grid">
             <article class="metric blue"><span>Changed cells</span><strong id="changeCellCount">—</strong><small>Moderate + severe</small></article>
             <article class="metric teal"><span>Scored cells</span><strong id="scoredCellCount">—</strong><small id="totalCellCount">of — grid cells</small></article>
+            <article class="metric violet"><span>Unknown cells</span><strong id="unknownCellCount">—</strong><small>Insufficient valid coverage</small></article>
             <article class="metric orange"><span>Maximum difference</span><strong id="maxDiffScore">—</strong><small>Uncalibrated radiometric score</small></article>
-            <article class="metric violet"><span>Reference flooding</span><strong id="referenceFlooding">—</strong><small>Official SpaceNet labels</small></article>
+            <article class="metric blue"><span>Reference flooding</span><strong id="referenceFlooding">—</strong><small>Official SpaceNet labels</small></article>
           </div>
           <div class="satellite-layout">
             <article class="panel satellite-source-panel"><div class="panel-head"><div><p class="eyebrow">SOURCE IMAGES</p><h3>Real SpaceNet pre/post pair</h3></div><span id="satelliteTimestamp" class="badge"></span></div><div class="satellite-pair"><figure><img id="satellitePreImage" alt="SpaceNet pre-event source"><figcaption id="satellitePreCaption"></figcaption></figure><figure><img id="satellitePostImage" alt="SpaceNet post-event source"><figcaption id="satellitePostCaption"></figcaption></figure></div></article>
             <article class="panel"><div class="panel-head"><div><p class="eyebrow">CHANGE GRID</p><h3 id="satelliteTileTitle">Tile</h3></div><span class="badge">Broad area only</span></div><div id="changeGrid" class="change-grid"></div><div class="change-legend"><span><i class="low"></i>Low</span><span><i class="moderate"></i>Moderate</span><span><i class="severe"></i>Severe</span><span><i class="unknown"></i>Insufficient coverage</span></div><p id="satelliteFootprint" class="footprint"></p><p class="interpretation">This layer is uncalibrated radiometric change evidence. It is not a destruction probability and is not passed into TGNN node features.</p></article>
           </div>
+          <div class="satellite-detail-grid">
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">SOURCE PROVENANCE</p><h3>Paths and checksums</h3></div></div><div id="satelliteSourceProvenance" class="satellite-provenance-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">REFERENCE ANNOTATIONS</p><h3>SpaceNet flood labels</h3></div></div><div id="satelliteReferenceDetail" class="satellite-detail-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">NORMALIZATION</p><h3>Universal adapter provenance</h3></div></div><div id="satelliteNormalization" class="satellite-detail-list"></div></article>
+          </div>
         </div>
       </section>
 
       <section class="view" id="buildings">
-        <div class="section-heading"><div><p class="eyebrow">PERSISTENT GIS OVERLAY</p><h3>Manual building classification</h3></div><span id="buildingClassifiedTotal" class="badge">0 classified</span></div>
+        <div class="section-heading"><div><p class="eyebrow">SEARCHABLE INVENTORY</p><h3>Buildings</h3></div><span id="buildingClassifiedTotal" class="badge">0 classified</span></div>
         <div class="callout"><span>i</span><div><strong>The frozen OSM snapshot remains unchanged.</strong><p>Assignments are stored as revisions in a separate SQLite ledger keyed by the original building source ID.</p></div></div>
-        <div class="building-layout">
-          <article class="panel building-form">
-            <label>Select building<select id="buildingSelect"><option value="">Loading buildings…</option></select></label>
-            <label>Assigned type<input id="buildingType" maxlength="64" placeholder="residential, shelter, warehouse…"></label>
-            <label>Operator<input id="buildingOperator" maxlength="200" placeholder="Responder name or ID"></label>
-            <label>Optional notes<textarea id="buildingNotes" maxlength="2000" rows="4" placeholder="Reason or supporting evidence"></textarea></label>
-            <button class="primary" id="saveBuildingClassification">Save classification revision</button>
-          </article>
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">CURRENT RECORD</p><h3 id="buildingDetailTitle">Select a building</h3></div><span id="buildingRevision" class="badge">No revision</span></div><div id="buildingCurrent" class="building-current empty compact-empty">Choose a building to view its classification.</div><div class="panel-head building-history-head"><div><p class="eyebrow">AUDIT</p><h3>Revision history</h3></div></div><div id="buildingHistory" class="building-history"></div></article>
-        </div>
+        <article class="panel building-inventory-filters"><label>Source ID<input id="buildingSourceFilter" placeholder="Search OSM source ID"></label><label>Assigned type<select id="buildingTypeFilter"><option value="">All types</option></select></label><label>Status<select id="buildingStatusFilter"><option value="all">All buildings</option><option value="unclassified">Unclassified only</option><option value="classified">Classified only</option></select></label></article>
+        <div class="building-layout"><article class="panel building-inventory"><div class="panel-head"><div><p class="eyebrow">RESULTS</p><h3>Building inventory</h3></div><span id="buildingInventoryTotal" class="badge">0 buildings</span></div><div id="buildingInventoryRows" class="building-inventory-rows"></div></article><div id="inventoryBuildingComponentHost" class="building-component-host"><div class="empty panel compact-empty">Select an inventory result to view or revise its classification.</div></div></div>
       </section>
 
+      <aside id="buildingClassificationComponent" class="panel building-classification-component hidden" aria-live="polite">
+        <div class="panel-head"><div><p class="eyebrow">BUILDING CLASSIFICATION</p><h3 id="buildingComponentTitle">Select a building</h3></div><div class="button-row"><span id="buildingComponentRevision" class="badge">Unclassified</span><button id="closeBuildingComponent" class="icon-button" title="Close building panel">×</button></div></div>
+        <div id="buildingComponentCurrent" class="building-current empty compact-empty">Choose a building to view its classification.</div>
+        <div class="building-component-form"><label>Assigned type<input id="buildingComponentType" maxlength="64" placeholder="shelter, field hospital, warehouse…"></label><label>Operator<input id="buildingComponentOperator" maxlength="200" placeholder="Responder name or ID"></label><label>Optional notes<textarea id="buildingComponentNotes" maxlength="2000" rows="3" placeholder="Reason or supporting evidence"></textarea></label><button class="primary" id="saveBuildingComponent">Save classification revision</button></div>
+        <details id="buildingHistoryDetails" class="building-history-details"><summary>Revision history <span id="buildingHistoryCount">0 revisions</span></summary><div id="buildingComponentHistory" class="building-history"></div></details>
+      </aside>
+
       <section class="view" id="social-alerts">
-        <div class="section-heading"><div><p class="eyebrow">RESPONDER REVIEW</p><h3>Social and NLP alerts</h3></div><span class="badge">Incoming → pending → confirmed / rejected</span></div>
+        <div class="section-heading"><div><p class="eyebrow">AUDIT AND DETAILS</p><h3>Social and NLP alerts</h3></div><div class="social-audit-controls"><label>Scope<select id="socialScope"><option value="scenario" selected>Active scenario</option><option value="general">General monitoring</option></select></label><label>Responder identity<input id="responderIdentity" value="dashboard-responder" maxlength="200"></label></div></div>
         <div id="socialAlertError" class="callout warning hidden"></div>
         <div class="metric-grid">
           <article class="metric blue"><span>Incoming</span><strong id="alertIncoming">0</strong><small>Being resolved</small></article>
@@ -169,14 +186,14 @@
           <article class="metric teal"><span>Rejected</span><strong id="alertRejected">0</strong><small>Retained for audit</small></article>
         </div>
         <div class="social-alert-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">REVIEW QUEUE</p><h3>Pending reports</h3></div><span id="pendingAlertTotal" class="badge">0 pending</span></div><div id="pendingAlertRows" class="alert-review-list"></div></article>
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">CONFIRMED EVIDENCE</p><h3>Human-confirmed hotspots</h3></div><span class="hotspot-key"><i></i> Confirmed social report</span></div><div id="socialHotspotMap" class="hotspot-map"><div class="map-grid"></div><p>Confirm a resolved report to place an orange hotspot.</p></div><div id="graphObservationRows" class="graph-observation-list"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">REVIEW QUEUE</p><h3>Pending report details</h3></div><span id="pendingAlertTotal" class="badge">0 pending</span></div><div id="pendingAlertRows" class="alert-review-list"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">REVIEWED</p><h3>Confirmed and rejected decisions</h3></div><span class="badge">Hotspots render on Operations map</span></div><div id="reviewedAlertRows" class="alert-audit-list single-column"></div></article>
         </div>
-        <article class="panel audit-panel"><div class="panel-head"><div><p class="eyebrow">AUDIT TRAIL</p><h3>Rejected and duplicate reports</h3></div></div><div id="socialAuditRows" class="alert-audit-list"></div></article>
+        <div class="social-alert-layout audit-panel"><article class="panel"><div class="panel-head"><div><p class="eyebrow">DEDUPLICATION</p><h3>Duplicate reports</h3></div><span id="duplicateAlertTotal" class="badge">0 duplicates</span></div><div id="duplicateAlertRows" class="alert-audit-list single-column"></div></article><article class="panel"><div class="panel-head"><div><p class="eyebrow">CONTRADICTIONS</p><h3>Rejected inputs and errors</h3></div><span id="contradictionAlertTotal" class="badge">0 errors</span></div><div id="contradictionAlertRows" class="alert-audit-list single-column"></div></article></div>
       </section>
 
       <section class="view" id="media">
-        <div class="section-heading"><div><p class="eyebrow">OBJECT STORAGE</p><h3>MinIO image browser</h3></div><a class="primary link-button" href="http://localhost:9001" target="_blank">Open console ↗</a></div>
+        <div class="section-heading"><div><p class="eyebrow">OBJECT STORAGE</p><h3>MinIO image browser</h3></div><a class="primary link-button" href="http://localhost:9001" target="_blank" data-local-only>Open console ↗</a></div>
         <div class="media-layout"><article class="panel object-list"><div class="panel-head"><h3>Recent objects</h3><span id="objectTotal" class="badge">0 images</span></div><div id="objectRows"></div></article><article class="panel preview"><div id="previewPlaceholder" class="preview-placeholder"><span>▧</span><p>Select an image to preview</p></div><img id="imagePreview" alt="Selected MinIO object"><div id="imageMeta"></div></article></div>
       </section>
 
@@ -186,7 +203,7 @@
       </section>
     </main>
   </div>
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="/app.js"></script>
+  <script src="/vendor/maplibre-gl.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

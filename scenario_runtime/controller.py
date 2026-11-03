@@ -6,6 +6,7 @@ import copy
 import math
 import threading
 import time
+import uuid
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Callable, Iterable
@@ -63,6 +64,7 @@ class ScenarioController:
         self._current: dict | None = None
         self._error: str | None = None
         self._generation = 0
+        self._replay_id: str | None = None
         self._thread: threading.Thread | None = None
 
     @staticmethod
@@ -89,6 +91,7 @@ class ScenarioController:
             self._anchor = self._clock()
             self._error = None
             self._generation += 1
+            self._replay_id = uuid.uuid4().hex
             generation = self._generation
             if background:
                 self._thread = threading.Thread(
@@ -123,6 +126,7 @@ class ScenarioController:
             self._completed.clear()
             self._current = None
             self._error = None
+            self._replay_id = None
 
     def set_speed(self, speed: float) -> None:
         value = self._valid_speed(speed)
@@ -151,8 +155,10 @@ class ScenarioController:
                 self._next_index += 1
                 self._current = copy.deepcopy(event)
                 event_generation = self._generation
+                dispatch_event = copy.deepcopy(event)
+                dispatch_event["scenario_replay_id"] = self._replay_id
             try:
-                self._dispatcher(copy.deepcopy(event))
+                self._dispatcher(dispatch_event)
             except Exception as exc:
                 with self._lock:
                     if event_generation == self._generation:
@@ -195,6 +201,7 @@ class ScenarioController:
             timestamp = self._scenario_start + timedelta(seconds=elapsed)
             return {
                 "state": self._state.value,
+                "replay_id": self._replay_id,
                 "speed": self._speed,
                 "simulation_elapsed_seconds": elapsed,
                 "simulation_timestamp": timestamp.isoformat().replace("+00:00", "Z"),

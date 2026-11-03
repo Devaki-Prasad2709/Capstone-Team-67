@@ -12,6 +12,7 @@ from core.satellite.change_contract import (
     validate_pair_event,
 )
 from core.satellite.normalizer import RasterReadError
+from dashboard import server as dashboard_server
 from dashboard.server import satellite_change_output
 
 
@@ -99,6 +100,24 @@ def test_duplicate_and_invalid_events_do_not_become_change_results():
         raise AssertionError("invalid pair event was accepted")
 
 
+def test_transport_backed_duplicates_are_reprocessed_once_per_scenario_replay():
+    accumulator = SatellitePairAccumulator(lambda event: event["payload"], grid_size=2)
+
+    for replay_id in ("replay-a", "replay-b"):
+        pre, post = _event("pre", _jpeg(100)), _event("post", _jpeg(110))
+        for event in (pre, post):
+            event.update(
+                is_duplicate=True,
+                transfer_mode="test",
+                scenario_replay_id=replay_id,
+            )
+        assert accumulator.accept(pre) is None
+        result = accumulator.accept(post)
+        assert result is not None
+        assert result["scenario_replay_id"] == replay_id
+        assert accumulator.accept(post) is None
+
+
 def test_normalization_failure_propagates_through_change_contract():
     pre, post = _event("pre", _jpeg(100)), _event("post", _jpeg(110))
     failure = RasterReadError("payload is corrupt", input_role="PRE")
@@ -113,6 +132,7 @@ def test_normalization_failure_propagates_through_change_contract():
 
 
 def test_dashboard_contract_adds_safe_minio_previews():
+    dashboard_server.topic_tails.clear()
     latest = {
         "scenario_id": "louisiana-east-flood-v1",
         "scenario_timestamp": "2026-09-24T12:00:30Z",
@@ -137,6 +157,7 @@ def test_dashboard_contract_adds_safe_minio_previews():
 
 
 def test_dashboard_contract_resolves_base64_sources_from_content_hash():
+    dashboard_server.topic_tails.clear()
     content_hash = "a" * 64
     latest = {
         "scenario_id": "louisiana-east-flood-v1",
@@ -166,6 +187,7 @@ def test_dashboard_contract_resolves_base64_sources_from_content_hash():
 
 
 def test_dashboard_contract_preserves_satellite_topic_error():
+    dashboard_server.topic_tails.clear()
     message = "[PRE] corrupt raster | Requirement: source raster must exist and be readable"
     with (
         patch("dashboard.server.recent_topic_events", return_value=([], message)),
@@ -175,4 +197,7 @@ def test_dashboard_contract_preserves_satellite_topic_error():
         }),
     ):
         response = satellite_change_output()
-    assert response == {"latest": None, "result_count": 0, "error": message}
+    assert response["latest"] is None
+    assert response["result_count"] == 0
+    assert response["error"] == message
+    assert response["diagnostics"]["kafka_tail"]["cache_hit"] is False
