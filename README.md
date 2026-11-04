@@ -34,6 +34,10 @@ For the authoritative system architecture, contracts, setup, operation,
 evaluation boundaries, deployment replacements, and troubleshooting guide, see
 [`docs/FINAL_SYSTEM_DOCUMENTATION.md`](docs/FINAL_SYSTEM_DOCUMENTATION.md).
 
+For a presentation-focused but code-level explanation of everything before
+YOLO, NLP inference, satellite scoring, graph-state prediction, and TGNN, see
+[`docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md`](docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md).
+
 ## Current features
 
 ### Data ingestion
