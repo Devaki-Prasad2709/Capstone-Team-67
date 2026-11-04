@@ -39,6 +39,9 @@ YOLO, NLP inference, satellite scoring, graph-state prediction, and TGNN, see
 [`docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md`](docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md).
 The reasoning behind those upstream choices is documented separately in
 [`docs/UPSTREAM_DESIGN_DECISIONS.md`](docs/UPSTREAM_DESIGN_DECISIONS.md).
+For a complete visual reference covering the full pipeline, control plane,
+persistent state, and evidence boundaries, see
+[`docs/COMPLETE_ARCHITECTURE_DIAGRAMS.md`](docs/COMPLETE_ARCHITECTURE_DIAGRAMS.md).
 
 ## Current features
 
