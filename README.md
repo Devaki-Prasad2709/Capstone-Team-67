@@ -42,6 +42,9 @@ The reasoning behind those upstream choices is documented separately in
 For a complete visual reference covering the full pipeline, control plane,
 persistent state, and evidence boundaries, see
 [`docs/COMPLETE_ARCHITECTURE_DIAGRAMS.md`](docs/COMPLETE_ARCHITECTURE_DIAGRAMS.md).
+For a beginner-friendly explanation of the browser dashboard, its JavaScript
+modules, map layers, refresh behavior, API calls, and operator controls, see
+[`docs/FRONTEND_ARCHITECTURE_GUIDE.md`](docs/FRONTEND_ARCHITECTURE_GUIDE.md).
 
 ## Current features
 

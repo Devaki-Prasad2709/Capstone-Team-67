@@ -420,6 +420,7 @@ Each test file protects a distinct contract:
 | `docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md` | Detailed upstream reference covering configuration, producers, scenario replay, provenance, deduplication, MinIO, Kafka, GIS preparation, Spark, failure semantics, limitations, and presentation questions. |
 | `docs/UPSTREAM_DESIGN_DECISIONS.md` | Decision-rationale companion explaining why each upstream technology and boundary was selected, rejected alternatives, trade-offs, and field-deployment replacements. |
 | `docs/COMPLETE_ARCHITECTURE_DIAGRAMS.md` | Mermaid-based visual reference for the full source-to-dashboard architecture, topic routing, scenario replay, modality processing, GIS/graph/TGNN, dashboard projection, deployment, security, and persistence boundaries. |
+| `docs/FRONTEND_ARCHITECTURE_GUIDE.md` | Beginner-friendly guide to the dashboard page shell, JavaScript modules, MapLibre layers, navigation, refresh lifecycle, API client, evidence views, security modes, and common user interactions. |
 | `docs/SIMULATION_WORKFLOW_FOR_PPT.md` | Presentation-friendly simulation clock, provenance and event story. |
 | `docs/FINAL_SCENARIO.md` | Frozen Louisiana scenario selection and provenance. |
 | `docs/AI_INTEGRATION.md` | YOLO architecture, model lineage, metrics and serving path. |
