@@ -37,6 +37,8 @@ evaluation boundaries, deployment replacements, and troubleshooting guide, see
 For a presentation-focused but code-level explanation of everything before
 YOLO, NLP inference, satellite scoring, graph-state prediction, and TGNN, see
 [`docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md`](docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md).
+The reasoning behind those upstream choices is documented separately in
+[`docs/UPSTREAM_DESIGN_DECISIONS.md`](docs/UPSTREAM_DESIGN_DECISIONS.md).
 
 ## Current features
 

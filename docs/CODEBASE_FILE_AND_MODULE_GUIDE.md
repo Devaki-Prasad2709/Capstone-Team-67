@@ -418,6 +418,7 @@ Each test file protects a distinct contract:
 | `docs/ARCHITECTURE.md` | Technical layer and event-flow reference. |
 | `docs/UPSTREAM_AND_PREPROCESSING_FOR_PPT.md` | Presentation-friendly ingestion-to-Spark explanation. |
 | `docs/UPSTREAM_ARCHITECTURE_DEEP_DIVE.md` | Detailed upstream reference covering configuration, producers, scenario replay, provenance, deduplication, MinIO, Kafka, GIS preparation, Spark, failure semantics, limitations, and presentation questions. |
+| `docs/UPSTREAM_DESIGN_DECISIONS.md` | Decision-rationale companion explaining why each upstream technology and boundary was selected, rejected alternatives, trade-offs, and field-deployment replacements. |
 | `docs/SIMULATION_WORKFLOW_FOR_PPT.md` | Presentation-friendly simulation clock, provenance and event story. |
 | `docs/FINAL_SCENARIO.md` | Frozen Louisiana scenario selection and provenance. |
 | `docs/AI_INTEGRATION.md` | YOLO architecture, model lineage, metrics and serving path. |
