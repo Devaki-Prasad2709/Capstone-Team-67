@@ -1,8 +1,17 @@
 # IEEE manuscript: highlighted corrections
 
-This report compares the supplied manuscript with [the corrected IEEE manuscript](manuscript.tex), introduced in commit `e79f828`. It explains additions, removals and their evidence. **Bold text identifies additions or corrected claims**; ~~strikethrough identifies removed claims~~. Wording below is condensed where indicated rather than a complete line-by-line diff.
+This report compares the supplied manuscript with [the corrected IEEE manuscript](manuscript.tex), initially introduced in commit `e79f828` and subsequently expanded for the six-page revision. It explains additions, removals and their evidence. **Bold text identifies additions or corrected claims**; ~~strikethrough identifies removed claims~~. Wording below is condensed where indicated rather than a complete line-by-line diff.
 
 The [highlighted LaTeX entry point](manuscript_highlighted.tex) renders substantive corrected passages in blue. This Markdown report also records deleted material and formatting changes that blue highlighting cannot show.
+
+## Latest revision: research comparison and six-page target
+
+- **Removed calendar-date and "historical" phrasing from the manuscript.** Evaluation scope and checkpoint differences remain explicit.
+- **Added a comparison subsection and a full-width table** covering RescueNet, Zou et al., SpaceNet 8, Selvakumaran et al., and this prototype.
+- **Explained why semantic IoU, instance AP, grid-change counts and operational graph results cannot be ranked as interchangeable accuracy scores.**
+- **Added evidence identity and evaluation protocol discussion**, including content/event identity, component versus system validation, and missing latency terms.
+- **Corrected the malformed revision macro**: its argument count must be `[1]`; the prior blanket citation replacement had mistakenly changed that syntax.
+- Added substantive research discussion without changing IEEE margins or font sizes. See the README for final build status.
 
 ## 1. Title: remove an unsupported timing claim
 
@@ -55,13 +64,13 @@ The corrected method explicitly states:
 
 Evidence: [broad_area_classifier.py](../../core/satellite/broad_area_classifier.py).
 
-## 5. Satellite results: distinguish historical evidence from current validation
+## 5. Satellite results: distinguish recorded evaluation evidence from current validation
 
 Before, the manuscript called the 33 changed cells an output of the current procedure.
 
 Corrected interpretation:
 
-> **The historical 26 September 2026 acceptance record** reports 64 scored cells and 33 changed cells: 24 moderate and nine severe. **These describe that recorded run, not a newly executed validation of the current Universal Satellite Adapter.**
+> **The recorded integration evaluation** reports 64 scored cells and 33 changed cells: 24 moderate and nine severe. **These describe that recorded run, not a newly executed validation of the current Universal Satellite Adapter.**
 
 The counts were retained with their correct scope; they were not replaced with a newly invented measurement.
 
@@ -71,19 +80,19 @@ Removed the unsupported example:
 
 No supporting versioned artifact was established for those numbers.
 
-The local untracked October result reports 32 changed cells, including 23 moderate and nine severe. That file was not included in the manuscript commit. **A current-adapter evaluation needs a validated, versioned artifact with source checksums, normalization settings and software revision before its numbers replace the historical paragraph.**
+The local untracked October result reports 32 changed cells, including 23 moderate and nine severe. That file was not included in the manuscript commit. **A current-adapter evaluation needs a validated, versioned artifact with source checksums, normalization settings and software revision before its numbers replace the recorded-evaluation paragraph.**
 
 The paper retains the limitation that 22 flooded reference features out of 40 cannot be compared directly with grid-cell counts to calculate accuracy.
 
-Evidence: [historical acceptance record](../END_TO_END_ACCEPTANCE.md).
+Evidence: [integration acceptance record](../END_TO_END_ACCEPTANCE.md).
 
 ## 6. YOLO integration: identify the checkpoint actually tested
 
 Added:
 
-> **The historical 26 September 2026 acceptance run used the replaced three-class YOLO checkpoint, not the current ten-class YOLO26s-seg checkpoint.**
+> **The integration acceptance configuration used a three-class YOLO checkpoint; the separate detector evaluation uses the active ten-class YOLO26s-seg checkpoint.**
 
-This prevents historical workflow acceptance from being read as evaluation of the active model. Current held-out metrics and the poor transfer to three legacy ISBDA images are attributed to the separate segmentation verification record.
+This prevents workflow acceptance from being read as evaluation of the active model. Current held-out metrics and the poor transfer to three legacy ISBDA images are attributed to the separate segmentation verification record.
 
 Evidence: [acceptance record](../END_TO_END_ACCEPTANCE.md), [segmentation verification](../SEGMENTATION_VERIFICATION.md), and [checkpoint manifest](../../ai/computer_vision/artifact_manifest.json).
 
@@ -130,6 +139,6 @@ No model training, application code or evaluation measurements were changed by t
 
 Citation-key resolution, matching LaTeX environment counts, removal of manually numbered citations, removal of external-image dependencies and whitespace were checked for the manuscript package.
 
-**PDF compilation and visual layout remain unverified because a TeX compiler was unavailable.** Compile both entry points and inspect page count, tables, diagram readability, line wrapping and references before submission. IEEEtran provides the conference layout; venue-specific page limits and submission requirements still need checking.
+**Both clean and highlighted PDFs now compile successfully and contain exactly six pages**, verified with Tectonic 0.17.0 and PDF page-count inspection. Times-compatible fonts are explicitly configured. The comparison table and representative pages were visually inspected. Underfull boxes and a sub-point bibliography-balancing warning remain; no horizontal overflow was reported. Venue-specific submission requirements still need checking.
 
 Build instructions: [paper README](README.md).

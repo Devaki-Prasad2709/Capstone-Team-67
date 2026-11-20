@@ -1,4 +1,6 @@
 \documentclass[conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
 \usepackage{cite}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
@@ -9,9 +11,9 @@
 \usepackage{microtype}
 \usepackage{xcolor}
 \ifdefined\ShowRevisions
-\newcommand{\revision}\cite{resc}{{\color{blue}#1}}
+\newcommand{\revision}[1]{{\color{blue}#1}}
 \else
-\newcommand{\revision}\cite{resc}{#1}
+\newcommand{\revision}[1]{#1}
 \fi
 \title{AI-Powered Post-Disaster Area Scanning and Assessment System: A Provenance-Aware Multimodal Streaming Prototype}
 \author{\IEEEauthorblockN{Devaki Prasad, Dibya Dyuti Bhalla, Aryan Khan, Nehaz Khan}
@@ -43,8 +45,40 @@ Rahnemoonfar \emph{et al.} introduced RescueNet, a high-resolution post-disaster
 \subsection{Multimodal and Graph-Based Assessment}
 SpaceNet 8 established a benchmark involving building and road mapping and flood-related analysis from satellite imagery \cite{spacenet}. Selvakumaran \emph{et al.} examined graph-based multimodal remote-sensing analysis for urban search and rescue and considered how evidence and uncertainty can be incorporated into operational assessment \cite{selva}. Graph attention networks provide a general mechanism for learning weighted neighbourhood representations \cite{gat}, while gated recurrent units provide a sequence model for temporal state \cite{gru}. The architecture in this paper uses these model families as a prototype component; it does not claim that the resulting risk rankings are calibrated or validated on real disaster graph sequences.
 
+
+\subsection{Comparison with Existing Research}
+\revision{Table~\ref{tab:comparison} compares the purpose, output unit, and evaluation scope of representative research with this prototype. It is a methodological comparison, not a ranking of benchmark scores. A dataset contribution, a segmentation model, and an operational evidence system answer different questions. Their numerical results are comparable only when the imagery, annotation conversion, class definitions, split, and metric implementation are matched.}
+
+\begin{table*}[t]
+\caption{\revision{Comparison of research scope and evaluation units. Entries describe the cited contributions; they do not imply that unlisted capabilities are absent from those projects.}}
+\label{tab:comparison}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.16\textwidth}p{0.23\textwidth}p{0.24\textwidth}p{0.29\textwidth}@{}}
+\toprule
+\textbf{Research} & \textbf{Primary contribution} & \textbf{Output / evidence unit} & \textbf{Relationship to this prototype}\\
+\midrule
+RescueNet \cite{resc} & Annotated UAV dataset and semantic-segmentation evaluation & Pixel-level scene labels & Supplies training evidence; polygon conversion changes the evaluation representation.\\
+Zou \emph{et al.} \cite{zou} & Improved building instance segmentation on earthquake UAV imagery & Building masks and boxes & Relevant detector research; different data and classes prevent direct score ranking.\\
+SpaceNet 8 \cite{spacenet} & Infrastructure mapping and flood-detection benchmark & Buildings, roads and flood attribution & Supplies paired imagery; our grid scores quantify radiometric change only.\\
+Selvakumaran \emph{et al.} \cite{selva} & Graph-based multimodal analysis for search and rescue & Integrated remote-sensing evidence & Closely related operational motivation; our evaluation addresses replay and traceability.\\
+This work & Streaming integration with provenance and operator review & Image predictions, grid cells, graph snapshots and reviewed reports & Held-out detector metrics plus bounded workflow acceptance; no unified field accuracy.\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\revision{RescueNet provides dense scene annotations and evaluates semantic segmentation \cite{resc}. Our detector consumes converted polygon annotations and reports box and mask average precision. Pixel-wise overlap and instance average precision measure different properties: a semantic model can label scene regions without separating individual instances, whereas instance evaluation also depends on predicted object separation. Therefore, the reported mask mAP of 0.675 should not be interpreted as an improvement over a published semantic-segmentation score. The useful connection is dataset reuse with an explicit conversion boundary.}
+
+\revision{Zou \emph{et al.} address building damage through an improved instance-segmentation model incorporating channel attention and changes to the feature-processing neck, evaluated on Yangbi earthquake UAV imagery \cite{zou}. Their study investigates detector design. This prototype instead integrates a committed detector into a traceable observation pipeline. A defensible comparative experiment would train both detectors using the same converted labels and split, then report per-class mask AP, inference time on the same hardware, and external-event transfer. Such a controlled comparison has not been performed here; the ISBDA replay exposes a transfer limitation rather than evidence of superiority.}
+
+\revision{SpaceNet 8 targets semantic infrastructure mapping and flood attribution \cite{spacenet}. Our satellite component shares its use of georeferenced paired imagery, but returns an overlap-aligned grid of brightness-change scores. A changed cell can guide evidence inspection, yet cannot establish which building flooded or which road became impassable. This distinction also prevents a misleading comparison between 33 changed cells and 22 flooded reference features. Evaluating a semantic satellite detector would require a separate output contract and matched reference labels.}
+
+\revision{Graph-based multimodal analysis for urban search and rescue is already represented by Selvakumaran \emph{et al.} \cite{selva}. Accordingly, combining graphs and disaster imagery is not claimed as novel by itself. The specific contribution examined here is the implementation of source-to-observation traceability, replay isolation, and visible separation of evidence types. Its practical value is that an operator can inspect the image and association behind an observation while retaining the temporal graph view. Whether this improves response decisions remains an empirical question requiring user studies and real incident data.}
+
+\revision{These comparisons motivate three evaluation questions: does the image model generalize to the deployment source; can accepted evidence be reconstructed without duplication or loss; and do graph rankings help prioritize independently verified damage? The present results provide held-out evidence for the first question within RescueNet and software checks for the second. They do not yet establish cross-event generalization or the decision utility required by the third.}
+
 \section{System Architecture}
-\revision{Fig.~\ref{fig:architecture} summarizes the implemented architecture. Implementation claims are anchored to repository revision \texttt{d8030798662c}; historical evaluation records retain their original run dates and checkpoints \cite{team67}.} Source adapters accept dataset assets and scenario inputs. Preparation stages validate and normalize records, attach provenance, and apply deduplication. SHA-256 identifies byte-identical objects; perceptual hashing is used for selected near-duplicate drone imagery. PRE/POST satellite pairs are not suppressed as duplicates by default because small differences may be meaningful.
+\revision{Fig.~\ref{fig:architecture} summarizes the implemented architecture. Implementation claims are anchored to repository revision \texttt{d8030798662c}; evaluation records identify their corresponding configurations and checkpoints \cite{team67}.} Source adapters accept dataset assets and scenario inputs. Preparation stages validate and normalize records, attach provenance, and apply deduplication. SHA-256 identifies byte-identical objects; perceptual hashing is used for selected near-duplicate drone imagery. PRE/POST satellite pairs are not suppressed as duplicates by default because small differences may be meaningful.
 
 Kafka transports compact event envelopes, timestamps, source identifiers, checksums, and object references. MinIO stores large image payloads. Spark Structured Streaming parses configured topics, validates schemas, retains Kafka offset metadata, and persists supported metadata outputs, including Parquet with checkpoints. Not every modality computation passes through Spark: dedicated workers execute YOLO inference and satellite pair processing, while graph/TGNN and social-review functions are separate services.
 
@@ -108,6 +142,14 @@ The social module uses deterministic text normalization, distress keywords and p
 \subsection{Scenario Replay and Data Provenance}
 The controlled Louisiana East Flood replay combines real archived ISBDA image bytes, a real SpaceNet 8 PRE/POST raster pair, and a frozen OSM-derived GIS snapshot with simulated drone coordinates/targets, event timestamps, telemetry, social content, responder decisions, and recovery values. The scenario controller supports a simulated timeline and replay controls, including pause, resume, reset, and playback-speed control. The clean replay publishes a small set of production-shaped event records for the source inputs, while the scenario timeline also includes derived processing and explicit responder-review milestones. Resetting a replay does not erase Kafka history or MinIO objects; replay identity and offset boundaries are used to isolate dashboard views. \revision{Responder-decision assets describe the scenario story and provenance; actual confirmation or rejection is performed through the operator review endpoint. The timeline milestone does not itself publish an automatic responder decision.} This is a controlled software replay, not a field deployment. The implementation uses one Kafka broker with replication factor one, so high availability is not established.
 
+
+\subsection{Evidence Identity and Evaluation Protocol}
+\revision{Reproducibility requires both content identity and event identity. A checksum identifies the image bytes, while an observation identifier distinguishes the record that associates those bytes with a scenario time and target. Reusing an image during a new replay does not imply a new physical observation. Conversely, two valid observations may share an object reference while describing different event contexts. This is why replay identity, event timestamps, source provenance, and duplicate handling belong in the evidence contract rather than being inferred from a displayed filename.}
+
+\revision{The evaluation is interpreted at three levels. Detector evaluation measures predictions against held-out image labels. Component checks examine transformations such as raster alignment, valid-mask propagation, GIS association, and report review. Integration acceptance examines whether records traverse the configured services and remain available to the dashboard. Success at one level cannot substitute for another: a correctly delivered prediction may still be wrong, and a correct image prediction may still be assigned to the wrong infrastructure entity.}
+
+\revision{For future replication, each run should record the code revision, checkpoint checksum, source asset checksums, scenario identity, event offsets, and configuration. Latency should be measured at successive boundaries: publication, inference completion, graph update, and dashboard availability. The current CPU timing covers only image preprocessing, inference, and postprocessing. Queue delay, object retrieval, graph inference, and browser refresh are additional terms for which this paper does not report an end-to-end benchmark.}
+
 \section{Experimental Results}
 \subsection{Held-Out RescueNet Evaluation}
 The active segmentation checkpoint was evaluated on 450 held-out RescueNet images containing 2,680 labelled instances, at 640-pixel input size and batch size one on a local 11th-generation Intel i5 CPU. Table~\ref{tab:metrics} reports box and mask results separately.
@@ -131,10 +173,10 @@ mAP@50--95 & 0.494 & 0.443\\
 Mean per-image processing time was 1.5 ms preprocessing, 148.8 ms inference, and 8.3 ms postprocessing on the stated CPU. These are local measurements, not a general throughput guarantee. The measured mean per-image time is approximately 158.6 ms when the three reported stages are summed; this sum is specific to the local CPU test path and should not be treated as end-to-end system latency. No multi-image concurrency or network transfer benchmark is inferred from these measurements. The held-out metrics represent one dataset split, not external field validation. In the frozen Louisiana replay, the active checkpoint produced zero detections on ISBDA image \texttt{5\_9240.jpg} and one water detection on each of \texttt{6\_270.jpg} and \texttt{8\_90.jpg}. These results demonstrate execution of the inference/provenance route, not useful damage segmentation on those images.
 
 \subsection{Satellite Processing}
-\revision{The historical 26 September 2026 acceptance record for SpaceNet 8 tile \texttt{2\_23\_44} reports 64 scored grid cells and 33 changed cells (24 moderate and nine severe) \cite{team67}. These describe that recorded run, not a newly executed validation of the current Universal Satellite Adapter. The available reference contains 22 flooded features among 40, but these object-level annotations do not correspond directly to output grid cells. Consequently, no cell-level confusion matrix, satellite precision, recall, IoU, or flood accuracy is established. A current-adapter evaluation requires a separately versioned run artifact identifying source checksums, normalization policy, configuration, and software revision.}
+\revision{The recorded integration evaluation for SpaceNet 8 tile \texttt{2\_23\_44} reports 64 scored grid cells and 33 changed cells (24 moderate and nine severe) \cite{team67}. These describe that recorded run, not a newly executed validation of the current Universal Satellite Adapter. The available reference contains 22 flooded features among 40, but these object-level annotations do not correspond directly to output grid cells. Consequently, no cell-level confusion matrix, satellite precision, recall, IoU, or flood accuracy is established. A current-adapter evaluation requires a separately versioned run artifact identifying source checksums, normalization policy, configuration, and software revision.}
 
 \subsection{Integration Evidence}
-\revision{The historical 26 September 2026 acceptance run used the replaced three-class YOLO checkpoint, not the current ten-class YOLO26s-seg checkpoint. It supports the recorded workflow behavior, while current-model metrics and legacy-image transfer observations come from the separate segmentation verification record \cite{team67}.} The historical acceptance record reports three completed post-start replays, 12/12 timeline milestones, Kafka/MinIO/Spark services, checkpoint-backed inference, GIS association, social review, dashboard output, and negative tests for invalid GPS, stale telemetry, and missing telemetry fields. The same acceptance record includes 21 drone objects and 22 satellite objects in MinIO across a broader scope; these totals are not attributed to one replay. These are software-workflow checks, not model accuracy or proof of operational emergency-response performance. The recorded acceptance suite also included invalid/missing records, unreadable images, duplicates, stale events, and service-failure checks in separate test scopes. The documented test totals from different milestones are not combined here as though they were one fresh, unified test run.
+\revision{The integration acceptance configuration used a three-class YOLO checkpoint; the separate detector evaluation uses the active ten-class YOLO26s-seg checkpoint. It supports the recorded workflow behavior, while current-model metrics and legacy-image transfer observations come from the separate segmentation verification record \cite{team67}.} The integration acceptance record reports three completed post-start replays, 12/12 timeline milestones, Kafka/MinIO/Spark services, checkpoint-backed inference, GIS association, social review, dashboard output, and negative tests for invalid GPS, stale telemetry, and missing telemetry fields. The same acceptance record includes 21 drone objects and 22 satellite objects in MinIO across a broader scope; these totals are not attributed to one replay. These are software-workflow checks, not model accuracy or proof of operational emergency-response performance. The recorded acceptance suite also included invalid/missing records, unreadable images, duplicates, stale events, and service-failure checks in separate test scopes. The documented test totals from different milestones are not combined here as though they were one fresh, unified test run.
 
 \section{Discussion and Limitations}
 The system's contribution differs from task-specific UAV segmentation and satellite mapping research \cite{resc,zou,spacenet,selva}. Rather than claiming higher detection or flood-mapping accuracy, it demonstrates how evidence from separate modules can be transported, associated with infrastructure identities, retained over time, and exposed with provenance. The evaluation values must be interpreted within their own datasets and protocols; direct comparison with published scores from different datasets, labels, or evaluation splits would be invalid.
@@ -172,6 +214,6 @@ P. Veli\v{c}kovi\'c \emph{et al.}, ``Graph attention networks,'' in \emph{Proc. 
 K. Cho \emph{et al.}, ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' in \emph{Proc. Conf. Empirical Methods in Natural Language Processing (EMNLP)}, 2014, pp. 1724--1734, doi: 10.3115/v1/D14-1179.
 
 \bibitem{team67}
-Team 67, ``Capstone-Team-67: Implementation and evaluation records,'' branch \texttt{dibsei/baseline-blocker-fixes}, revision \texttt{d8030798662c}, 2026. [Online]. Available: \url{https://github.com/Devaki-Prasad2709/Capstone-Team-67/tree/d8030798662ce5340f9e8f42e0967b630477868d}. Accessed: Nov. 20, 2026. Evidence includes the segmentation verification, historical acceptance, and computer-vision artifact manifest. Repository records are not peer-reviewed publications.
+Team 67, ``Capstone-Team-67: Implementation and evaluation records,'' branch \texttt{dibsei/baseline-blocker-fixes}, revision \texttt{d8030798662c}, 2026. [Online]. Available: \url{https://github.com/Devaki-Prasad2709/Capstone-Team-67/tree/d8030798662ce5340f9e8f42e0967b630477868d}. Accessed: Nov. 20, 2026. Evidence includes the segmentation verification, integration acceptance, and computer-vision artifact manifest. Repository records are not peer-reviewed publications.
 \end{thebibliography}
 \end{document}
