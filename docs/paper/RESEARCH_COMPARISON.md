@@ -1,6 +1,6 @@
 # Research comparison: sources and interpretation
 
-The manuscript's comparison is qualitative. No competing model was trained or benchmarked during this document revision. Numerical superiority is not claimed.
+The manuscript's comparison is qualitative. No competing model was trained or benchmarked during this manuscript update. Numerical superiority is not claimed.
 
 | Source | Verified basis for the comparison | Interpretation in this paper |
 |---|---|---|
@@ -11,4 +11,4 @@ The manuscript's comparison is qualitative. No competing model was trained or be
 
 The full references remain in the manuscript bibliography. The comparison table describes reported contributions; an omitted feature does not establish that another project lacks it.
 
-The integration acceptance configuration and the active detector evaluation use different checkpoints. Removing repeated calendar dates from the prose does not merge those experiments. The manuscript retains that distinction, and its repository citation retains a stable evidence revision.
+The integration acceptance configuration and the active detector evaluation use different checkpoints. Removing repeated calendar dates from the prose does not merge those experiments. The manuscript retains that distinction through explicit descriptions of the evaluated checkpoints and configurations.

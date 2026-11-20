@@ -1,6 +1,6 @@
-# IEEE manuscript and revision record
+# IEEE manuscript package
 
-This package corrects the supplied IEEE conference manuscript against repository revision `d8030798662ce5340f9e8f42e0967b630477868d`.
+This package contains the corrected and expanded IEEE conference manuscript.
 
 - `manuscript.tex`: clean IEEEtran conference manuscript.
 - `manuscript_highlighted.tex`: review entry point; substantive corrected passages appear in blue.
@@ -27,7 +27,7 @@ IEEEtran supplies the two-column conference layout, author blocks, abstract, key
 
 ## Research expansion
 
-The revised related-work section includes a comparison table and discusses task scope, label representation, comparable metrics, generalization and operational evaluation. An additional methods subsection explains evidence identity and evaluation protocol. Calendar-date-heavy acceptance wording has been removed while preserving experiment and checkpoint distinctions. No new experiments or benchmark improvements are claimed.
+The expanded related-work section includes a comparison table and discusses task scope, label representation, comparable metrics, generalization and operational evaluation. An additional methods subsection explains evidence identity and evaluation protocol. Calendar-date-heavy acceptance wording has been removed while preserving experiment and checkpoint distinctions. No new experiments or benchmark improvements are claimed.
 
 ## Highlighted change record
 
@@ -35,7 +35,6 @@ The revised related-work section includes a comparison table and discusses task 
 |---|---|---|
 | Title | Removed “Real-Time”. | No deadline or end-to-end latency validation supports that claim. |
 | Throughout | Replaced manually typed citation numbers with keyed cite commands. | Automatic IEEE numbering and citation grouping. |
-| Architecture opening | Added a repository revision and implementation citation. | Makes the reviewed code and evidence traceable. |
 | Architecture figure | Replaced the missing PNG with a self-contained diagram and corrected caption. | Removes the missing-image compile dependency and explains the actual evidence paths. |
 | Provenance table | Reduced column widths and removed outer padding. | Allows room for intercolumn spacing in the IEEE column. |
 | Detector methods | Added break opportunities in the full checkpoint hash. | Preserves the exact hash while allowing narrow-column wrapping. |
@@ -46,7 +45,7 @@ The revised related-work section includes a comparison table and discusses task 
 | Satellite results | Attributed the 33-cell result to the recorded integration evaluation. | It must not be presented as a current universal-adapter measurement. |
 | Satellite results | Removed the unsupported 4x4, 92.769% coverage and score-range example. | No supporting versioned artifact was established. |
 | Integration results | Identified the integration configuration's three-class checkpoint. | Separates workflow acceptance from active ten-class model evidence. |
-| Bibliography | Added the GRU DOI and replaced the vague internal dossier with a cited, revision-pinned repository reference. | Improves attribution and reproducibility. |
+| Bibliography | Added the GRU DOI and removed the internal development-record reference. | Keeps the bibliography focused on published research. |
 | Preamble | Removed unused multirow and funding override; added a review-color macro. | Keeps the clean and highlighted documents on one shared source. |
 
 ## Evidence and interpretation
@@ -61,7 +60,7 @@ Recorded replay and satellite counts come from:
 Current classifier settings come from:
 - `../../core/satellite/broad_area_classifier.py`
 
-The separate local, untracked `results/satellite_e2e_2026-10-01.json` reports 32 changed cells (23 moderate, 9 severe). It is not included or promoted to authoritative published evidence by this documentation commit. The manuscript instead explicitly limits its numerical satellite claim to the committed acceptance record. A new current-adapter result should be validated and versioned before replacing that paragraph.
+A separate local result reports 32 changed cells (23 moderate and nine severe). It is not promoted to authoritative published evidence here. The manuscript limits its numerical satellite claim to the documented integration evaluation. A replacement result should be validated and documented with its source checksums and configuration.
 
 This paper evaluates the Louisiana replay. It does not claim to comprehensively evaluate the later Mexico scenario or every subsequent dashboard feature.
 
