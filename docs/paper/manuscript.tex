@@ -1,0 +1,177 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{balance}
+\usepackage{microtype}
+\usepackage{xcolor}
+\ifdefined\ShowRevisions
+\newcommand{\revision}\cite{resc}{{\color{blue}#1}}
+\else
+\newcommand{\revision}\cite{resc}{#1}
+\fi
+\title{AI-Powered Post-Disaster Area Scanning and Assessment System: A Provenance-Aware Multimodal Streaming Prototype}
+\author{\IEEEauthorblockN{Devaki Prasad, Dibya Dyuti Bhalla, Aryan Khan, Nehaz Khan}
+\IEEEauthorblockA{Team 67, Department of Computer Science and Engineering (AI\&ML)\\
+PES University, Bengaluru, India\\
+Capstone Project Supervisor: Dr. Ashwini K}}
+\begin{document}
+\maketitle
+\begin{abstract}
+Post-disaster assessment requires evidence from aerial imagery, satellite observations, geographic information systems (GIS), telemetry, and public reports to be interpreted across different spatial and temporal scales. This paper presents a provenance-aware prototype that integrates these sources through event contracts, Kafka transport, MinIO object storage, and selected Spark Structured Streaming paths. Drone imagery is analysed by a YOLO26s-seg instance-segmentation checkpoint trained and evaluated on ten RescueNet classes. GIS-associated observations update time-indexed infrastructure graph states, which are processed by a two-layer graph-attention network and a gated recurrent unit (GAT--GRU) to produce uncalibrated relative node-risk rankings. Separate modules generate coarse radiometric PRE/POST satellite-change evidence and deterministic, human-reviewed social-report candidates. On the held-out RescueNet test split (450 images; 2,680 labelled instances), box precision, recall, and mAP@50 are 0.675, 0.647, and 0.685; corresponding mask metrics are 0.664, 0.657, and 0.675. A controlled Louisiana replay demonstrates the integration workflow but uses simulated GPS/target assignments, timestamps, telemetry, social content, and recovery values. The active detector also transfers poorly to the three legacy ISBDA replay images. Satellite scores and graph rankings have no validated disaster-ground-truth accuracy or probability calibration. The contribution is therefore an auditable, replayable integration architecture and a clearly bounded evaluation, rather than a field-validated autonomous damage-prediction system.
+\end{abstract}
+\begin{IEEEkeywords}
+Disaster informatics, geospatial analytics, infrastructure assessment, multimodal evidence, provenance, streaming systems, UAV segmentation.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Post-disaster situational assessment is a heterogeneous evidence problem. Unmanned aerial vehicle (UAV) imagery can reveal local damage; satellite imagery offers wider-area context; geographic information systems provide persistent spatial identities; telemetry can describe infrastructure condition; and public reports may expose observations unavailable to sensors. These inputs differ in resolution, coordinate reference, latency, reliability, and evidential meaning. An assessment workflow must therefore do more than execute an image classifier: it must preserve source identity, associate observations with places, retain temporal history, and expose uncertainty to an operator.
+
+Research datasets and task-specific methods provide important foundations. RescueNet supplies high-resolution UAV imagery with dense semantic annotations for disaster-scene understanding \cite{resc}. Research on post-earthquake UAV imagery has also explored improved instance segmentation for building damage categories \cite{zou}. SpaceNet 8 and related work address building/road mapping and flood-related change using paired satellite observations \cite{spacenet}. More recently, graph-based multimodal remote-sensing analysis has been investigated for operational urban search-and-rescue use, including methods that incorporate uncertainty and evolving evidence \cite{selva}. These studies demonstrate progress in individual assessment tasks. They do not remove the systems challenge of moving heterogeneous observations through traceable, updateable operational workflows.
+
+This paper describes a prototype whose primary contribution is systems integration rather than a new state-of-the-art damage classifier. It combines event-driven ingestion, object storage, supported stream validation, UAV segmentation, GIS-linked temporal graph updates, independent satellite and social evidence paths, and a dashboard. Crucially, the prototype preserves the distinction between learned detections, radiometric change scores, heuristic report matches, and synthetic-data graph rankings. The paper reports the evidence available for each component without treating unlike outputs as a single accuracy measure.
+
+The contributions are: (1) an event-driven architecture that separates large image payloads from metadata and provenance; (2) a traceable path from drone detections to GIS-associated observations and temporal graph state; (3) independent satellite and human-reviewed social evidence layers; and (4) a bounded evaluation that distinguishes model metrics, processing observations, scenario replay, and integration tests.
+
+\section{Related Work}
+\subsection{UAV Damage Assessment}
+Rahnemoonfar \emph{et al.} introduced RescueNet, a high-resolution post-disaster UAV dataset with pixel-level annotations spanning buildings, roads, pools, trees, and other scene elements \cite{resc}. This broad class coverage supports scene understanding beyond building-only classification. Zou \emph{et al.} proposed an improved instance-segmentation method for post-earthquake UAV imagery, targeting finer building boundaries and damage categories \cite{zou}. Such task-specific methods typically evaluate against labelled imagery under a defined dataset and protocol. The present work uses RescueNet for training and held-out evaluation, but its own replay imagery comes from a separate legacy source; consequently, RescueNet metrics cannot be interpreted as evidence of cross-dataset transfer.
+
+\subsection{Multimodal and Graph-Based Assessment}
+SpaceNet 8 established a benchmark involving building and road mapping and flood-related analysis from satellite imagery \cite{spacenet}. Selvakumaran \emph{et al.} examined graph-based multimodal remote-sensing analysis for urban search and rescue and considered how evidence and uncertainty can be incorporated into operational assessment \cite{selva}. Graph attention networks provide a general mechanism for learning weighted neighbourhood representations \cite{gat}, while gated recurrent units provide a sequence model for temporal state \cite{gru}. The architecture in this paper uses these model families as a prototype component; it does not claim that the resulting risk rankings are calibrated or validated on real disaster graph sequences.
+
+\section{System Architecture}
+\revision{Fig.~\ref{fig:architecture} summarizes the implemented architecture. Implementation claims are anchored to repository revision \texttt{d8030798662c}; historical evaluation records retain their original run dates and checkpoints \cite{team67}.} Source adapters accept dataset assets and scenario inputs. Preparation stages validate and normalize records, attach provenance, and apply deduplication. SHA-256 identifies byte-identical objects; perceptual hashing is used for selected near-duplicate drone imagery. PRE/POST satellite pairs are not suppressed as duplicates by default because small differences may be meaningful.
+
+Kafka transports compact event envelopes, timestamps, source identifiers, checksums, and object references. MinIO stores large image payloads. Spark Structured Streaming parses configured topics, validates schemas, retains Kafka offset metadata, and persists supported metadata outputs, including Parquet with checkpoints. Not every modality computation passes through Spark: dedicated workers execute YOLO inference and satellite pair processing, while graph/TGNN and social-review functions are separate services.
+
+The drone worker retrieves image bytes, applies inference preprocessing, and publishes structured predictions. Damage-relevant building and blocked-road classes retain polygon geometry in the downstream result contract. GIS association links observations to stable infrastructure identifiers. Append-oriented observations and time-indexed graph snapshots support temporal state updates. The dashboard backend exposes replay controls, readiness and process status, materialized evidence, social review, and map projections. A running service alone is not proof that the complete pipeline is healthy.
+
+\begin{figure*}[t]
+\centering
+\begin{tabular}{c}
+\fbox{\parbox{0.84\textwidth}{\centering Source adapters: drone imagery, satellite PRE/POST pairs, social reports, telemetry}}\\[3pt]
+$\downarrow$\\[3pt]
+\fbox{\parbox{0.84\textwidth}{\centering Kafka: event metadata and references \qquad MinIO: image objects}}\\[6pt]
+\begin{tabular}{@{}ccc@{}}
+\parbox[t]{0.28\textwidth}{\centering $\downarrow$\\Spark\\Schema validation\\Checkpointed metadata / Parquet}&
+\parbox[t]{0.28\textwidth}{\centering $\downarrow$\\YOLO / telemetry observations\\GIS association and graph states\\Ordered snapshots $\rightarrow$ GAT--GRU}&
+\parbox[t]{0.28\textwidth}{\centering $\downarrow$\\Satellite normalization and change\\Social matching and human review\\Independent evidence layers}
+\end{tabular}\\[6pt]
+$\downarrow$\\[3pt]
+\fbox{\parbox{0.84\textwidth}{\centering Dashboard: map, relative risk, evidence, freshness, replay and operator controls}}
+\end{tabular}
+\caption{\revision{Implemented evidence paths. Spark validates configured streams; dedicated workers perform inference. Drone and telemetry observations update temporal graph state. Satellite change and social review remain separate dashboard evidence paths. Arrows describe data flow; operator actions use backend APIs.}}
+\label{fig:architecture}
+\end{figure*}
+
+\begin{table}[t]
+\caption{Data Sources and Evidence Roles in the Controlled Prototype}
+\label{tab:provenance}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.18\columnwidth}p{0.32\columnwidth}p{0.34\columnwidth}@{}}
+\toprule
+\textbf{Source} & \textbf{Role} & \textbf{Boundary}\\
+\midrule
+RescueNet & Training and held-out test for YOLO26s-seg & Does not prove transfer to ISBDA or field imagery.\\
+ISBDA & Three archived images in frozen replay & GPS, targets and event times are scenario-assigned.\\
+SpaceNet 8 & Real PRE/POST raster pair & Radiometric change output; no matched cell-level accuracy.\\
+OSM-derived GIS & Frozen infrastructure geometry & Scenario graph attributes are not live telemetry.\\
+Social / telemetry & Scenario-generated reports and values & Social candidates require human review; telemetry is simulated.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Methods and Implementation}
+\subsection{Drone Image Segmentation}
+The active checkpoint is YOLO26s-seg, with 11,422,286 parameters and 34.3 GFLOPs. It was trained using converted RescueNet segmentation annotations and covers ten classes: water, building-no-damage, building-minor-damage, building-major-damage, building-total-destruction, vehicle, road-clear, road-blocked, tree, and pool. The verified checkpoint SHA-256 is \revision{\texttt{2d687e94fa5c2ef4}\allowbreak\texttt{45c0888794de99ea}\allowbreak\texttt{1155d880ddb9be8f}\allowbreak\texttt{9237617eb55068b5}}. The dataset contains 4,494 images; the documented split is 3,595 training, 449 validation, and 450 test images. Segmentation masks are converted to polygon representations for downstream observation contracts; contour filtering and simplification mean that exact pixel-mask preservation is not guaranteed.
+
+\subsection{Satellite Change Evidence}
+PRE and POST rasters are checked for supported coordinate reference systems, affine transforms, overlapping coverage, compatible bands, and valid pixels. When required, rasters are reprojected onto an overlap-only common grid, and NoData is propagated through validity masks. The current broad-area classifier partitions the common raster into an $8\times8$ grid and calculates normalized mean absolute radiometric difference for each valid cell:
+\begin{equation}
+ d_k=\frac{1}{255N_k}\sum_{p\in k}\left|I_{\mathrm{pre}}(p)-I_{\mathrm{post}}(p)\right|,
+\end{equation}
+\revision{Here $I_{\mathrm{pre}}$ and $I_{\mathrm{post}}$ are aligned luminance values on a common 0--255 numeric scale. The sum includes only pixels valid in both rasters; $N_k$ is their count in cell $k$. The default minimum valid fraction is 0.95; cells below this fraction are unknown and receive no change score. Scores below 0.15 are low change, scores from 0.15 up to but excluding 0.40 are moderate, and scores at least 0.40 are severe. These are heuristic settings, not calibrated damage thresholds.} This output is radiometric change evidence, not semantic flood extent, building damage classification, or a calibrated damage probability.
+
+\subsection{GIS and Temporal Graph}
+Each accepted drone observation is associated with an infrastructure entity using the scenario's available location/target association. Observations are accumulated into time-indexed graph states. The Louisiana scenario graph contains spatial edges; it does not encode functional dependency edges between infrastructure systems. Thus, graph neighbourhood structure represents spatial context rather than a validated power--telecom--road dependency network.
+
+The temporal model uses two graph-attention layers followed by a GRU over ordered graph snapshots. The GAT layers aggregate neighbourhood information, and the recurrent unit summarizes temporal changes. The model was trained on synthetic graph sequences with stochastic failure/recovery labels. Synthetic training provides controlled sequences for exercising the temporal pipeline, but it also creates a risk that the model learns simulator-specific relationships. The runtime graph is assembled from scenario state and heuristic attributes; there is no independent real-disaster graph sequence for validation. At runtime it produces uncalibrated relative failure-risk rankings. A score such as 0.70 must not be read as a 70\% probability of failure; no real-sequence calibration or operational decision threshold is available.
+
+\subsection{Social Evidence and Human Review}
+The social module uses deterministic text normalization, distress keywords and patterns, limited negation handling, named GIS landmark/entity matching, and fuzzy string similarity. It is not a trained general-purpose NLP model or an LLM. Candidate reports enter a pending-review state. A human reviewer can confirm or reject a candidate; confirmed reports can create a GIS-linked evidence hotspot, while rejected reports remain audit evidence. This workflow does not autonomously establish report truth, and social evidence does not modify structural-damage inputs or TGNN inputs. \revision{GIS match scores are heuristic association signals; no held-out NLP accuracy, F1 score, or probability calibration is established.} Confirmation by a reviewer is an auditable workflow decision, not independent ground truth that the report is factually correct.
+
+\subsection{Scenario Replay and Data Provenance}
+The controlled Louisiana East Flood replay combines real archived ISBDA image bytes, a real SpaceNet 8 PRE/POST raster pair, and a frozen OSM-derived GIS snapshot with simulated drone coordinates/targets, event timestamps, telemetry, social content, responder decisions, and recovery values. The scenario controller supports a simulated timeline and replay controls, including pause, resume, reset, and playback-speed control. The clean replay publishes a small set of production-shaped event records for the source inputs, while the scenario timeline also includes derived processing and explicit responder-review milestones. Resetting a replay does not erase Kafka history or MinIO objects; replay identity and offset boundaries are used to isolate dashboard views. \revision{Responder-decision assets describe the scenario story and provenance; actual confirmation or rejection is performed through the operator review endpoint. The timeline milestone does not itself publish an automatic responder decision.} This is a controlled software replay, not a field deployment. The implementation uses one Kafka broker with replication factor one, so high availability is not established.
+
+\section{Experimental Results}
+\subsection{Held-Out RescueNet Evaluation}
+The active segmentation checkpoint was evaluated on 450 held-out RescueNet images containing 2,680 labelled instances, at 640-pixel input size and batch size one on a local 11th-generation Intel i5 CPU. Table~\ref{tab:metrics} reports box and mask results separately.
+\begin{table}[t]
+\caption{Held-Out RescueNet Test Metrics}
+\label{tab:metrics}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Boxes} & \textbf{Masks}\\
+\midrule
+Precision & 0.675 & 0.664\\
+Recall & 0.647 & 0.657\\
+mAP@50 & 0.685 & 0.675\\
+mAP@50--95 & 0.494 & 0.443\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Mean per-image processing time was 1.5 ms preprocessing, 148.8 ms inference, and 8.3 ms postprocessing on the stated CPU. These are local measurements, not a general throughput guarantee. The measured mean per-image time is approximately 158.6 ms when the three reported stages are summed; this sum is specific to the local CPU test path and should not be treated as end-to-end system latency. No multi-image concurrency or network transfer benchmark is inferred from these measurements. The held-out metrics represent one dataset split, not external field validation. In the frozen Louisiana replay, the active checkpoint produced zero detections on ISBDA image \texttt{5\_9240.jpg} and one water detection on each of \texttt{6\_270.jpg} and \texttt{8\_90.jpg}. These results demonstrate execution of the inference/provenance route, not useful damage segmentation on those images.
+
+\subsection{Satellite Processing}
+\revision{The historical 26 September 2026 acceptance record for SpaceNet 8 tile \texttt{2\_23\_44} reports 64 scored grid cells and 33 changed cells (24 moderate and nine severe) \cite{team67}. These describe that recorded run, not a newly executed validation of the current Universal Satellite Adapter. The available reference contains 22 flooded features among 40, but these object-level annotations do not correspond directly to output grid cells. Consequently, no cell-level confusion matrix, satellite precision, recall, IoU, or flood accuracy is established. A current-adapter evaluation requires a separately versioned run artifact identifying source checksums, normalization policy, configuration, and software revision.}
+
+\subsection{Integration Evidence}
+\revision{The historical 26 September 2026 acceptance run used the replaced three-class YOLO checkpoint, not the current ten-class YOLO26s-seg checkpoint. It supports the recorded workflow behavior, while current-model metrics and legacy-image transfer observations come from the separate segmentation verification record \cite{team67}.} The historical acceptance record reports three completed post-start replays, 12/12 timeline milestones, Kafka/MinIO/Spark services, checkpoint-backed inference, GIS association, social review, dashboard output, and negative tests for invalid GPS, stale telemetry, and missing telemetry fields. The same acceptance record includes 21 drone objects and 22 satellite objects in MinIO across a broader scope; these totals are not attributed to one replay. These are software-workflow checks, not model accuracy or proof of operational emergency-response performance. The recorded acceptance suite also included invalid/missing records, unreadable images, duplicates, stale events, and service-failure checks in separate test scopes. The documented test totals from different milestones are not combined here as though they were one fresh, unified test run.
+
+\section{Discussion and Limitations}
+The system's contribution differs from task-specific UAV segmentation and satellite mapping research \cite{resc,zou,spacenet,selva}. Rather than claiming higher detection or flood-mapping accuracy, it demonstrates how evidence from separate modules can be transported, associated with infrastructure identities, retained over time, and exposed with provenance. The evaluation values must be interpreted within their own datasets and protocols; direct comparison with published scores from different datasets, labels, or evaluation splits would be invalid.
+
+Several limitations constrain interpretation. First, RescueNet metrics do not establish transfer to ISBDA or arbitrary UAV imagery; the three-image replay is a negative transfer signal. Second, radiometric changes may arise from illumination, shadows, seasonal variation, sensor differences, registration error, or actual surface change. Third, scenario GPS/target associations are simulated, so GIS traceability is not evidence of camera-based geolocation accuracy. Fourth, graph capacities, loads, damage, and stress include scenario-defined or heuristic quantities; the Louisiana graph has spatial but no functional dependency edges. Fifth, synthetic TGNN training may encode simulator-specific dynamics, and its output has no probability calibration or validated operational threshold. Sixth, deterministic social matching may miss context, ambiguity, negation, and multilingual content; human review remains necessary.
+
+The available evidence lacks a unified, time-aligned disaster ground-truth dataset with which to compute full-system precision, recall, or decision utility. A single-host acceptance run is not a deployment-scale load test, and a one-broker Kafka configuration is not highly available. A real deployment would require privacy controls for aerial imagery and social reports, role-based access, audit logs, retention rules, operator accountability, and mechanisms to correct false or stale evidence. Model scores and unverified reports must not autonomously trigger emergency actions; high-impact decisions require responder verification.
+
+\section{Future Work and Conclusion}
+Future validation should replace legacy replay imagery with representative labelled UAV samples and include an external event-level test set. Camera-based pixel-to-GPS localization and real infrastructure telemetry/dependency data are required to validate GIS association and graph semantics. Satellite evaluation should map independent reference labels to the same output grid, define the positive class before scoring, preserve NoData exclusions, and report cell-level confusion metrics on held-out tiles. TGNN evaluation requires held-out real graph sequences, calibration analysis, ranking-utility tests, and predeclared thresholds. The social resolver should be evaluated against human-adjudicated reports with language, ambiguity, and negation breakdowns. Finally, multi-node resilience, security, and deployment-scale performance need dedicated tests.
+
+This paper has presented a modular prototype connecting event-driven ingestion, image-object storage, supported stream validation, drone segmentation, GIS-associated observations, temporal graph state, independent satellite-change evidence, human-reviewed social reports, and dashboard projection. The defensible result is a provenance-aware and replayable workflow with explicit separation of learned, deterministic, heuristic, and synthetic-model outputs. The current evidence supports a bounded prototype demonstration, not a field-validated real-time disaster prediction claim.
+
+\section*{Acknowledgment}
+The team acknowledges the guidance of Dr. Ashwini K and the support provided through the PES University capstone project.
+
+\balance
+\begin{thebibliography}{00}
+\bibitem{resc}
+M. Rahnemoonfar, T. Chowdhury, and R. Murphy, ``RescueNet: A high resolution UAV semantic segmentation dataset for natural disaster damage assessment,'' \emph{Scientific Data}, vol. 10, Art. no. 913, 2023, doi: 10.1038/s41597-023-02799-4.
+
+\bibitem{zou}
+R. Zou, J. Liu, H. Pan, D. Tang, and R. Zhou, ``An improved instance segmentation method for fast assessment of damaged buildings based on post-earthquake UAV images,'' \emph{Sensors}, vol. 24, no. 13, Art. no. 4371, 2024, doi: 10.3390/s24134371.
+
+\bibitem{spacenet}
+R. H\"ansch \emph{et al.}, ``The SpaceNet 8 challenge---from foundation mapping to flood detection,'' in \emph{Proc. IEEE Int. Geosci. Remote Sens. Symp. (IGARSS)}, 2022, pp. 5073--5076, doi: 10.1109/IGARSS46834.2022.9883741.
+
+\bibitem{selva}
+S. Selvakumaran \emph{et al.}, ``Improving operational use of post-disaster damage assessment for urban search and rescue by integrated graph-based multimodal remote sensing data analysis,'' \emph{Progress in Disaster Science}, vol. 25, Art. no. 100404, 2025, doi: 10.1016/j.pdisas.2025.100404.
+
+\bibitem{gat}
+P. Veli\v{c}kovi\'c \emph{et al.}, ``Graph attention networks,'' in \emph{Proc. Int. Conf. Learning Representations (ICLR)}, 2018.
+
+\bibitem{gru}
+K. Cho \emph{et al.}, ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' in \emph{Proc. Conf. Empirical Methods in Natural Language Processing (EMNLP)}, 2014, pp. 1724--1734, doi: 10.3115/v1/D14-1179.
+
+\bibitem{team67}
+Team 67, ``Capstone-Team-67: Implementation and evaluation records,'' branch \texttt{dibsei/baseline-blocker-fixes}, revision \texttt{d8030798662c}, 2026. [Online]. Available: \url{https://github.com/Devaki-Prasad2709/Capstone-Team-67/tree/d8030798662ce5340f9e8f42e0967b630477868d}. Accessed: Nov. 20, 2026. Evidence includes the segmentation verification, historical acceptance, and computer-vision artifact manifest. Repository records are not peer-reviewed publications.
+\end{thebibliography}
+\end{document}
